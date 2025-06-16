@@ -1,0 +1,35 @@
+{
+  "users": [
+    {
+      "name": "rabbitmq",
+      "password": "rabbitmq",
+      "tags": "administrator"
+    }
+  ],
+  "vhosts": [
+    {
+      "name": "/"
+    }
+  ],
+  "permissions": [
+    {
+      "user": "rabbitmq",
+      "vhost": "/",
+      "configure": ".*",
+      "write": ".*",
+      "read": ".*"
+    }
+  ],
+  "queues": [
+    {
+      "name": "document_extractor",
+      "vhost": "/",
+      "durable": true
+    },
+    {
+      "name": "embedding_document",
+      "vhost": "/",
+      "durable": true
+    }
+  ]
+}
