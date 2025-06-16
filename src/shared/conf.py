@@ -208,11 +208,13 @@ class EmbeddingConfig(ConfigComponent):
     """Document embedding service configuration."""
 
     FOLDER_EXTRACTED_DOC_PATH = os.getenv("EMBEDDING_FOLDER_SOURCE_PATH")
-    CHUNK_SIZE = int(os.getenv("EMBEDDING_CHUNK_SIZE"))
-    CHUNK_OVERLAP = int(os.getenv("EMBEDDING_CHUNK_OVERLAP"))
-    MAX_RETRIES = int(os.getenv("EMBEDDING_MAX_RETRIES"))
-    RETRY_DELAY = int(os.getenv("EMBEDDING_RETRY_DELAY"))
-    MAX_MEMORY_USAGE_PERCENT = int(os.getenv("EMBEDDING_MAX_MEMORY_USAGE_PERCENT"))
+    CHUNK_SIZE = int(os.getenv("EMBEDDING_CHUNK_SIZE") or 0)
+    CHUNK_OVERLAP = int(os.getenv("EMBEDDING_CHUNK_OVERLAP") or 0)
+    MAX_RETRIES = int(os.getenv("EMBEDDING_MAX_RETRIES") or 0)
+    RETRY_DELAY = int(os.getenv("EMBEDDING_RETRY_DELAY") or 0)
+    MAX_MEMORY_USAGE_PERCENT = int(
+        os.getenv("EMBEDDING_MAX_MEMORY_USAGE_PERCENT") or 100
+    )
     QUEUE = os.getenv("EMBEDDING_QUEUE")
 
     @classmethod
@@ -251,8 +253,8 @@ class EmbeddingConfig(ConfigComponent):
 class SearchConfig(ConfigComponent):
     """Search service configuration."""
 
-    LLM_MAX_TOKENS = int(os.getenv("SEARCH_LLM_MAX_TOKENS"))
-    LLM_TEMPERATURE = float(os.getenv("SEARCH_LLM_TEMPERATURE"))
+    LLM_MAX_TOKENS = int(os.getenv("SEARCH_LLM_MAX_TOKENS") or 0)
+    LLM_TEMPERATURE = float(os.getenv("SEARCH_LLM_TEMPERATURE") or 0.0)
 
     @classmethod
     def validate(cls) -> bool:

@@ -1,11 +1,7 @@
 from __future__ import annotations
-
-import logging
-
 from src.shared.database import PGVectorDatabase
 from src.shared.schema import ChunkQueryResult, DocumentChunk
-
-logger = logging.getLogger("SEARCH_REPOSITORY")
+from src.shared.logger import logger
 
 
 class SearchRepository:

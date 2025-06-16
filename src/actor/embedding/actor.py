@@ -53,9 +53,8 @@ def embedding_document(message_data: dict):
         logger.info(f"Received document for embedding: {document_name}")
 
         # Validate that the document name is provided
-        document_full_path = os.path.join(
-            Config.embedding.FOLDER_EXTRACTED_DOC_PATH, document_name
-        )
+        folder_path = Config.embedding.FOLDER_EXTRACTED_DOC_PATH or ""
+        document_full_path = os.path.join(folder_path, document_name)
         if not os.path.exists(document_full_path):
             logger.error(f"Document file {document_full_path} does not exist.")
 

@@ -68,9 +68,10 @@ class CohereEmbeddingModel(EmbeddingModel):
         super().__init__(model_name)
         self.cohere = None
         self.SEARCH_DOCUMENT_TYPE = "search_query"
+        self.api_key: str = ""
 
     @staticmethod
-    async def create(api_key: str) -> CohereEmbeddingModel:
+    async def create(api_key: str) -> "CohereEmbeddingModel":
         """
         Create a CohereEmbeddingModel instance with the provided API key.
 
@@ -81,8 +82,8 @@ class CohereEmbeddingModel(EmbeddingModel):
             CohereEmbeddingModel: The created embedding model instance.
         """
         embedding_model = CohereEmbeddingModel()
-        embedding_model.api_key = api_key
-        embedding_model.cohere = cohere.AsyncClient(api_key=api_key)
+        embedding_model.api_key = api_key or ""
+        embedding_model.cohere = cohere.AsyncClient(api_key=embedding_model.api_key)
         return embedding_model
 
     async def generate_texts_embeddings(self, texts: list[str]) -> list[list[float]]:
@@ -131,7 +132,9 @@ class EmbeddingModelFactory:
             EmbeddingModel: An instance of the specified embedding model.
         """
         if Config.ai.EMBEDDING_MODEL == "cohere/embed-v4.0":
-            return await CohereEmbeddingModel.create(Config.ai.EMBEDDING_MODEL_API_KEY)
+            return await CohereEmbeddingModel.create(
+                Config.ai.EMBEDDING_MODEL_API_KEY or ""
+            )
         else:
             raise ValueError(
                 f"Unsupported embedding model: {Config.ai.EMBEDDING_MODEL}"

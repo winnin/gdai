@@ -588,6 +588,7 @@ dependencies = [
     { name = "scipy" },
     { name = "streamlit" },
     { name = "taskipy" },
+    { name = "types-aiofiles" },
 ]
 
 [package.dev-dependencies]
@@ -617,6 +618,7 @@ requires-dist = [
     { name = "scipy", specifier = ">=1.15.2" },
     { name = "streamlit", specifier = ">=1.44.0" },
     { name = "taskipy", specifier = ">=1.14.1" },
+    { name = "types-aiofiles", specifier = ">=24.1.0.20250606" },
 ]
 
 [package.metadata.requires-dev]
@@ -3107,6 +3109,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/8b/6f/3991f0f1c7fcb2df31aef28e0594d8d54b05393a0e4e34c65e475c2a5d41/typer-0.15.2.tar.gz", hash = "sha256:ab2fab47533a813c49fe1f16b1a370fd5819099c00b119e0633df65f22144ba5", size = 100711 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/7f/fc/5b29fea8cee020515ca82cc68e3b8e1e34bb19a3535ad854cac9257b414c/typer-0.15.2-py3-none-any.whl", hash = "sha256:46a499c6107d645a9c13f7ee46c5d5096cae6f5fc57dd11eccbbb9ae3e44ddfc", size = 45061 },
+]
+
+[[package]]
+name = "types-aiofiles"
+version = "24.1.0.20250606"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/64/6e/fac4ffc896cb3faf2ac5d23747b65dd8bae1d9ee23305d1a3b12111c3989/types_aiofiles-24.1.0.20250606.tar.gz", hash = "sha256:48f9e26d2738a21e0b0f19381f713dcdb852a36727da8414b1ada145d40a18fe", size = 14364 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/71/de/f2fa2ab8a5943898e93d8036941e05bfd1e1f377a675ee52c7c307dccb75/types_aiofiles-24.1.0.20250606-py3-none-any.whl", hash = "sha256:e568c53fb9017c80897a9aa15c74bf43b7ee90e412286ec1e0912b6e79301aee", size = 14276 },
 ]
 
 [[package]]

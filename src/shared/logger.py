@@ -56,17 +56,16 @@ for handler in gdai_logger.handlers[:]:
 # Add a custom filter
 gdai_logger.addFilter(ModulePathFilter())
 
+
+# Custom formatter for time formatting (avoid assigning to method directly)
+class CustomFormatter(logging.Formatter):
+    def formatTime(self, record, datefmt=None):
+        result = super().formatTime(record, datefmt)
+        return result[:-3]  # Remove last 3 digits of microseconds
+
+
 # Create formatter with configurable format
-formatter = logging.Formatter(GDAI_LOG_FORMAT, "%Y-%m-%d %H:%M:%S,%f")
-old_format = formatter.formatTime
-
-
-def format_time(self, record, datefmt=None):
-    result = old_format(record, datefmt)
-    return result[:-3]  # Remove last 3 digits of microseconds
-
-
-formatter.formatTime = format_time.__get__(formatter)
+formatter = CustomFormatter(GDAI_LOG_FORMAT, "%Y-%m-%d %H:%M:%S,%f")
 
 # Add console handler
 console_handler = logging.StreamHandler(sys.stdout)

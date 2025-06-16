@@ -129,7 +129,7 @@ class LLMModelFactory:
             LLMModel: An instance of OpenAIModel.
         """
         model_name = Config.ai.LLM_MODEL
-        api_key = Config.ai.LLM_MODEL_API_KEY
+        api_key = Config.ai.LLM_MODEL_API_KEY or ""
         temperature = Config.ai.LLM_TEMPERATURE
         max_tokens = Config.ai.LLM_MAX_TOKENS
         if "openai" in model_name:

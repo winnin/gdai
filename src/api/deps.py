@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from fastapi import HTTPException, status
 
-from src.api.repository.repository import SearchRepository
+from src.api.repository.search import SearchRepository
 from src.api.services.search_service import SearchService
 from src.shared.embedding_model import EmbeddingModelFactory
 from src.shared.llm_model import LLMModelFactory

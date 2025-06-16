@@ -42,9 +42,8 @@ def document_extractor(document_data: dict):
         if not tenant_id:
             logger.error("Tenant ID is required")
             raise ValueError("Tenant ID is required")
-        document_full_path = os.path.join(
-            Config.extractor.FOLDER_RAW_DOC_PATH, document_name
-        )
+        folder_path = Config.extractor.FOLDER_RAW_DOC_PATH or ""
+        document_full_path = os.path.join(folder_path, document_name)
 
         # Check if the file exists
         if not os.path.exists(document_full_path):
@@ -99,9 +98,8 @@ def document_extractor(document_data: dict):
             logger.error(f"Failed to serialize document {document_name}: {e!s}")
             raise
 
-        output_path = os.path.join(
-            Config.extractor.FOLDER_EXTRACTED_DOC_PATH, f"{document_name}.json"
-        )
+        output_folder = Config.extractor.FOLDER_EXTRACTED_DOC_PATH or ""
+        output_path = os.path.join(output_folder, f"{document_name}.json")
         try:
             os.makedirs(
                 os.path.dirname(output_path), exist_ok=True
@@ -116,15 +114,13 @@ def document_extractor(document_data: dict):
                 raise OSError("Not enough disk space to save extracted document")
 
             with open(
-                os.path.join(
-                    Config.extractor.FOLDER_EXTRACTED_DOC_PATH, f"{document_name}.json"
-                ),
+                os.path.join(output_folder, f"{document_name}.json"),
                 "w",
                 encoding="utf-8",
             ) as f:
                 f.write(extracted_doc_data_json)
             logger.info(
-                f"Extracted document data saved to {os.path.join(Config.extractor.FOLDER_EXTRACTED_DOC_PATH, f'{document_name}.json')}"
+                f"Extracted document data saved to {os.path.join(output_folder, f'{document_name}.json')}"
             )
         except OSError as e:
             logger.error(f"Failed to write extracted document to disk: {e!s}")

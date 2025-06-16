@@ -1,11 +1,8 @@
 # The SearchService class has been moved to src/api/services/search_service.py
 from __future__ import annotations
 
-import logging
 
 from src.shared.llm_model import LLMModel
-
-logger = logging.getLogger("SEARCH_SERVICE")
 
 
 class SearchService:
@@ -98,10 +95,10 @@ class SearchService:
         Returns:
             str: The full answer text from the LLM.
         """
-        msg_result = ""
-        async for token in self.llm_model.call_llm_stream(prompt):
-            msg_result += token
-        return msg_result
+        full_response = ""
+        async for chunk in self.llm_model.call_llm_stream(prompt):
+            full_response += chunk
+        return full_response
 
     async def _generate_answer(
         self, message_id: str, query: str, chunks_result
@@ -150,7 +147,7 @@ class SearchService:
 
     async def answer_query(
         self, tenant_id: str, query_id: str, query: str, chunks_limit: int = 3
-    ) -> str:
+    ) -> dict:
         """
         Answer a query by searching for relevant documents and generating a response.
 
@@ -160,7 +157,7 @@ class SearchService:
             query (str): The query text.
             chunks_limit (int): The maximum number of chunks to use.
         Returns:
-            str: The answer to the query.
+            dict: The answer to the query and the used chunks.
         """
         # create in table message a new message with the query with status pending
         message_id = await self.repository.create_message_entry(

@@ -16,7 +16,7 @@ class DocumentExtractor(ABC):
         pass
 
     @abstractmethod
-    def extract_document_data(document_path: str) -> dict:
+    def extract_document_data(self, document_path: str) -> dict:
         """
         Extract text from a document.
         """
@@ -113,7 +113,7 @@ class PyMuPDFExtractor(DocumentExtractor):
         Extract raw text from PDF using PyMuPDF.
         Returns list of text items with page information.
         """
-        text_data = []
+        text_data: list[dict] = []
 
         for page_num, page in enumerate(pdf_document):
             text = page.get_text()
@@ -130,21 +130,20 @@ class PyMuPDFExtractor(DocumentExtractor):
         text_data = self._join_paragraphs_between_pages(text_data)
         return text_data
 
-    def _extract_raw_tables(self, pdf_document) -> list:
+    def _extract_raw_tables(self, pdf_document) -> list[Table]:
         """
         Extract raw table data from PDF.
         Note: Basic table detection with PyMuPDF is limited.
         For production use, consider adding tabula-py or camelot-py integration.
         """
-        # Basic implementation - in real scenarios this would be more complex
-        tables = []
+        tables: list[Table] = []
         return tables
 
-    def _extract_raw_images(self, pdf_document) -> list:
+    def _extract_raw_images(self, pdf_document) -> list[Image]:
         """
         Extract raw image data from PDF.
         """
-        images = []
+        images: list[Image] = []
 
         return images
 
@@ -170,12 +169,10 @@ class PyMuPDFExtractor(DocumentExtractor):
         """
         Convert raw table data to Table objects.
         """
-        # Placeholder implementation - would need to be expanded
-        # for actual table extraction
         if not raw_result or len(raw_result) == 0:
-            return None
+            return []
 
-        tables = []
+        tables: list[Table] = []
         for table_data in raw_result:
             tables.append(
                 Table(
@@ -190,9 +187,9 @@ class PyMuPDFExtractor(DocumentExtractor):
         Convert raw image data to Image objects.
         """
         if not raw_result or len(raw_result) == 0:
-            return None
+            return []
 
-        images = []
+        images: list[Image] = []
         for img_data in raw_result:
             images.append(
                 Image(
@@ -261,7 +258,7 @@ class DoclingPDFExtractor(DocumentExtractor):
         file_name = os.path.basename(document_path)
         return file_name
 
-    def _generate_docling_pdf_extractor(self, use_ocr: bool = False) -> Document:
+    def _generate_docling_pdf_extractor(self, use_ocr: bool = False):
         """
         Generate a Docling PDF extractor with the specified options.
         """
@@ -297,10 +294,10 @@ class DoclingPDFExtractor(DocumentExtractor):
         return doc
 
     def _extract_tables(self, raw_result) -> list[Table]:
-        return None
+        return []
 
     def _extract_images(self, raw_result) -> list[Image]:
-        return None
+        return []
 
     def _extract_text(self, text_result) -> list[Text]:
         # extract text from docling result to a dictionary
@@ -310,11 +307,13 @@ class DoclingPDFExtractor(DocumentExtractor):
         ]
 
         # group text by page number
-        page_data = defaultdict(str)
+        page_data: dict[int, str] = defaultdict(str)
         for page_number, page_text in text_found:
             page_data[page_number] += (
                 (" " + page_text) if page_data[page_number] else page_text
             )
         # create a list of Page objects
-        pages = [Text(page=page, text=text) for page, text in page_data.items()]
+        pages: list[Text] = [
+            Text(page=page, text=text) for page, text in page_data.items()
+        ]
         return pages

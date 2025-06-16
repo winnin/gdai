@@ -104,7 +104,7 @@ class EmbeddingDocumentService:
         return page_chunks
 
     async def _chunk_document(
-        self, doc: str, chunk_by_paragraph=True
+        self, doc: Document, chunk_by_paragraph=True
     ) -> list[DocumentChunk]:
         """Split document pages into chunks with specified overlap."""
 
@@ -120,7 +120,7 @@ class EmbeddingDocumentService:
                         doc.doc_id,
                         doc.doc_name,
                         page_number,
-                        doc.texts[i],
+                        doc.texts[i].text,
                     )
                 )
 

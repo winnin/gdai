@@ -24,6 +24,7 @@ dependencies = [
     "scipy>=1.15.2",
     "streamlit>=1.44.0",
     "taskipy>=1.14.1",
+    "types-aiofiles>=24.1.0.20250606",
 ]
 
 
@@ -34,17 +35,6 @@ dev-dependencies = [
     "pytest>=8.3.5",
     "pytest-asyncio>=0.26.0",
 ]
-
-
-# [tool.ruff]
-# line-length = 120
-# target-version = "py310"
-
-# [tool.ruff.lint]
-# select = ["E", "F", "UP", "I", "RUF"]
-# ignore = ["E203", "E501"]
-
-
 
 
 [tool.pytest.ini_options]
