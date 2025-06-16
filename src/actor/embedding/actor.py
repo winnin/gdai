@@ -9,7 +9,7 @@ import psutil
 
 from src.actor.embedding.repository import DocumentRepository
 from src.actor.embedding.service import EmbeddingDocumentService
-from src.shared.broker import dramatiq  # with configured broked
+from src.shared.broker import dramatiq  # with configured broker
 from src.shared.conf import Config
 from src.shared.embedding_model import EmbeddingModelFactory
 from src.shared.logger import logger
