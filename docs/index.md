@@ -100,6 +100,8 @@ SEARCH_LLM_TEMPERATURE=0.7
    ```bash
    docker-compose up -d
    ```
+3. **Start Dramatiq actors: **
+4. **Start FastAPI services: **
 
 ## 3. API Usage
 
