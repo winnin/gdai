@@ -22,6 +22,7 @@ G-DAI is an open-source platform designed to provide a robust, multi-tenant vect
 ## Getting Started
 
 ### Prerequisites
+
 - Python 3.12+
 - Docker (optional, for containerized deployment)
 - PostgreSQL with pgvector extension
@@ -29,44 +30,54 @@ G-DAI is an open-source platform designed to provide a robust, multi-tenant vect
 ### Installation
 
 Clone the repository:
+
 ```bash
 git clone https://github.com/your-org/g-dai.git
 cd g-dai
 ```
 
 Install dependencies:
+
 ```bash
 pip install -r requirements.txt
 ```
 
 Or use Docker Compose:
+
 ```bash
 docker-compose up --build
 ```
 
 ### Configuration
+
 - Edit `pyproject.toml` and `mkdocs.yml` for project settings.
 - Set up your database and environment variables as needed.
 
 ### Running the API
+
 ```bash
 python -m src.api.main
 ```
 
 ### Ingesting Documents
+
 Place your documents in the `DOC_FOLDER/raw/` directory. Use the provided scripts or API endpoints to process and embed them.
 
 ### Querying
+
 Use the API to perform semantic search and retrieve answers with source references.
 
 ## Documentation
+
 - [Project Overview](docs/index.md)
 - [Contributing](docs/contributing.md)
 - [Code of Conduct](docs/code_of_conduct.md)
 - [About](docs/about.md)
 
 ## Community & Contributing
+
 We welcome contributions! Please read the [contributing guidelines](docs/contributing.md) and [code of conduct](docs/code_of_conduct.md) before submitting issues or pull requests.
 
 ## License
+
 This project is licensed under the MIT License.
