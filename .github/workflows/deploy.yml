@@ -17,3 +17,4 @@ jobs:
       - run: pip install mkdocs
       - run: pip install mkdocs-dracula-theme
       - run: mkdocs gh-deploy --force
+      - run: echo "Deployment to GitHub Pages completed successfully."
