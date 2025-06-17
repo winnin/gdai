@@ -53,9 +53,7 @@ class TestSchemaDocumentInput:
             "doc_name": "Test Document",
             "pages": ["Page 1", "Page 2"],
         }
-        with pytest.raises(
-            ValueError, match="tenant_id must be between 3 and 256 characters"
-        ):
+        with pytest.raises(ValueError, match="tenant_id must be between 3 and 256 characters"):
             DocumentInput(**input_data)
 
     def test_doc_id_minimum_length(self):
@@ -64,9 +62,7 @@ class TestSchemaDocumentInput:
             "doc_name": "Test Document",
             "pages": ["Page 1", "Page 2"],
         }
-        with pytest.raises(
-            ValueError, match="doc_id must be between 1 and 128 characters"
-        ):
+        with pytest.raises(ValueError, match="doc_id must be between 1 and 128 characters"):
             DocumentInput(**input_data)
 
     def test_doc_id_maximum_length(self):
@@ -75,9 +71,7 @@ class TestSchemaDocumentInput:
             "doc_name": "Test Document",
             "pages": ["Page 1", "Page 2"],
         }
-        with pytest.raises(
-            ValueError, match="doc_id must be between 1 and 128 characters"
-        ):
+        with pytest.raises(ValueError, match="doc_id must be between 1 and 128 characters"):
             DocumentInput(**input_data)
 
     def test_doc_name_minimum_length(self):
@@ -86,9 +80,7 @@ class TestSchemaDocumentInput:
             "doc_name": "",
             "pages": ["Page 1", "Page 2"],
         }
-        with pytest.raises(
-            ValueError, match="doc_name must be between 1 and 256 characters"
-        ):
+        with pytest.raises(ValueError, match="doc_name must be between 1 and 256 characters"):
             DocumentInput(**input_data)
 
     def test_doc_name_maximum_length(self):
@@ -97,9 +89,7 @@ class TestSchemaDocumentInput:
             "doc_name": "d" * 257,
             "pages": ["Page 1", "Page 2"],
         }
-        with pytest.raises(
-            ValueError, match="doc_name must be between 1 and 256 characters"
-        ):
+        with pytest.raises(ValueError, match="doc_name must be between 1 and 256 characters"):
             DocumentInput(**input_data)
 
 
@@ -146,9 +136,7 @@ class TestSchemaDocumentChunk:
         assert chunk.doc_id == "doc1"
 
     def test_invalid_end_offset(self):
-        with pytest.raises(
-            ValueError, match="end_offset must be greater than or equal to begin_offset"
-        ):
+        with pytest.raises(ValueError, match="end_offset must be greater than or equal to begin_offset"):
             DocumentChunk(
                 chunk_id="chunk1",
                 tenant_id="tenant1",
@@ -169,7 +157,4 @@ class TestSchemaDocumentChunk:
             end_offset=20,
             doc_id="doc1",
         )
-        assert (
-            str(chunk)
-            == "DocumentChunk(chunk_id=chunk1, page_number=1, offsets=(0, 20))"
-        )
+        assert str(chunk) == "DocumentChunk(chunk_id=chunk1, page_number=1, offsets=(0, 20))"

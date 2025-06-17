@@ -1,7 +1,8 @@
 from __future__ import annotations
+
 from src.shared.database import PGVectorDatabase
-from src.shared.schema import ChunkQueryResult, DocumentChunk
 from src.shared.logger import logger
+from src.shared.schema import ChunkQueryResult, DocumentChunk
 
 
 class SearchRepository:
@@ -14,9 +15,7 @@ class SearchRepository:
         Initialize repository.
         """
 
-    async def create_message_entry(
-        self, tenant_id: str, query_id: str, query_text: str
-    ) -> str:
+    async def create_message_entry(self, tenant_id: str, query_id: str, query_text: str) -> str:
         """
         Create a new message entry in the database.
 
@@ -36,17 +35,13 @@ class SearchRepository:
                     RETURNING id
                 """
                 result = await conn.fetchval(query, tenant_id, query_id, query_text)
-                logger.info(
-                    f"Created message entry with ID: {result} for tenant: {tenant_id}, query_id: {query_id}"
-                )
+                logger.info(f"Created message entry with ID: {result} for tenant: {tenant_id}, query_id: {query_id}")
                 return result
         except Exception as e:
             logger.error(f"Error creating message entry: {e}")
             raise
 
-    async def get_chunks_by_vector_similarity(
-        self, tenant_id: str, query_id: str, query_embedding: list[float], limit: int
-    ) -> list[ChunkQueryResult]:
+    async def get_chunks_by_vector_similarity(self, tenant_id: str, query_id: str, query_embedding: list[float], limit: int) -> list[ChunkQueryResult]:
         """
         Get document chunks by vector similarity.
 
@@ -140,16 +135,12 @@ class SearchRepository:
                     WHERE id = $2
                 """
                 await conn.execute(query, text, message_id)
-                logger.info(
-                    f"Updated message {message_id} text and status to completed"
-                )
+                logger.info(f"Updated message {message_id} text and status to completed")
         except Exception as e:
             logger.error(f"Error updating message text for {message_id}: {e}")
             raise
 
-    async def add_chunks_to_message(
-        self, message_id: str, chunks: list[ChunkQueryResult]
-    ) -> None:
+    async def add_chunks_to_message(self, message_id: str, chunks: list[ChunkQueryResult]) -> None:
         """
         Add chunks to a message.
 

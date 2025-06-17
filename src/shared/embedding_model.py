@@ -71,7 +71,7 @@ class CohereEmbeddingModel(EmbeddingModel):
         self.api_key: str = ""
 
     @staticmethod
-    async def create(api_key: str) -> "CohereEmbeddingModel":
+    async def create(api_key: str) -> CohereEmbeddingModel:
         """
         Create a CohereEmbeddingModel instance with the provided API key.
 
@@ -132,10 +132,6 @@ class EmbeddingModelFactory:
             EmbeddingModel: An instance of the specified embedding model.
         """
         if Config.ai.EMBEDDING_MODEL == "cohere/embed-v4.0":
-            return await CohereEmbeddingModel.create(
-                Config.ai.EMBEDDING_MODEL_API_KEY or ""
-            )
+            return await CohereEmbeddingModel.create(Config.ai.EMBEDDING_MODEL_API_KEY or "")
         else:
-            raise ValueError(
-                f"Unsupported embedding model: {Config.ai.EMBEDDING_MODEL}"
-            )
+            raise ValueError(f"Unsupported embedding model: {Config.ai.EMBEDDING_MODEL}")

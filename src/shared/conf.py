@@ -44,9 +44,7 @@ class DatabaseConfig(ConfigComponent):
     PGVECTOR_HOST = os.getenv("PGVECTOR_HOST")
     PGVECTOR_PORT = int(os.getenv("PGVECTOR_PORT", "5432"))
     PGVECTOR_MIN_POOL_CONNECTIONS = int(os.getenv("PGVECTOR_MIN_POOL_CONNECTIONS", "2"))
-    PGVECTOR_MAX_POOL_CONNECTIONS = int(
-        os.getenv("PGVECTOR_MAX_POOL_CONNECTIONS", "10")
-    )
+    PGVECTOR_MAX_POOL_CONNECTIONS = int(os.getenv("PGVECTOR_MAX_POOL_CONNECTIONS", "10"))
 
     @classmethod
     def validate(cls) -> bool:
@@ -159,9 +157,7 @@ class ExtractorConfig(ConfigComponent):
 
         raw_path = Path(cls.FOLDER_RAW_DOC_PATH)
         if not raw_path.exists():
-            logger.warning(
-                f"Raw documents directory does not exist: {cls.FOLDER_RAW_DOC_PATH}"
-            )
+            logger.warning(f"Raw documents directory does not exist: {cls.FOLDER_RAW_DOC_PATH}")
             # Try to create the directory
             try:
                 raw_path.mkdir(parents=True, exist_ok=True)
@@ -176,9 +172,7 @@ class ExtractorConfig(ConfigComponent):
 
         extracted_path = Path(cls.FOLDER_EXTRACTED_DOC_PATH)
         if not extracted_path.exists():
-            logger.warning(
-                f"Extracted documents directory does not exist: {cls.FOLDER_EXTRACTED_DOC_PATH}"
-            )
+            logger.warning(f"Extracted documents directory does not exist: {cls.FOLDER_EXTRACTED_DOC_PATH}")
             # Try to create the directory
             try:
                 extracted_path.mkdir(parents=True, exist_ok=True)
@@ -212,9 +206,7 @@ class EmbeddingConfig(ConfigComponent):
     CHUNK_OVERLAP = int(os.getenv("EMBEDDING_CHUNK_OVERLAP") or 0)
     MAX_RETRIES = int(os.getenv("EMBEDDING_MAX_RETRIES") or 0)
     RETRY_DELAY = int(os.getenv("EMBEDDING_RETRY_DELAY") or 0)
-    MAX_MEMORY_USAGE_PERCENT = int(
-        os.getenv("EMBEDDING_MAX_MEMORY_USAGE_PERCENT") or 100
-    )
+    MAX_MEMORY_USAGE_PERCENT = int(os.getenv("EMBEDDING_MAX_MEMORY_USAGE_PERCENT") or 100)
     QUEUE = os.getenv("EMBEDDING_QUEUE")
 
     @classmethod
@@ -284,16 +276,6 @@ class Config:
     extractor = ExtractorConfig
     embedding = EmbeddingConfig
     search = SearchConfig
-
-    # Component mapping
-    _components = {
-        "db": db,
-        "broker": broker,
-        "ai": ai,
-        "extractor": extractor,
-        "embedding": embedding,
-        "search": search,
-    }
 
     @classmethod
     def validate_all(cls) -> bool:

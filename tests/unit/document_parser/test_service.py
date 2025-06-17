@@ -25,15 +25,9 @@ class TestParserService:
         document_extractor = DoclingPDFExtractor()
         return document_extractor
 
-    def test_extract_document(
-        self, extractor, file_path, long_pdf_with_text_and_images
-    ):
+    def test_extract_document(self, extractor, file_path, long_pdf_with_text_and_images):
         fake_tenant_id = "abcdefg_1"
-        service = ExtractDocumentService(
-            document_folder_path=file_path, document_extractor=extractor
-        )
-        document = service.extract_data_from_document(
-            fake_tenant_id, long_pdf_with_text_and_images
-        )
+        service = ExtractDocumentService(document_folder_path=file_path, document_extractor=extractor)
+        document = service.extract_data_from_document(fake_tenant_id, long_pdf_with_text_and_images)
         assert len(document.texts) == 28
         assert document.tenant_id == fake_tenant_id

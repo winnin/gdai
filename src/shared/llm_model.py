@@ -57,9 +57,7 @@ class OpenAIModel(LLMModel):
         api_key (str): The API key for the OpenAI service.
     """
 
-    def __init__(
-        self, model_name: str, api_key: str, temperature: float, max_tokens: int
-    ):
+    def __init__(self, model_name: str, api_key: str, temperature: float, max_tokens: int):
         """
         Initialize the OpenAI model.
 
@@ -78,9 +76,7 @@ class OpenAIModel(LLMModel):
         )
 
     @staticmethod
-    async def create(
-        model_name: str, api_key: str, temperature: float = 0.7, max_tokens: int = 1000
-    ) -> OpenAIModel:
+    async def create(model_name: str, api_key: str, temperature: float = 0.7, max_tokens: int = 1000) -> OpenAIModel:
         """
         Create an instance of OpenAIModel with the provided API key.
 
@@ -134,8 +130,6 @@ class LLMModelFactory:
         max_tokens = Config.ai.LLM_MAX_TOKENS
         if "openai" in model_name:
             openai_model_name = model_name.split("/")[1]
-            return await OpenAIModel.create(
-                openai_model_name, api_key, temperature, max_tokens
-            )
+            return await OpenAIModel.create(openai_model_name, api_key, temperature, max_tokens)
 
         raise ValueError("Invalid SEARCH_LLM_MODEL configuration")

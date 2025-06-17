@@ -28,13 +28,17 @@ dependencies = [
 ]
 
 
-
-
 [tool.uv]
-dev-dependencies = [
-    "pytest>=8.3.5",
-    "pytest-asyncio>=0.26.0",
-]
+dev-dependencies = ["pytest>=8.3.5", "pytest-asyncio>=0.26.0"]
+
+
+[tool.ruff]
+line-length = 180
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "UP", "I", "RUF"]
+ignore = ["E203", "E501"]
 
 
 [tool.pytest.ini_options]

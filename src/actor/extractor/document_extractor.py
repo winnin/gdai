@@ -91,17 +91,11 @@ class PyMuPDFExtractor(DocumentExtractor):
 
             next_text_list_paragraphs = next_text.split("\n\n")
 
-            if next_text_list_paragraphs[0][
-                0
-            ].isupper():  # if first character is uppercase
+            if next_text_list_paragraphs[0][0].isupper():  # if first character is uppercase
                 next_text = "\n\n".join(next_text_list_paragraphs)
             else:
                 current_text += f"\n{next_text_list_paragraphs[0]}"
-                next_text = (
-                    "\n\n".join(next_text_list_paragraphs[1:])
-                    if len(next_text_list_paragraphs) > 1
-                    else ""
-                )
+                next_text = "\n\n".join(next_text_list_paragraphs[1:]) if len(next_text_list_paragraphs) > 1 else ""
 
             text_data[i] = {"page_number": page_current_text, "text": current_text}
             text_data[i + 1] = {"page_number": page_next_text, "text": next_text}
@@ -204,10 +198,7 @@ class PyMuPDFExtractor(DocumentExtractor):
         """
         Convert raw text data to Text objects organized by page.
         """
-        pages = [
-            Text(page=page_data["page_number"], text=page_data["text"])
-            for page_data in text_result
-        ]
+        pages = [Text(page=page_data["page_number"], text=page_data["text"]) for page_data in text_result]
         return pages
 
 
@@ -218,12 +209,8 @@ class DoclingPDFExtractor(DocumentExtractor):
 
     def __init__(self):
         super().__init__()
-        self.docling_extractor_without_ocr = self._generate_docling_pdf_extractor(
-            use_ocr=False
-        )
-        self.docling_extractor_with_ocr = self._generate_docling_pdf_extractor(
-            use_ocr=True
-        )
+        self.docling_extractor_without_ocr = self._generate_docling_pdf_extractor(use_ocr=False)
+        self.docling_extractor_with_ocr = self._generate_docling_pdf_extractor(use_ocr=True)
 
     def extract_document_data(self, document_path: str) -> dict:
         """
@@ -268,9 +255,7 @@ class DoclingPDFExtractor(DocumentExtractor):
         pipeline_options.do_table_structure = True  # pick what you need
         docling_extractor = DocumentConverter(
             format_options={
-                InputFormat.PDF: PdfFormatOption(
-                    pipeline_options=pipeline_options
-                )  # switch to beta PDF backend
+                InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options)  # switch to beta PDF backend
             }
         )
         return docling_extractor
@@ -301,19 +286,12 @@ class DoclingPDFExtractor(DocumentExtractor):
 
     def _extract_text(self, text_result) -> list[Text]:
         # extract text from docling result to a dictionary
-        text_found = [
-            (text_item["prov"][0]["page_no"], text_item["text"])
-            for text_item in text_result
-        ]
+        text_found = [(text_item["prov"][0]["page_no"], text_item["text"]) for text_item in text_result]
 
         # group text by page number
         page_data: dict[int, str] = defaultdict(str)
         for page_number, page_text in text_found:
-            page_data[page_number] += (
-                (" " + page_text) if page_data[page_number] else page_text
-            )
+            page_data[page_number] += (" " + page_text) if page_data[page_number] else page_text
         # create a list of Page objects
-        pages: list[Text] = [
-            Text(page=page, text=text) for page, text in page_data.items()
-        ]
+        pages: list[Text] = [Text(page=page, text=text) for page, text in page_data.items()]
         return pages

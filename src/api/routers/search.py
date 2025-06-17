@@ -14,9 +14,7 @@ router = APIRouter(prefix="/search", tags=["search"])
 
 
 @router.post("/query", response_model=SearchResponse)
-async def search_query_endpoint(
-    request: SearchRequest, search_service=Depends(get_search_service)
-):
+async def search_query_endpoint(request: SearchRequest, search_service=Depends(get_search_service)):
     """
     Process a search query and return results.
     """
@@ -26,9 +24,7 @@ async def search_query_endpoint(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="tenant_id, query_id, and query_text are required",
             )
-        logger.info(
-            f"Received search query for tenant: {request.tenant_id}, query_id: {request.query_id}"
-        )
+        logger.info(f"Received search query for tenant: {request.tenant_id}, query_id: {request.query_id}")
         query_result = await search_service.answer_query(
             request.tenant_id,
             request.query_id,

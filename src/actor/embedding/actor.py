@@ -23,9 +23,7 @@ try:
         chunk_overlap=Config.embedding.CHUNK_OVERLAP,
         document_repository=document_repository,
     )
-    logger.info(
-        f"Embedding service initialized successfully with model: {embedding_model !s}"
-    )
+    logger.info(f"Embedding service initialized successfully with model: {embedding_model !s}")
 except Exception as e:
     logger.critical(f"Failed to initialize embedding components: {e!s}")
     raise RuntimeError("Embedding service initialization failed") from e
@@ -72,28 +70,16 @@ def embedding_document(message_data: dict):
         # Embedding can be memory-intensive, so we verify we have enough resources
         mem = psutil.virtual_memory()
         if mem.percent > Config.embedding.MAX_MEMORY_USAGE_PERCENT:
-            logger.error(
-                f"Insufficient memory to process embedding (Usage: {mem.percent}%)"
-            )
-            raise RuntimeError(
-                f"System memory usage too high ({mem.percent}%) for safe embedding processing"
-            )
+            logger.error(f"Insufficient memory to process embedding (Usage: {mem.percent}%)")
+            raise RuntimeError(f"System memory usage too high ({mem.percent}%) for safe embedding processing")
         try:
-            logger.info(
-                f"Beginning embedding for document {document_name} at {document_full_path}"
-            )
+            logger.info(f"Beginning embedding for document {document_name} at {document_full_path}")
             asyncio.run(embedding_service.process_document(document_full_path))
             process_time = time() - start_time
-            logger.info(
-                f"Document embedding for {document_name} completed successfully in {process_time:.2f}s"
-            )
+            logger.info(f"Document embedding for {document_name} completed successfully in {process_time:.2f}s")
         except Exception as e:
-            logger.error(
-                f"Error during embedding process for document {document_name}: {e!s}"
-            )
-            raise RuntimeError(
-                f"Embedding process failed for document {document_name}"
-            ) from e
+            logger.error(f"Error during embedding process for document {document_name}: {e!s}")
+            raise RuntimeError(f"Embedding process failed for document {document_name}") from e
 
     except Exception as e:
         # Log with context information for diagnostics

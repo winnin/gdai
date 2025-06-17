@@ -29,6 +29,4 @@ class InsertDocumentException(Exception):
     def __init__(self, document_id: str, collection_name: str):
         self.document_id = document_id
         self.collection_name = collection_name
-        super().__init__(
-            f"Failed to insert document ID {document_id} into collection {collection_name}"
-        )
+        super().__init__(f"Failed to insert document ID {document_id} into collection {collection_name}")

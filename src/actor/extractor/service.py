@@ -22,9 +22,7 @@ class ExtractDocumentService:
         """
         self.document_extractor = document_extractor
 
-    def extract_data_from_document(
-        self, tenant_id: str, document_path: str
-    ) -> Document:
+    def extract_data_from_document(self, tenant_id: str, document_path: str) -> Document:
         """
         Extract text from a document.
 

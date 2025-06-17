@@ -15,9 +15,7 @@ class TestDocumentRepository:
         try:
             yield repo
         finally:
-            await repo.clean_tenant_database(
-                tenant_id=TestDocumentRepository.TENANT_ID_TEST
-            )
+            await repo.clean_tenant_database(tenant_id=TestDocumentRepository.TENANT_ID_TEST)
 
     @pytest_asyncio.fixture
     async def document(self):
@@ -91,17 +89,13 @@ class TestDocumentRepository:
     @pytest.mark.asyncio
     async def test_get_document_by_id_not_found(self, repository):
         # Attempts to retrieve a document that does not exist
-        document = await repository.get_document_by_id(
-            "TestDocumentRepository_nonexistent_id"
-        )
+        document = await repository.get_document_by_id("TestDocumentRepository_nonexistent_id")
         assert document is None
 
     @pytest.mark.asyncio
     async def test_get_document_chunk_by_id_not_found(self, repository):
         # Attempts to retrieve a chunk that does not exist
-        chunk = await repository.get_document_chunk_by_id(
-            "TestDocumentRepository_nonexistent_id"
-        )
+        chunk = await repository.get_document_chunk_by_id("TestDocumentRepository_nonexistent_id")
         assert chunk is None
 
     @pytest.mark.asyncio
@@ -154,19 +148,13 @@ class TestDocumentRepository:
     async def test_clean_tenant_database_not_found(self, repository, document, chunks):
         await repository.insert_document(document, chunks)
         # Attempts to clean a tenant that does not exist
-        await repository.clean_tenant_database(
-            "TestDocumentRepository_nonexistent_tenant"
-        )
+        await repository.clean_tenant_database("TestDocumentRepository_nonexistent_tenant")
         # Verifies that the database was not affected
         document = await repository.get_document_by_id("TestDocumentRepository_doc1")
         assert document is not None
-        chunk1 = await repository.get_document_chunk_by_id(
-            "TestDocumentRepository_chunk1"
-        )
+        chunk1 = await repository.get_document_chunk_by_id("TestDocumentRepository_chunk1")
         assert chunk1 is not None
-        chunk2 = await repository.get_document_chunk_by_id(
-            "TestDocumentRepository_chunk2"
-        )
+        chunk2 = await repository.get_document_chunk_by_id("TestDocumentRepository_chunk2")
         assert chunk2 is not None
 
     @pytest.mark.asyncio

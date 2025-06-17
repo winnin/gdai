@@ -1,7 +1,6 @@
 # The SearchService class has been moved to src/api/services/search_service.py
 from __future__ import annotations
 
-
 from src.shared.llm_model import LLMModel
 
 
@@ -45,9 +44,7 @@ class SearchService:
         self.embedding_model = embedding_model
         self.repository = repository
 
-    async def _retrieve_relevant_chunks(
-        self, tenant_id: str, query_id: str, query: str, chunks_limit: int
-    ):
+    async def _retrieve_relevant_chunks(self, tenant_id: str, query_id: str, query: str, chunks_limit: int):
         """
         Retrieve relevant document chunks based on the embedded query.
 
@@ -60,14 +57,10 @@ class SearchService:
             List[ChunkQueryResult]: A list of document chunks sorted by similarity.
         """
         # Generate embedding for the query
-        embedded_query = (
-            await self.embedding_model.generate_texts_embeddings([query])
-        )[0]
+        embedded_query = (await self.embedding_model.generate_texts_embeddings([query]))[0]
 
         # Retrieve chunks using vector similarity search
-        chunks_result = await self.repository.get_chunks_by_vector_similarity(
-            tenant_id, query_id, embedded_query, chunks_limit
-        )
+        chunks_result = await self.repository.get_chunks_by_vector_similarity(tenant_id, query_id, embedded_query, chunks_limit)
 
         # Here you could add reranking logic if needed
 
@@ -100,9 +93,7 @@ class SearchService:
             full_response += chunk
         return full_response
 
-    async def _generate_answer(
-        self, message_id: str, query: str, chunks_result
-    ) -> dict:
+    async def _generate_answer(self, message_id: str, query: str, chunks_result) -> dict:
         """
         Generate an answer using the LLM based on the query and relevant chunks.
 
@@ -114,14 +105,10 @@ class SearchService:
             dict: The generated answer and used chunks.
         """
         # Format chunks for the prompt
-        chunks_text = "\n\n".join(
-            [chunk_res.chunk.chunk_text for chunk_res in chunks_result]
-        )
+        chunks_text = "\n\n".join([chunk_res.chunk.chunk_text for chunk_res in chunks_result])
 
         # Prepare the prompt for the LLM
-        prompt = self.__PROMPT_TEMPLATE_TO_SOLVE_QUERY.format(
-            query=query, chunks=chunks_text
-        )
+        prompt = self.__PROMPT_TEMPLATE_TO_SOLVE_QUERY.format(query=query, chunks=chunks_text)
 
         # Get streaming response from LLM and store tokens
         answer_text = await self._process_llm_stream(message_id, prompt)
@@ -145,9 +132,7 @@ class SearchService:
         ]
         return {"msg": answer_text, "chunks": chunks_used}
 
-    async def answer_query(
-        self, tenant_id: str, query_id: str, query: str, chunks_limit: int = 3
-    ) -> dict:
+    async def answer_query(self, tenant_id: str, query_id: str, query: str, chunks_limit: int = 3) -> dict:
         """
         Answer a query by searching for relevant documents and generating a response.
 
@@ -160,14 +145,10 @@ class SearchService:
             dict: The answer to the query and the used chunks.
         """
         # create in table message a new message with the query with status pending
-        message_id = await self.repository.create_message_entry(
-            tenant_id, query_id, query
-        )
+        message_id = await self.repository.create_message_entry(tenant_id, query_id, query)
         try:
             # retrieve the chunks from the database based on the query
-            chunks_result = await self._retrieve_relevant_chunks(
-                tenant_id, query_id, query, chunks_limit
-            )
+            chunks_result = await self._retrieve_relevant_chunks(tenant_id, query_id, query, chunks_limit)
 
             if not chunks_result:  # ??????? if nothing is found is it a error or just no results? avoid answer something out of the rag
                 await self._handle_no_results(message_id)

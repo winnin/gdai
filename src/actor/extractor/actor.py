@@ -48,9 +48,7 @@ def document_extractor(document_data: dict):
         # Check if the file exists
         if not os.path.exists(document_full_path):
             logger.error(f"Document file {document_full_path} does not exist")
-            raise FileNotFoundError(
-                f"Document file {document_full_path} does not exist"
-            )
+            raise FileNotFoundError(f"Document file {document_full_path} does not exist")
 
         # Check if the file is readable
         if not os.access(document_full_path, os.R_OK):
@@ -63,24 +61,14 @@ def document_extractor(document_data: dict):
             logger.error(f"Document file {document_full_path} is empty")
             raise ValueError(f"Document file {document_full_path} is empty")
 
-        if (
-            file_size > Config.extractor.MAX_FILE_SIZE_MB * 1024 * 1024
-        ):  # Limite configurável
-            logger.error(
-                f"Document file {document_full_path} exceeds maximum allowed size"
-            )
-            raise ValueError(
-                f"Document file {document_full_path} exceeds maximum allowed size"
-            )
+        if file_size > Config.extractor.MAX_FILE_SIZE_MB * 1024 * 1024:  # Limite configurável
+            logger.error(f"Document file {document_full_path} exceeds maximum allowed size")
+            raise ValueError(f"Document file {document_full_path} exceeds maximum allowed size")
 
         # Start the document extraction process
         try:
-            logger.info(
-                f"Beginning document extraction for {document_name} at {document_full_path}"
-            )
-            extracted_doc_data = service.extract_data_from_document(
-                tenant_id, document_full_path
-            )
+            logger.info(f"Beginning document extraction for {document_name} at {document_full_path}")
+            extracted_doc_data = service.extract_data_from_document(tenant_id, document_full_path)
             logger.info(f"Document extraction completed for {document_name}")
         except Exception as e:
             logger.error(f"Failed to extract document {document_name}: {e!s}")
@@ -88,12 +76,8 @@ def document_extractor(document_data: dict):
 
         # Serialize the extracted data to JSON and save to file
         try:
-            extracted_doc_data_json = json.dumps(
-                extracted_doc_data.model_dump(), default=str
-            )
-            logger.info(
-                f"Extracted document size: {sys.getsizeof(extracted_doc_data_json)} bytes"
-            )
+            extracted_doc_data_json = json.dumps(extracted_doc_data.model_dump(), default=str)
+            logger.info(f"Extracted document size: {sys.getsizeof(extracted_doc_data_json)} bytes")
         except Exception as e:
             logger.error(f"Failed to serialize document {document_name}: {e!s}")
             raise
@@ -101,15 +85,11 @@ def document_extractor(document_data: dict):
         output_folder = Config.extractor.FOLDER_EXTRACTED_DOC_PATH or ""
         output_path = os.path.join(output_folder, f"{document_name}.json")
         try:
-            os.makedirs(
-                os.path.dirname(output_path), exist_ok=True
-            )  # Verificar se o diretório de saída existe
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)  # Verificar se o diretório de saída existe
 
             # Check if there's enough disk space
             disk_usage = shutil.disk_usage(os.path.dirname(output_path))
-            if (
-                disk_usage.free < sys.getsizeof(extracted_doc_data_json) * 2
-            ):  # 2x para ter margem
+            if disk_usage.free < sys.getsizeof(extracted_doc_data_json) * 2:  # 2x para ter margem
                 logger.error("Not enough disk space to save extracted document")
                 raise OSError("Not enough disk space to save extracted document")
 
@@ -119,21 +99,15 @@ def document_extractor(document_data: dict):
                 encoding="utf-8",
             ) as f:
                 f.write(extracted_doc_data_json)
-            logger.info(
-                f"Extracted document data saved to {os.path.join(output_folder, f'{document_name}.json')}"
-            )
+            logger.info(f"Extracted document data saved to {os.path.join(output_folder, f'{document_name}.json')}")
         except OSError as e:
             logger.error(f"Failed to write extracted document to disk: {e!s}")
             raise
 
         # Send to next stage with error handling
         try:
-            logger.info(
-                f"Document extraction for {document_name} completed successfully"
-            )
-            embedding_document.send(
-                {"document_name": f"{document_name}.json"}
-            )  # call next action
+            logger.info(f"Document extraction for {document_name} completed successfully")
+            embedding_document.send({"document_name": f"{document_name}.json"})  # call next action
             logger.info(f"Document {document_name} sent for embedding processing")
         except Exception as e:
             logger.error(f"Failed to enqueue document for embedding: {e!s}")

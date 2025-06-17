@@ -182,9 +182,7 @@ class DocumentChunk(BaseModel):
         """
         begin_offset = info.data["begin_offset"]
         if begin_offset is None:
-            raise ValueError(
-                "begin_offset must be provided before validating end_offset"
-            )
+            raise ValueError("begin_offset must be provided before validating end_offset")
         if value < begin_offset:
             raise ValueError("end_offset must be greater than or equal to begin_offset")
         return value

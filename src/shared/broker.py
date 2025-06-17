@@ -14,9 +14,7 @@ def _get_broker_url():
         str: The AMQP URL for RabbitMQ.
     """
     url = f"amqp://{Config.broker.RABBIT_MQ_USER}:{Config.broker.RABBIT_MQ_PASSWORD}@{Config.broker.RABBIT_MQ_HOST}:{Config.broker.RABBIT_MQ_PORT}/%2f"
-    logger.info(
-        f"Connecting to RabbitMQ broker at: {Config.broker.RABBIT_MQ_HOST}:{Config.broker.RABBIT_MQ_PORT}"
-    )
+    logger.info(f"Connecting to RabbitMQ broker at: {Config.broker.RABBIT_MQ_HOST}:{Config.broker.RABBIT_MQ_PORT}")
     return url
 
 

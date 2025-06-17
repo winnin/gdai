@@ -135,12 +135,8 @@ class DocumentRepository:
         try:
             async with PGVectorDatabase.get_connection() as connection:
                 async with connection.transaction():
-                    await connection.execute(
-                        "DELETE FROM document_chunk WHERE fk_doc_id = $1", document_id
-                    )
-                    await connection.execute(
-                        "DELETE FROM document WHERE id = $1", document_id
-                    )
+                    await connection.execute("DELETE FROM document_chunk WHERE fk_doc_id = $1", document_id)
+                    await connection.execute("DELETE FROM document WHERE id = $1", document_id)
         except Exception as e:
             print(f"Error deleting document: {e}")
 
@@ -149,11 +145,7 @@ class DocumentRepository:
         try:
             async with PGVectorDatabase.get_connection() as connection:
                 async with connection.transaction():
-                    await connection.execute(
-                        "DELETE FROM document_chunk where tenant_id = $1", tenant_id
-                    )
-                    await connection.execute(
-                        "DELETE FROM document where tenant_id = $1", tenant_id
-                    )
+                    await connection.execute("DELETE FROM document_chunk where tenant_id = $1", tenant_id)
+                    await connection.execute("DELETE FROM document where tenant_id = $1", tenant_id)
         except Exception as e:
             print(f"Error cleaning tenant database: {e}")

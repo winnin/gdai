@@ -37,9 +37,7 @@ async def upload_document(
     """
     try:
         if not tenant_id:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="tenant_id is required"
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="tenant_id is required")
         if not document:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -57,9 +55,7 @@ async def upload_document(
             shutil.copyfileobj(document.file, buffer)
         document_data = {"document_name": document.filename, "tenant_id": tenant_id}
         document_extractor.send(document_data)
-        logger.info(
-            f"Document {document.filename} uploaded successfully for tenant: {tenant_id}"
-        )
+        logger.info(f"Document {document.filename} uploaded successfully for tenant: {tenant_id}")
         return DocumentUploadResponse(
             message=f"Document {document.filename} uploaded and queued for processing",
             document_name=document.filename,

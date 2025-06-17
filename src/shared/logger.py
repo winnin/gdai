@@ -35,9 +35,7 @@ class ModulePathFilter(logging.Filter):
 # Create the GDAI logger
 GDAI_LOG_LEVEL = os.getenv("GDAI_LOG_LEVEL", "INFO").upper()
 if GDAI_LOG_LEVEL not in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]:
-    raise ValueError(
-        f"Invalid GDAI_LOG_LEVEL: {GDAI_LOG_LEVEL}. Must be one of DEBUG, INFO, WARNING, ERROR, CRITICAL."
-    )
+    raise ValueError(f"Invalid GDAI_LOG_LEVEL: {GDAI_LOG_LEVEL}. Must be one of DEBUG, INFO, WARNING, ERROR, CRITICAL.")
 
 # Get log format from environment or use default
 GDAI_LOG_FORMAT = os.getenv(
@@ -76,18 +74,14 @@ gdai_logger.addHandler(console_handler)
 if GDAI_LOG_FILE_ENABLED:
     try:
         log_file_path = os.getenv("GDAI_LOG_FILE_PATH", "/tmp/gdai.log")
-        max_bytes = int(
-            float(os.getenv("GDAI_LOG_FILE_MAX_SIZE_MB", "10")) * 1024 * 1024
-        )
+        max_bytes = int(float(os.getenv("GDAI_LOG_FILE_MAX_SIZE_MB", "10")) * 1024 * 1024)
         backup_count = int(os.getenv("GDAI_LOG_FILE_BACKUP_COUNT", "5"))
 
         # Ensure log directory exists
         log_dir = os.path.dirname(log_file_path)
         os.makedirs(log_dir, exist_ok=True)
 
-        file_handler = RotatingFileHandler(
-            log_file_path, maxBytes=max_bytes, backupCount=backup_count
-        )
+        file_handler = RotatingFileHandler(log_file_path, maxBytes=max_bytes, backupCount=backup_count)
         file_handler.setFormatter(formatter)
         gdai_logger.addHandler(file_handler)
     except Exception as e:
@@ -107,7 +101,7 @@ class Logger:
     def __new__(cls):
         """Ensure only one instance of Logger exists"""
         if cls._instance is None:
-            cls._instance = super(Logger, cls).__new__(cls)
+            cls._instance = super().__new__(cls)
             cls._instance._initialized = False
         return cls._instance
 
