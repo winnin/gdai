@@ -2,6 +2,11 @@
 
 Welcome to the documentation for **GDAI**, a multi-tenant vector store with advanced semantic search and auditable answer capabilities.
 
+[![Tests](https://github.com/winnin/gdai/actions/workflows/tests.yml/badge.svg)](https://github.com/winnin/gdai/actions/workflows/tests.yml)
+[![Pre-commit](https://github.com/winnin/gdai/actions/workflows/pre-commit.yml/badge.svg)](https://github.com/winnin/gdai/actions/workflows/pre-commit.yml)
+[![codecov](https://codecov.io/gh/winnin/gdai/branch/main/graph/badge.svg)](https://codecov.io/gh/winnin/gdai)
+![Python Version](https://img.shields.io/badge/python-3.11%2B-blue)
+
 ## What is GDAI?
 
 GDAI is an open-source platform that enables organizations to:
@@ -91,24 +96,6 @@ SEARCH_LLM_TEMPERATURE=0.7
 > **Note:** Replace `your-cohere-api-key` and `your-openai-api-key` with your actual API keys.
 
 ---
-
-## 2. Deployment & Running
-
-### Local Development
-
-1. **Install Docker and Docker Compose** (if not already installed).
-2. **Start all services:**
-   ```bash
-   docker-compose up --build
-   ```
-   Or in detached mode:
-   ```bash
-   docker-compose up -d
-   ```
-3. **Start Dramatiq actors:**
-4. **Start FastAPI services:**
-
-## 3. API Usage
 
 ### Search Query Endpoint
 

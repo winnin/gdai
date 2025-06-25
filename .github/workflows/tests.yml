@@ -1,0 +1,26 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install UV
+        run: wget -qO- https://astral.sh/uv/install.sh | sh
+      - name: Install dependencies
+        run: uv sync --all-groups
+      - name: Run coverage tests
+        run: uv run pytest --cov=src --cov-fail-under=50
+      - name: Archive code coverage results
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-coverage-report
+          path: htmlcov/
+          retention-days: 14
