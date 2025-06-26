@@ -1,14 +1,11 @@
 name: Tests
 
 on:
-  workflow_run:
-    workflows: ["pre-commit"]
-    types:
-      - completed
+  push:
+  pull_request:
 
 jobs:
   test:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

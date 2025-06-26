@@ -1,54 +1,72 @@
-# GDAI Documentation
+# G-DAI: Multi-Tenant Vector Store with Auditable Semantic Search
 
-Welcome to the documentation for **GDAI**, a multi-tenant vector store with advanced semantic search and auditable answer capabilities.
+G-DAI is an open-source platform designed to provide a robust, multi-tenant vector store with advanced document processing and semantic search capabilities. It leverages Retrieval-Augmented Generation (RAG) and other semantic techniques to deliver accurate, auditable answers, al
 
 [![Tests](https://github.com/winnin/gdai/actions/workflows/tests.yml/badge.svg)](https://github.com/winnin/gdai/actions/workflows/tests.yml)
 [![Pre-commit](https://github.com/winnin/gdai/actions/workflows/pre-commit.yml/badge.svg)](https://github.com/winnin/gdai/actions/workflows/pre-commit.yml)
 [![codecov](https://codecov.io/gh/winnin/gdai/branch/main/graph/badge.svg)](https://codecov.io/gh/winnin/gdai)
 ![Python Version](https://img.shields.io/badge/python-3.11%2B-blue)
 
-## What is GDAI?
+## Purpose
 
-GDAI is an open-source platform that enables organizations to:
-
-- Store and manage document embeddings in a vector database.
-- Support multiple tenants (organizations, teams, or projects) with isolated data.
-- Use semantic search and Retrieval-Augmented Generation (RAG) to answer questions based on ingested documents.
-- Ensure every answer is auditable and traceable to its original source.
+- **Multi-Tenant Vector Store:** Manage isolated data and search spaces for multiple organizations or users.
+- **Semantic Document Processing:** Go beyond RAG by incorporating various semantic approaches for document understanding and retrieval.
+- **Auditable Answers:** Every answer is traceable to its source, ensuring transparency and trust.
+- **Flexible Integration:** Designed to be easily integrated into existing data pipelines and applications.
 
 ## Key Features
 
-- **Multi-Tenant Management**: Isolate data and search for different clients.
-- **Semantic Search**: Retrieve information using vector similarity and advanced semantic techniques.
-- **RAG and Beyond**: Combine retrieval with generative models and other semantic approaches.
-- **Auditable Answers**: Every answer includes references to the source documents.
-- **API-First**: RESTful API for integration.
+- **Tenant Management:** Isolate data and search for different clients or projects.
+- **Document Ingestion:** Process and embed documents from various formats (PDF, Markdown, etc.).
+- **Semantic Search:** Use vector similarity and advanced semantic techniques to retrieve relevant information.
+- **Retrieval-Augmented Generation (RAG):** Combine retrieval with generative models for context-aware answers.
+- **Source Traceability:** Every answer includes references to the original documents and locations.
+- **API-First:** RESTful API for easy integration.
+- **Auditing:** Built-in mechanisms to audit and review the provenance of answers.
 
 ## Getting Started
 
-- [Installation](contributing.md#installation)
-- [Usage](contributing.md#usage)
-- [API Reference](about.md)
+### Prerequisites
 
-## Learn More
+- Python 3.11+
+- Docker (optional, for containerized deployment)
+- PostgreSQL with pgvector extension
 
-- [Contributing](contributing.md)
-- [Code of Conduct](code_of_conduct.md)
-- [About the Project](about.md)
+### Installation
 
----
+1. Clone the repository:
 
-# GDAI - Generative Document AI
+   ```bash
+   git clone https://github.com/winnin/gdai.git
+   cd gdai
+   ```
 
-GDAI is a containerized, AI-powered application that leverages a set of specialized services to provide semantic search, secure user authentication, and a scalable API. The application uses Docker Compose for local development and production deployment, ensuring all services work together seamlessly.
+2. Create a virtual environment and install dependencies using uv:
 
-## 1. Configuration
+   ```sh
+   uv venv
+   source .venv/bin/activate  # On Windows use: .venv\Scripts\activate
+   uv sync --all-groups  # Installs all dependencies including test packages
+   ```
 
-### Environment Variables (.env)
+3. Setup pre-commit hooks:
 
-The application uses a `.env` file for configuration. Below are the main keys you must set:
+   ```sh
+   pre-commit install
+   pre-commit install --hook-type pre-push
+   ```
 
-```
+4. Running PGVector and RabbitMQ using docker-compose
+
+   ```sh
+   docker-compose up
+   ```
+
+5. Define .env file
+
+```sh
+
+
 GDAI_LOG_LEVEL=DEBUG
 GDAI_LOG_FORMAT=[%(asctime)s] [GDAI] [%(levelname)s]: %(message)s
 GDAI_LOG_FILE_ENABLED=false
@@ -91,69 +109,43 @@ SEARCH_LLM_MODEL=openai/gpt-4o
 SEARCH_LLM_API_KEY=your-openai-api-key
 SEARCH_LLM_MAX_TOKENS=1000
 SEARCH_LLM_TEMPERATURE=0.7
+
 ```
 
 > **Note:** Replace `your-cohere-api-key` and `your-openai-api-key` with your actual API keys.
 
----
+6. Running Dramatiq document processors
 
-### Search Query Endpoint
+```sh
+    python -m dramatiq src.extractor.actor src.embedding.actor src.search.actor
+```
 
-- **POST** `/search/query`
-- **Request Body:**
-  ```json
-  {
-    "tenant_id": "string",
-    "query_id": "string",
-    "query_text": "string",
-    "chunks_limit": 100
-  }
-  ```
-- **Response:**
-  ```json
-  {
-    "message": "string",
-    "query_id": "string",
-    "status": "success",
-    "list_chunks": [ ... ]
-  }
-  ```
+5. Running API services
 
-### Document Upload Endpoint
+```sh
+    python -m src.api.main
+```
 
-- **POST** `/search/document/upload`
-- **Form Data:**
-  - `tenant_id`: string
-  - `document`: file (PDF, etc)
-- **Response:**
-  ```json
-  {
-    "message": "Document <filename> uploaded and queued for processing",
-    "document_name": "<filename>",
-    "tenant_id": "<tenant_id>",
-    "status": "pending"
-  }
-  ```
+6. Use swagger to call API
 
----
+   > **Link:** http://localhost:8000/docs.
 
-## 4. How to Use
+### Querying
 
-- **Upload a document** via `/search/document/upload` (multipart form-data).
-- **Submit a search query** via `/search/query` (JSON body).
-- Results will be based on the processed documents for the given tenant.
+Use the API to perform semantic search and retrieve answers with source references.
 
----
+## Documentation
 
-## 5. Contributing
+- [Contributing](./docs/contributing.md)
+- [Code of Conduct](code_of_conduct.md)
+- [About](about.md)
+- [Changelog] (../CHANGELOG.md)
+- [Roadmap] (../ROADMAP.md)
 
-- Fork the repository, create a feature branch, and submit a pull request.
-- Please document new endpoints and configuration options.
+## Community & Contributing
 
----
+We welcome contributions! Please read the [contributing guidelines](docs/contributing.md) and [code of conduct](docs/code_of_conduct.md) before submitting issues or pull requests.
 
-## 6. License
+## License
 
-- See [LICENSE](LICENSE) for details.
-
-Happy coding!
+This project is licensed under the MIT License.

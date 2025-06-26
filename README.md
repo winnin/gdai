@@ -37,8 +37,8 @@ G-DAI is an open-source platform designed to provide a robust, multi-tenant vect
 1. Clone the repository:
 
    ```sh
-   git clone https://github.com/your-org/g-dai.git
-   cd g-dai
+   git clone https://github.com/winnin/gdai.git
+   cd gdai
    ```
 
 2. Create a virtual environment and install dependencies using uv:
