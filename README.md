@@ -136,12 +136,11 @@ Use the API to perform semantic search and retrieve answers with source referenc
 
 ## Documentation
 
-- [Project Overview](docs/index.md)
 - [Contributing](docs/contributing.md)
 - [Code of Conduct](docs/code_of_conduct.md)
 - [About](docs/about.md)
-- [Changelog] (CHANGELOG.md)
-- [Roadmap] (ROADMAP.md)
+- [Changelog]
+- [Roadmap]
 
 ## Community & Contributing
 

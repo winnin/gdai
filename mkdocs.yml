@@ -5,6 +5,9 @@ nav:
   - Contributing: contributing.md
   - Code of Conduct: code_of_conduct.md
   - About: about.md
+  - Changelog: CHANGELOG.md
+  - Roadmap: ROADMAP.md
+
 theme:
   name: dracula
   logo: assets/logo.png

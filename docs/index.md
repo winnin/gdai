@@ -136,15 +136,16 @@ Use the API to perform semantic search and retrieve answers with source referenc
 
 ## Documentation
 
-- [Contributing](./docs/contributing.md)
+- [Project Overview](index.md)
+- [Contributing](contributing.md)
 - [Code of Conduct](code_of_conduct.md)
 - [About](about.md)
-- [Changelog] (../CHANGELOG.md)
-- [Roadmap] (../ROADMAP.md)
+- [Changelog] (CHANGELOG.md)
+- [Roadmap] (ROADMAP.md)
 
 ## Community & Contributing
 
-We welcome contributions! Please read the [contributing guidelines](docs/contributing.md) and [code of conduct](docs/code_of_conduct.md) before submitting issues or pull requests.
+We welcome contributions! Please read the [contributing guidelines](contributing.md) and [code of conduct](code_of_conduct.md) before submitting issues or pull requests.
 
 ## License
 
