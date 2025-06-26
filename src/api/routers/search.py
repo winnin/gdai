@@ -1,6 +1,4 @@
-"""
-Search endpoints router.
-"""
+"""Search endpoints router."""
 
 from __future__ import annotations
 
@@ -15,9 +13,7 @@ router = APIRouter(prefix="/search", tags=["search"])
 
 @router.post("/query", response_model=SearchResponse)
 async def search_query_endpoint(request: SearchRequest, search_service=Depends(get_search_service)):
-    """
-    Process a search query and return results.
-    """
+    """Process a search query and return results."""
     try:
         if not request.tenant_id or not request.query_id or not request.query_text:
             raise HTTPException(

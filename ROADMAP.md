@@ -23,4 +23,4 @@ This roadmap outlines the planned features and improvements for G-DAI. The timel
 
 ---
 
-*This roadmap is subject to change. Contributions and suggestions are welcome!*
+_This roadmap is subject to change. Contributions and suggestions are welcome!_

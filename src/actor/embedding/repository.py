@@ -8,21 +8,17 @@ from src.shared.schema import Document, DocumentChunk
 
 
 class DocumentRepository:
-    """
-    Manages documents and chunks in a PostgreSQL database with pgvector.
-    """
+    """Manages documents and chunks in a PostgreSQL database with pgvector."""
 
     def __init__(self):
-        """
-        Initialize repository.
-        """
+        """Initialize repository."""
 
     async def get_document_by_id(self, document_id: str):
-        """
-        Get document by ID.
+        """Get document by ID.
 
         Args:
             document_id (str): The ID of the document.
+
         Returns:
             Document: The document object or None if not found.
         """
@@ -49,11 +45,11 @@ class DocumentRepository:
             return doc
 
     async def get_document_chunk_by_id(self, chunk_id: str):
-        """
-        Get document chunk by ID.
+        """Get document chunk by ID.
 
         Args:
             chunk_id (str): The ID of the chunk.
+
         Returns:
             DocumentChunk: The document chunk object or None if not found.
         """
@@ -87,12 +83,12 @@ class DocumentRepository:
         return doc_chunk
 
     async def insert_document(self, document, document_chunks):
-        """
-        Insert document and chunks into database.
+        """Insert document and chunks into database.
 
         Args:
             document (Document): The document to insert.
             document_chunks (List[DocumentChunk]): The chunks to insert.
+
         Returns:
             None
         """

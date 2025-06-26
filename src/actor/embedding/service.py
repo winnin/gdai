@@ -41,7 +41,6 @@ class EmbeddingDocumentService:
 
     async def _load_document(self, document_path: str) -> Document:
         """Load document from file path and return Document object."""
-
         if not os.path.exists(document_path):
             raise FileNotFoundError(f"Document file {document_path} does not exist.")
         try:
@@ -75,7 +74,6 @@ class EmbeddingDocumentService:
 
     async def _chunk_document_by_paragraph(self, tenant_id, doc_id, doc_name, page_number, text) -> list[DocumentChunk]:
         """Split document pages into chunks by paragraphs."""
-
         page_chunks = []
 
         paragraphs = text.text.split("\n\n")
@@ -97,7 +95,6 @@ class EmbeddingDocumentService:
 
     async def _chunk_document(self, doc: Document, chunk_by_paragraph=True) -> list[DocumentChunk]:
         """Split document pages into chunks with specified overlap."""
-
         page_chunks = []
         num_pages = len(doc.texts)
 
@@ -131,7 +128,6 @@ class EmbeddingDocumentService:
 
     async def _embed_chunks(self, chunks: list[DocumentChunk], embedding_model: EmbeddingModel) -> None:
         """Generate embeddings for text chunks using the provided model."""
-
         batch_size = 64
         for i in range(0, len(chunks), batch_size):
             batch = chunks[i : i + batch_size]

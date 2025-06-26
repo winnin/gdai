@@ -5,9 +5,7 @@ from src.shared.llm_model import LLMModel
 
 
 class SearchService:
-    """
-    Service for handling search queries using LLM and embeddings.
-    """
+    """Service for handling search queries using LLM and embeddings."""
 
     __PROMPT_TEMPLATE_TO_SOLVE_QUERY = """
         You are an AI assistant that helps users find relevant information in documents.
@@ -32,8 +30,7 @@ class SearchService:
     """
 
     def __init__(self, llm_model: LLMModel, embedding_model, repository):
-        """
-        Initialize the SearchService.
+        """Initialize the SearchService.
 
         Args:
             llm_model (LLMModel): The language model to use for answering queries.
@@ -45,14 +42,14 @@ class SearchService:
         self.repository = repository
 
     async def _retrieve_relevant_chunks(self, tenant_id: str, query_id: str, query: str, chunks_limit: int):
-        """
-        Retrieve relevant document chunks based on the embedded query.
+        """Retrieve relevant document chunks based on the embedded query.
 
         Args:
             tenant_id (str): The ID of the tenant.
             query_id (str): The ID of the query.
             query (str): The query text.
             chunks_limit (int): The maximum number of chunks to retrieve.
+
         Returns:
             List[ChunkQueryResult]: A list of document chunks sorted by similarity.
         """
@@ -67,24 +64,24 @@ class SearchService:
         return chunks_result
 
     async def _handle_no_results(self, message_id: str):
-        """
-        Handle the case when no relevant chunks are found.
+        """Handle the case when no relevant chunks are found.
 
         Args:
             message_id (str): The ID of the message.
+
         Returns:
             None
         """
         await self.repository.update_message_status(message_id, "failed")
         return
 
-    async def _process_llm_stream(self, message_id: str, prompt: str) -> str:
-        """
-        Process the streaming response from the LLM and store tokens.
+    async def _process_llm_stream(self, prompt: str) -> str:
+        """Process the streaming response from the LLM and store tokens.
 
         Args:
             message_id (str): The ID of the message.
             prompt (str): The prompt to send to the LLM.
+
         Returns:
             str: The full answer text from the LLM.
         """
@@ -94,13 +91,13 @@ class SearchService:
         return full_response
 
     async def _generate_answer(self, message_id: str, query: str, chunks_result) -> dict:
-        """
-        Generate an answer using the LLM based on the query and relevant chunks.
+        """Generate an answer using the LLM based on the query and relevant chunks.
 
         Args:
             message_id (str): The ID of the message.
             query (str): The query text.
             chunks_result: The relevant document chunks.
+
         Returns:
             dict: The generated answer and used chunks.
         """
@@ -133,14 +130,14 @@ class SearchService:
         return {"msg": answer_text, "chunks": chunks_used}
 
     async def answer_query(self, tenant_id: str, query_id: str, query: str, chunks_limit: int = 3) -> dict:
-        """
-        Answer a query by searching for relevant documents and generating a response.
+        """Answer a query by searching for relevant documents and generating a response.
 
         Args:
             tenant_id (str): The ID of the tenant.
             query_id (str): The ID of the query.
             query (str): The query text.
             chunks_limit (int): The maximum number of chunks to use.
+
         Returns:
             dict: The answer to the query and the used chunks.
         """

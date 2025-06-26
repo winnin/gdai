@@ -1,16 +1,3 @@
-"""
-Logger Module
-
-This module provides a custom logger for the GDAI project with enhanced features:
-- Module path resolution for better log context.
-- Configurable log levels and formats via environment variables.
-- Optional file logging with rotation.
-
-Usage:
-    from src.shared.logger import logger
-    logger.info("This is an info message")
-"""
-
 from __future__ import annotations
 
 import logging
@@ -132,8 +119,7 @@ class Logger:
         gdai_logger.critical(message)
 
     def exception(self, message, *args, exc_info=True, **kwargs):
-        """
-        Log exception information with traceback.
+        """Log exception information with traceback.
 
         Should be called from an exception handler.
 

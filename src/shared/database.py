@@ -9,8 +9,7 @@ from src.shared.conf import Config
 
 
 class PGVectorDatabase:
-    """
-    A class for interacting with a PostgreSQL database using pgvector extension.
+    """A class for interacting with a PostgreSQL database using pgvector extension.
 
     This class manages database connections using a connection pool and provides
     methods for obtaining connections with the pgvector extension registered.
@@ -23,8 +22,7 @@ class PGVectorDatabase:
 
     @classmethod
     async def create_connection_pool(cls):
-        """
-        Create a new connection pool to the PostgreSQL database.
+        """Create a new connection pool to the PostgreSQL database.
 
         This method establishes a new pool of connections to the PostgreSQL database
         using the configuration parameters from the Config class.
@@ -48,8 +46,7 @@ class PGVectorDatabase:
 
     @classmethod
     async def get_connection_pool(cls):
-        """
-        Get or create a connection pool to the pgvector database.
+        """Get or create a connection pool to the pgvector database.
 
         This method returns the existing connection pool if it's available,
         or creates a new one if it doesn't exist or is closed.
@@ -64,8 +61,7 @@ class PGVectorDatabase:
     @classmethod
     @asynccontextmanager
     async def get_connection(cls):
-        """
-        Get a connection from the connection pool with pgvector extension registered.
+        """Get a connection from the connection pool with pgvector extension registered.
 
         This asynchronous context manager acquires a connection from the pool,
         registers the pgvector extension, and ensures the connection is properly

@@ -17,25 +17,19 @@ class DocumentExtractor(ABC):
 
     @abstractmethod
     def extract_document_data(self, document_path: str) -> dict:
-        """
-        Extract text from a document.
-        """
+        """Extract text from a document."""
         pass
 
 
 class PyMuPDFExtractor(DocumentExtractor):
-    """
-    Extract text, tables and images from a PDF document using PyMuPDF (fitz).
-    """
+    """Extract text, tables and images from a PDF document using PyMuPDF (fitz)."""
 
     def __init__(self):
         super().__init__()
         # No special initialization needed for PyMuPDF
 
     def extract_document_data(self, document_path: str) -> dict:
-        """
-        Extract content from a PDF document.
-        """
+        """Extract content from a PDF document."""
         # Check if the document exists
         if not os.path.exists(document_path):
             raise ValueError(f"Document {document_path} does not exist")
@@ -67,15 +61,12 @@ class PyMuPDFExtractor(DocumentExtractor):
             raise
 
     def _get_document_name(self, document_path: str) -> str:
-        """
-        Get the document name from the document path.
-        """
+        """Get the document name from the document path."""
         file_name = os.path.basename(document_path)
         return file_name
 
     def _join_paragraphs_between_pages(self, text_data: list[dict]) -> list:
-        """
-        Join paragraphs that are split between pages.
+        """Join paragraphs that are split between pages.
         This is a simple heuristic that checks if the last character of the previous page
         is a punctuation mark and the first character of the next page is not.
         """
@@ -103,8 +94,7 @@ class PyMuPDFExtractor(DocumentExtractor):
         return text_data
 
     def _extract_raw_text(self, pdf_document) -> list[dict]:
-        """
-        Extract raw text from PDF using PyMuPDF.
+        """Extract raw text from PDF using PyMuPDF.
         Returns list of text items with page information.
         """
         text_data: list[dict] = []
@@ -124,27 +114,22 @@ class PyMuPDFExtractor(DocumentExtractor):
         text_data = self._join_paragraphs_between_pages(text_data)
         return text_data
 
-    def _extract_raw_tables(self, pdf_document) -> list[Table]:
-        """
-        Extract raw table data from PDF.
+    def _extract_raw_tables(self) -> list[Table]:
+        """Extract raw table data from PDF.
         Note: Basic table detection with PyMuPDF is limited.
         For production use, consider adding tabula-py or camelot-py integration.
         """
         tables: list[Table] = []
         return tables
 
-    def _extract_raw_images(self, pdf_document) -> list[Image]:
-        """
-        Extract raw image data from PDF.
-        """
+    def _extract_raw_images(self) -> list[Image]:
+        """Extract raw image data from PDF."""
         images: list[Image] = []
 
         return images
 
     def _format_output(self, doc_name: str, dict_result: dict) -> Document:
-        """
-        Format the output to a Document object.
-        """
+        """Format the output to a Document object."""
         # Extract tables, images and text
         tables = self._format_table_data(dict_result["tables"])
         images = self._format_images_data(dict_result["pictures"])
@@ -160,9 +145,7 @@ class PyMuPDFExtractor(DocumentExtractor):
         return doc
 
     def _format_table_data(self, raw_result) -> list[Table]:
-        """
-        Convert raw table data to Table objects.
-        """
+        """Convert raw table data to Table objects."""
         if not raw_result or len(raw_result) == 0:
             return []
 
@@ -177,9 +160,7 @@ class PyMuPDFExtractor(DocumentExtractor):
         return tables
 
     def _format_images_data(self, raw_result) -> list[Image]:
-        """
-        Convert raw image data to Image objects.
-        """
+        """Convert raw image data to Image objects."""
         if not raw_result or len(raw_result) == 0:
             return []
 
@@ -195,17 +176,13 @@ class PyMuPDFExtractor(DocumentExtractor):
         return images
 
     def _format_text_data(self, text_result) -> list[Text]:
-        """
-        Convert raw text data to Text objects organized by page.
-        """
+        """Convert raw text data to Text objects organized by page."""
         pages = [Text(page=page_data["page_number"], text=page_data["text"]) for page_data in text_result]
         return pages
 
 
 class DoclingPDFExtractor(DocumentExtractor):
-    """
-    Extract text from a document using Docling.
-    """
+    """Extract text from a document using Docling."""
 
     def __init__(self):
         super().__init__()
@@ -213,9 +190,7 @@ class DoclingPDFExtractor(DocumentExtractor):
         self.docling_extractor_with_ocr = self._generate_docling_pdf_extractor(use_ocr=True)
 
     def extract_document_data(self, document_path: str) -> dict:
-        """
-        Extract text from a document.
-        """
+        """Extract text from a document."""
         # check if the document exists
         if not os.path.exists(document_path):
             raise ValueError(f"Document {document_path} does not exist")
@@ -239,16 +214,12 @@ class DoclingPDFExtractor(DocumentExtractor):
         return document
 
     def _get_document_name(self, document_path: str) -> str:
-        """
-        Get the document name from the document path.
-        """
+        """Get the document name from the document path."""
         file_name = os.path.basename(document_path)
         return file_name
 
     def _generate_docling_pdf_extractor(self, use_ocr: bool = False):
-        """
-        Generate a Docling PDF extractor with the specified options.
-        """
+        """Generate a Docling PDF extractor with the specified options."""
         pipeline_options = PdfPipelineOptions()
         pipeline_options.do_ocr = use_ocr  # pick what you need
         pipeline_options.generate_page_images = True
@@ -261,9 +232,7 @@ class DoclingPDFExtractor(DocumentExtractor):
         return docling_extractor
 
     def _format_output(self, doc_name: str, dict_result: dict) -> Document:
-        """
-        Format the output to a Document object.
-        """
+        """Format the output to a Document object."""
         # extract tables, images and text
         tables = self._extract_tables(dict_result["tables"])
         images = self._extract_images(dict_result["pictures"])
@@ -278,10 +247,10 @@ class DoclingPDFExtractor(DocumentExtractor):
         )
         return doc
 
-    def _extract_tables(self, raw_result) -> list[Table]:
+    def _extract_tables(self) -> list[Table]:
         return []
 
-    def _extract_images(self, raw_result) -> list[Image]:
+    def _extract_images(self) -> list[Image]:
         return []
 
     def _extract_text(self, text_result) -> list[Text]:

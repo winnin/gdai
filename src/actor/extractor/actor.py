@@ -23,12 +23,12 @@ service = ExtractDocumentService(doc_extractor)
     min_backoff=Config.extractor.RETRY_DELAY,
 )
 def document_extractor(document_data: dict):
-    """
-    Dramatiq actor for extracting document data.
+    """Dramatiq actor for extracting document data.
     Receives document metadata, validates and processes the file, extracts content, saves the result, and triggers embedding.
 
     Args:
         document_data (dict): Dictionary with 'document_name' and 'tenant_id'.
+
     Raises:
         ValueError, FileNotFoundError, PermissionError, IOError: On various file and processing errors.
     """

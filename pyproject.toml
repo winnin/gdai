@@ -28,14 +28,8 @@ dependencies = [
 ]
 
 
-
 [dependency-groups]
-test = [
-    "pytest>=8.4.0",
-    "pytest-cov>=6.2.1",
-    "pre-commit>=4.2.0",
-    "pytest-asyncio>=0.26.0",
-]
+test = ["pytest>=8.4.0", "pytest-cov>=6.2.1", "pre-commit>=4.2.0", "pytest-asyncio>=0.26.0"]
 
 
 [tool.ruff]
@@ -43,14 +37,18 @@ line-length = 180
 target-version = "py310"
 
 [tool.ruff.lint]
-select = ["E", "F", "UP", "I", "RUF"]
-ignore = ["E203", "E501"]
+select = ["E", "F", "UP", "I",  "ARG"]
+ignore = ["E203", "D203", "D213", "D212", "D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107", "ERA001"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google" # Use estilo Google para docstrings
 
 
 [tool.pytest.ini_options]
 filterwarnings = ["ignore::pydantic.warnings.PydanticDeprecatedSince20"]
 asyncio_mode = "strict"
 asyncio_default_fixture_loop_scope = "function"
+
 
 [tool.taskipy.tasks]
 runserver = { cmd = "uvicorn src.api.app:app --reload", help = "Execute FastAPI server in development mode" }

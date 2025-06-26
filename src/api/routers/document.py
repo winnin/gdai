@@ -1,6 +1,4 @@
-"""
-Document upload endpoints router.
-"""
+"""Document upload endpoints router."""
 
 from __future__ import annotations
 
@@ -9,7 +7,6 @@ import shutil
 
 from fastapi import (
     APIRouter,
-    BackgroundTasks,
     File,
     Form,
     HTTPException,
@@ -27,12 +24,10 @@ router = APIRouter(prefix="/document", tags=["document"])
 
 @router.post("/upload", response_model=DocumentUploadResponse)
 async def upload_document(
-    background_tasks: BackgroundTasks,
     tenant_id: str = Form(...),
     document: UploadFile = File(...),
 ):
-    """
-    Upload a document to be processed by the document extractor.
+    """Upload a document to be processed by the document extractor.
     Saves the file and triggers the extraction actor.
     """
     try:

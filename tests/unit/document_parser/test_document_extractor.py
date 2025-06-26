@@ -8,9 +8,7 @@ from src.actor.extractor.document_extractor import DoclingPDFExtractor
 
 
 class TestParserDocumentExtractor:
-    """
-    Tests based on some public documents from Wikipedia stored as pdf
-    """
+    """Tests based on some public documents from Wikipedia stored as pdf"""
 
     @pytest.fixture
     def file_path(self):

@@ -2,9 +2,7 @@ from __future__ import annotations
 
 
 class InvalidAPIKeyException(Exception):
-    """
-    Exception raised when an invalid API key is provided.
-    """
+    """Exception raised when an invalid API key is provided."""
 
     def __init__(self, api_key: str):
         self.api_key = api_key
@@ -12,9 +10,7 @@ class InvalidAPIKeyException(Exception):
 
 
 class InvalidDocumentContentException(Exception):
-    """
-    Exception raised when a document is invalid.
-    """
+    """Exception raised when a document is invalid."""
 
     def __init__(self, document_id: str):
         self.document_id = document_id
@@ -22,9 +18,7 @@ class InvalidDocumentContentException(Exception):
 
 
 class InsertDocumentException(Exception):
-    """
-    Exception raised when inserting an object into a collection fails.
-    """
+    """Exception raised when inserting an object into a collection fails."""
 
     def __init__(self, document_id: str, collection_name: str):
         self.document_id = document_id

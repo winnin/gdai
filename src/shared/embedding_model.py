@@ -9,16 +9,14 @@ from src.shared.conf import Config
 
 
 class EmbeddingModel(ABC):
-    """
-    A base class for embedding models.
+    """A base class for embedding models.
 
     Attributes:
         model_name (str): The name of the embedding model.
     """
 
     def __init__(self, model_name: str):
-        """
-        Initialize the embedding model.
+        """Initialize the embedding model.
 
         Args:
             model_name (str): The name of the embedding model.
@@ -27,8 +25,7 @@ class EmbeddingModel(ABC):
 
     @abstractmethod
     async def generate_texts_embeddings(self, texts: list[str]) -> list[list[float]]:
-        """
-        Generate embeddings for multiple texts.
+        """Generate embeddings for multiple texts.
 
         Args:
             texts (list[str]): A list of input texts.
@@ -39,8 +36,7 @@ class EmbeddingModel(ABC):
         pass
 
     def __str__(self) -> str:
-        """
-        Return a string representation of the embedding model.
+        """Return a string representation of the embedding model.
 
         Returns:
             str: The name of the embedding model.
@@ -49,8 +45,7 @@ class EmbeddingModel(ABC):
 
 
 class CohereEmbeddingModel(EmbeddingModel):
-    """
-    A specific implementation of the EmbeddingModel that uses the Cohere API.
+    """A specific implementation of the EmbeddingModel that uses the Cohere API.
 
     Attributes:
         model (str): The name of the Cohere embedding model.
@@ -60,9 +55,7 @@ class CohereEmbeddingModel(EmbeddingModel):
     """
 
     def __init__(self):
-        """
-        Initialize the Cohere embedding model.
-        """
+        """Initialize the Cohere embedding model."""
         self.model = "embed-v4.0"
         model_name = f"cohere/{self.model}"
         super().__init__(model_name)
@@ -72,8 +65,7 @@ class CohereEmbeddingModel(EmbeddingModel):
 
     @staticmethod
     async def create(api_key: str) -> CohereEmbeddingModel:
-        """
-        Create a CohereEmbeddingModel instance with the provided API key.
+        """Create a CohereEmbeddingModel instance with the provided API key.
 
         Args:
             api_key (str): The API key for Cohere.
@@ -87,8 +79,7 @@ class CohereEmbeddingModel(EmbeddingModel):
         return embedding_model
 
     async def generate_texts_embeddings(self, texts: list[str]) -> list[list[float]]:
-        """
-        Generate embeddings for multiple texts using the Cohere API.
+        """Generate embeddings for multiple texts using the Cohere API.
 
         Args:
             texts (list[str]): A list of input texts. The maximum number of texts is 96
@@ -119,14 +110,11 @@ class CohereEmbeddingModel(EmbeddingModel):
 
 
 class EmbeddingModelFactory:
-    """
-    A factory class to create instances of embedding models.
-    """
+    """A factory class to create instances of embedding models."""
 
     @staticmethod
     async def create() -> EmbeddingModel:
-        """
-        Create an instance of the specified embedding model.
+        """Create an instance of the specified embedding model.
 
         Returns:
             EmbeddingModel: An instance of the specified embedding model.

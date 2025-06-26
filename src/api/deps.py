@@ -10,8 +10,7 @@ from src.shared.logger import logger
 
 
 async def get_search_service():
-    """
-    Initialize and return a SearchService instance with all dependencies.
+    """Initialize and return a SearchService instance with all dependencies.
     Raises HTTPException if initialization fails.
     """
     try:

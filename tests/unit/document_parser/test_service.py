@@ -16,7 +16,7 @@ class TestParserService:
         return base_path
 
     @pytest.fixture
-    def long_pdf_with_text_and_images(self, file_path):
+    def long_pdf_with_text_and_images(self):
         file_name = "document_large_with_text_and_image.pdf"
         return file_name
 

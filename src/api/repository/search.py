@@ -6,23 +6,19 @@ from src.shared.schema import ChunkQueryResult, DocumentChunk
 
 
 class SearchRepository:
-    """
-    Repository for managing search-related database operations.
-    """
+    """Repository for managing search-related database operations."""
 
     def __init__(self):
-        """
-        Initialize repository.
-        """
+        """Initialize repository."""
 
     async def create_message_entry(self, tenant_id: str, query_id: str, query_text: str) -> str:
-        """
-        Create a new message entry in the database.
+        """Create a new message entry in the database.
 
         Args:
             tenant_id (str): The ID of the tenant.
             query_id (str): The ID of the query.
             query_text (str): The text of the query.
+
         Returns:
             id (str): The ID of the newly created message entry.
         """
@@ -42,14 +38,14 @@ class SearchRepository:
             raise
 
     async def get_chunks_by_vector_similarity(self, tenant_id: str, query_id: str, query_embedding: list[float], limit: int) -> list[ChunkQueryResult]:
-        """
-        Get document chunks by vector similarity.
+        """Get document chunks by vector similarity.
 
         Args:
             tenant_id (str): The ID of the tenant.
             query_id (str): The ID of the query.
             query_embedding (List[float]): The embedding vector of the query.
             limit (int): The maximum number of chunks to return.
+
         Returns:
             List[ChunkQueryResult]: A list of document chunks sorted by similarity.
         """
@@ -99,12 +95,12 @@ class SearchRepository:
             raise
 
     async def update_message_status(self, message_id: str, status: str) -> None:
-        """
-        Update the status of a message.
+        """Update the status of a message.
 
         Args:
             message_id (str): The ID of the message to update.
             status (str): The new status to set for the message.
+
         Returns:
             None
         """
@@ -118,12 +114,12 @@ class SearchRepository:
             raise
 
     async def update_message_text_and_status(self, message_id: str, text: str) -> None:
-        """
-        Update the text and status of a message.
+        """Update the text and status of a message.
 
         Args:
             message_id (str): The ID of the message to update.
             text (str): The new text to set for the message.
+
         Returns:
             None
         """
@@ -141,12 +137,12 @@ class SearchRepository:
             raise
 
     async def add_chunks_to_message(self, message_id: str, chunks: list[ChunkQueryResult]) -> None:
-        """
-        Add chunks to a message.
+        """Add chunks to a message.
 
         Args:
             message_id (str): The ID of the message to which chunks will be added.
             chunks (List[ChunkQueryResult]): A list of ChunkQueryResult objects to add.
+
         Returns:
             None
         """

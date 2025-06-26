@@ -8,8 +8,8 @@ from src.shared.logger import logger
 
 
 def _get_broker_url():
-    """
-    Gets the broker URL from environment variables.
+    """Gets the broker URL from environment variables.
+
     Returns:
         str: The AMQP URL for RabbitMQ.
     """

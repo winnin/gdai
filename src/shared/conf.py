@@ -1,5 +1,4 @@
-"""
-Centralized configuration for all G-DAI components.
+"""Centralized configuration for all G-DAI components.
 
 This module provides an organized configuration structure with environment variable loading,
 validation, and access to settings organized by component.
@@ -25,8 +24,7 @@ class ConfigComponent:
 
     @classmethod
     def validate(cls) -> bool:
-        """
-        Default validation method to be overridden by subclasses.
+        """Default validation method to be overridden by subclasses.
 
         Returns:
             bool: True if the configuration is valid
@@ -262,8 +260,7 @@ class SearchConfig(ConfigComponent):
 
 
 class Config:
-    """
-    Main configuration class that groups all components.
+    """Main configuration class that groups all components.
 
     This class serves as the central access point for all configurations
     and provides validation methods for all configuration.
@@ -279,8 +276,7 @@ class Config:
 
     @classmethod
     def validate_all(cls) -> bool:
-        """
-        Validates all configuration components.
+        """Validates all configuration components.
 
         Returns:
             bool: True if all components are valid, False otherwise
@@ -304,8 +300,7 @@ class Config:
 
     @classmethod
     def get_component(cls, component_name: str) -> type[ConfigComponent] | None:
-        """
-        Gets a configuration component by name.
+        """Gets a configuration component by name.
 
         Args:
             component_name: The name of the component to retrieve

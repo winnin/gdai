@@ -4,9 +4,7 @@ from pydantic import BaseModel
 
 
 class SearchRequest(BaseModel):
-    """
-    Request model for search queries.
-    """
+    """Request model for search queries."""
 
     tenant_id: str
     query_id: str
@@ -15,9 +13,7 @@ class SearchRequest(BaseModel):
 
 
 class SearchResponse(BaseModel):
-    """
-    Response model for search queries.
-    """
+    """Response model for search queries."""
 
     message: str
     query_id: str

@@ -9,13 +9,10 @@ from src.shared.schema import Document
 
 
 class ExtractDocumentService:
-    """
-    Service for extracting text from documents.
-    """
+    """Service for extracting text from documents."""
 
     def __init__(self, document_extractor: DocumentExtractor):
-        """
-        Initialize the ExtractDocumentService with a document extractor.
+        """Initialize the ExtractDocumentService with a document extractor.
 
         Args:
             document_extractor (DocumentExtractor): The extractor to use for document parsing.
@@ -23,14 +20,15 @@ class ExtractDocumentService:
         self.document_extractor = document_extractor
 
     def extract_data_from_document(self, tenant_id: str, document_path: str) -> Document:
-        """
-        Extract text from a document.
+        """Extract text from a document.
 
         Args:
             tenant_id (str): The tenant ID.
             document_path (str): The path to the document file.
+
         Returns:
             Document: The extracted document object.
+
         Raises:
             FileNotFoundException: If the document file does not exist.
         """

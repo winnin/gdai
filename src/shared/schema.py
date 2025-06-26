@@ -4,8 +4,7 @@ from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 
 class Text(BaseModel):
-    """
-    Represents a text content extracted from a document page.
+    """Represents a text content extracted from a document page.
 
     Attributes:
         page (int): The page number from which the text was extracted.
@@ -16,8 +15,7 @@ class Text(BaseModel):
     text: str
 
     def __str__(self) -> str:
-        """
-        Return a human-readable string representation of the Page.
+        """Return a human-readable string representation of the Page.
 
         Returns:
             str: A string displaying the page number and a snippet of the text.
@@ -25,8 +23,7 @@ class Text(BaseModel):
         return f"Page {self.page}: {self.text[:500]}..."
 
     def __len__(self) -> int:
-        """
-        Return the length of the text content.
+        """Return the length of the text content.
 
         Returns:
             int: The length of the text content.
@@ -34,8 +31,7 @@ class Text(BaseModel):
         return len(self.text)
 
     def __getitem__(self, key):
-        """
-        Permite fatiar o conteúdo do texto como uma string normal.
+        """Permite fatiar o conteúdo do texto como uma string normal.
 
         Args:
             key (int ou slice): Índice ou fatia a ser acessada.
@@ -47,8 +43,7 @@ class Text(BaseModel):
 
 
 class Image(BaseModel):
-    """
-    Represents an image extracted from a document page.
+    """Represents an image extracted from a document page.
 
     Attributes:
         page (int): The page number where the image is located.
@@ -65,8 +60,7 @@ class Image(BaseModel):
     height: int
 
     def __str__(self) -> str:
-        """
-        Return a human-readable string representation of the Image.
+        """Return a human-readable string representation of the Image.
 
         Returns:
             str: A string displaying the page number and position information.
@@ -75,8 +69,7 @@ class Image(BaseModel):
 
 
 class Table(BaseModel):
-    """
-    Represents a table extracted from a document page.
+    """Represents a table extracted from a document page.
 
     Attributes:
         page (int): The page number where the table is located.
@@ -88,8 +81,7 @@ class Table(BaseModel):
     cells: list[dict]
 
     def __str__(self) -> str:
-        """
-        Return a human-readable string representation of the Table.
+        """Return a human-readable string representation of the Table.
 
         Returns:
             str: A string displaying the page number and number of cells.
@@ -98,8 +90,7 @@ class Table(BaseModel):
 
 
 class Document(BaseModel):
-    """
-    Represents a document with its content and metadata.
+    """Represents a document with its content and metadata.
 
     A document can contain text content, tables, and images extracted from
     the original document file.
@@ -121,8 +112,7 @@ class Document(BaseModel):
     images: list[Image] | None = Field(default_factory=list)
 
     def __str__(self) -> str:
-        """
-        Return a human-readable string representation of the Document.
+        """Return a human-readable string representation of the Document.
 
         Returns:
             str: A string displaying the document ID, name, and number of pages.
@@ -131,8 +121,7 @@ class Document(BaseModel):
 
 
 class DocumentChunk(BaseModel):
-    """
-    Represents a chunk of text extracted from a document.
+    """Represents a chunk of text extracted from a document.
 
     Attributes:
         chunk_id (str): Unique identifier for the text chunk.
@@ -157,8 +146,7 @@ class DocumentChunk(BaseModel):
     embedding: list[float] | None = Field(default_factory=list)
 
     def __str__(self) -> str:
-        """
-        Return a human-readable string representation of the DocumentChunk.
+        """Return a human-readable string representation of the DocumentChunk.
 
         Returns:
             str: A string displaying the chunk ID, page number, and offsets.
@@ -167,8 +155,7 @@ class DocumentChunk(BaseModel):
 
     @field_validator("end_offset")
     def validate_end_offset(cls, value, info: ValidationInfo):
-        """
-        Validates that the end offset is greater than or equal to the begin offset.
+        """Validates that the end offset is greater than or equal to the begin offset.
 
         Args:
             value (int): The end offset to validate.

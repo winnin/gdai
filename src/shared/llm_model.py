@@ -9,16 +9,14 @@ from src.shared.conf import Config
 
 
 class LLMModel(ABC):
-    """
-    A base class for LLM (Large Language Model) models.
+    """A base class for LLM (Large Language Model) models.
 
     Attributes:
         model_name (str): The name of the LLM model.
     """
 
     def __init__(self, model_name: str):
-        """
-        Initialize the LLM model.
+        """Initialize the LLM model.
 
         Args:
             model_name (str): The name of the LLM model.
@@ -27,8 +25,7 @@ class LLMModel(ABC):
 
     @abstractmethod
     async def call_llm_stream(self, prompt: str) -> str:
-        """
-        Generate text based on a given prompt.
+        """Generate text based on a given prompt.
 
         Args:
             prompt (str): The input prompt for text generation.
@@ -39,8 +36,7 @@ class LLMModel(ABC):
         pass
 
     def __str__(self) -> str:
-        """
-        Return a string representation of the LLM model.
+        """Return a string representation of the LLM model.
 
         Returns:
             str: The name of the LLM model.
@@ -49,8 +45,7 @@ class LLMModel(ABC):
 
 
 class OpenAIModel(LLMModel):
-    """
-    A specific implementation of the LLMModel that uses the OpenAI API.
+    """A specific implementation of the LLMModel that uses the OpenAI API.
 
     Attributes:
         model_name (str): The name of the OpenAI model.
@@ -58,8 +53,7 @@ class OpenAIModel(LLMModel):
     """
 
     def __init__(self, model_name: str, api_key: str, temperature: float, max_tokens: int):
-        """
-        Initialize the OpenAI model.
+        """Initialize the OpenAI model.
 
         Args:
             model_name (str): The name of the OpenAI model.
@@ -77,8 +71,7 @@ class OpenAIModel(LLMModel):
 
     @staticmethod
     async def create(model_name: str, api_key: str, temperature: float = 0.7, max_tokens: int = 1000) -> OpenAIModel:
-        """
-        Create an instance of OpenAIModel with the provided API key.
+        """Create an instance of OpenAIModel with the provided API key.
 
         Args:
             api_key (str): The API key for the OpenAI service.
@@ -92,8 +85,7 @@ class OpenAIModel(LLMModel):
         return model
 
     async def call_llm_stream(self, prompt):
-        """
-        Answer a question using the LLM model with a given query and context.
+        """Answer a question using the LLM model with a given query and context.
 
         Args:
             query_prompt (str): The input query prompt.
@@ -102,7 +94,6 @@ class OpenAIModel(LLMModel):
         Returns:
             str: The generated answer from the LLM model.
         """
-
         messages = [HumanMessage(content=prompt)]
 
         # Usa o método .stream() para receber partes do texto incrementalmente
@@ -112,14 +103,11 @@ class OpenAIModel(LLMModel):
 
 
 class LLMModelFactory:
-    """
-    A factory class for creating instances of LLMModel based on the configuration.
-    """
+    """A factory class for creating instances of LLMModel based on the configuration."""
 
     @staticmethod
     async def create() -> LLMModel:
-        """
-        Create an instance of LLMModel based on the configuration.
+        """Create an instance of LLMModel based on the configuration.
 
         Returns:
             LLMModel: An instance of OpenAIModel.
