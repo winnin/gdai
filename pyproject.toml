@@ -13,12 +13,14 @@ dependencies = [
     "dramatiq[rabbitmq,watch]>=1.17.1",
     "fastapi-cli>=0.0.7",
     "fastapi[standard]>=0.115.12",
+    "fitz>=0.0.1.dev2",
     "langchain[openai]>=0.3.25",
     "langgraph>=0.4.7",
     "mkdocs-dracula-theme>=1.0.7",
     "mkdocs>=1.6.1",
     "pgvector>=0.4.0",
     "pre-commit>=4.2.0",
+    "pymupdf>=1.26.1",
     "python-dotenv>=1.1.0",
     "rich>=13.9.4",
     "scipy>=1.15.2",
@@ -51,5 +53,6 @@ asyncio_default_fixture_loop_scope = "function"
 
 
 [tool.taskipy.tasks]
-runserver = { cmd = "uvicorn src.api.app:app --reload", help = "Execute FastAPI server in development mode" }
+configure = { cmd = "uv sync --all-groups & pre-commit install & pre-commit install --hook-type pre-push", help = "Configure the environment" }
+rundev = {cmd = "python -m dramatiq src.actor.extractor.actor src.actor.embedding.actor", help = "Run the development server with Dramatiq workers and API" }
 tests = { cmd = "pytest", help = "Run all unit tests" }

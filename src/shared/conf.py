@@ -274,6 +274,9 @@ class Config:
     embedding = EmbeddingConfig
     search = SearchConfig
 
+    # Add this dictionary to map component names to their configuration classes
+    _components = {"db": DatabaseConfig, "broker": BrokerConfig, "ai": AIModelsConfig, "extractor": ExtractorConfig, "embedding": EmbeddingConfig, "search": SearchConfig}
+
     @classmethod
     def validate_all(cls) -> bool:
         """Validates all configuration components.
