@@ -4,9 +4,9 @@ from fastapi import HTTPException, status
 
 from src.api.repository.search import SearchRepository
 from src.api.services.search_service import SearchService
-from src.shared.embedding_model import EmbeddingModelFactory
-from src.shared.llm_model import LLMModelFactory
-from src.shared.logger import logger
+from src.conf.embedding_model import EmbeddingModelFactory
+from src.conf.llm_model import LLMModelFactory
+from src.conf.logger import logger
 
 
 async def get_search_service():
