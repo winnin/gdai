@@ -9,8 +9,8 @@ from src.config.broker import dramatiq
 from src.config.logger import logger
 from src.config.settings import Config
 from src.embeddings.cohere import EmbeddingModelFactory
-from src.repositories import DocumentRepository
-from src.services import EmbeddingDocumentService
+from src.repositories.pgvector import DocumentRepository
+from src.services.embedding import EmbeddingDocumentService
 
 try:
     document_repository = DocumentRepository()
