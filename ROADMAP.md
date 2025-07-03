@@ -1,6 +1,6 @@
 # Project Roadmap
 
-This roadmap outlines the planned features and improvements for G-DAI. The timeline and priorities may change based on community feedback and project needs.
+This roadmap outlines the planned features and improvements for GDAI. The timeline and priorities may change based on community feedback and project needs.
 
 ## Q3 2024
 

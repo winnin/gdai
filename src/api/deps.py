@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from fastapi import HTTPException, status
 
-from src.api.repository.search import SearchRepository
-from src.api.services.search_service import SearchService
-from src.conf.embedding_model import EmbeddingModelFactory
-from src.conf.llm_model import LLMModelFactory
-from src.conf.logger import logger
+from src.config.logger import logger
+from src.embeddings import EmbeddingFactory
+from src.llms import LLMFactory
+from src.repositories import RepositoryFactory
+from src.services.search import SearchService
 
 
 async def get_search_service():
@@ -14,9 +14,9 @@ async def get_search_service():
     Raises HTTPException if initialization fails.
     """
     try:
-        embedding_model = await EmbeddingModelFactory.create()
-        llm_model = await LLMModelFactory.create()
-        search_repository = SearchRepository()
+        embedding_model = await EmbeddingFactory.get_embedding()
+        llm_model = await LLMFactory.get_llm()
+        search_repository = RepositoryFactory.get_repository().search
         search_service = SearchService(
             llm_model=llm_model,
             embedding_model=embedding_model,

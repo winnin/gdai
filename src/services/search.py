@@ -108,7 +108,7 @@ class SearchService:
         prompt = self.__PROMPT_TEMPLATE_TO_SOLVE_QUERY.format(query=query, chunks=chunks_text)
 
         # Get streaming response from LLM and store tokens
-        answer_text = await self._process_llm_stream(message_id, prompt)
+        answer_text = await self._process_llm_stream(prompt)
 
         # Update message with final answer
         await self.repository.update_message_text_and_status(message_id, answer_text)

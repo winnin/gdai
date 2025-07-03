@@ -5,8 +5,8 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from src.api.deps import get_search_service
-from src.api.models.search import SearchRequest, SearchResponse
-from src.conf.logger import logger
+from src.config.logger import logger
+from src.schemas.query import SearchRequest, SearchResponse
 
 router = APIRouter(prefix="/search", tags=["search"])
 

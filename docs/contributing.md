@@ -1,4 +1,4 @@
-# Contributing to G-DAI
+# Contributing to GDAI
 
 We welcome contributions from the community! Please follow these guidelines to help us maintain a high-quality project.
 

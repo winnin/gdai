@@ -8,13 +8,13 @@ import psutil
 from src.config.broker import dramatiq
 from src.config.logger import logger
 from src.config.settings import Config
-from src.embeddings.cohere import EmbeddingModelFactory
-from src.repositories.pgvector import DocumentRepository
+from src.embeddings import EmbeddingFactory
+from src.repositories import RepositoryFactory
 from src.services.embedding import EmbeddingDocumentService
 
 try:
-    document_repository = DocumentRepository()
-    embedding_model = asyncio.run(EmbeddingModelFactory.create())
+    document_repository = RepositoryFactory.get_repository().document
+    embedding_model = asyncio.run(EmbeddingFactory.get_embedding())
     embedding_service = EmbeddingDocumentService(
         embedding_model=embedding_model,
         chunk_size=Config.embedding.CHUNK_SIZE,

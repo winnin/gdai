@@ -85,19 +85,71 @@ class QueryOutput(BaseModel):
         return f"QueryOutput(query={self.query}, answer={self.answer}, num_chunks={self.num_chunks})"
 
 
-# class SearchRequest(BaseModel):
-#     """Request model for search queries."""
+class SearchRequest(BaseModel):
+    """Request model for search queries."""
 
-#     tenant_id: str
-#     query_id: str
-#     query_text: str
-#     chunks_limit: int | None = 100
+    tenant_id: str
+    query_id: str
+    query_text: str
+    chunks_limit: int | None = 100
 
 
-# class SearchResponse(BaseModel):
-#     """Response model for search queries."""
+class SearchResponse(BaseModel):
+    """Response model for search queries."""
 
-#     message: str
-#     query_id: str
-#     status: str
-#     list_chunks: list | None = None
+    message: str
+    query_id: str
+    status: str
+    list_chunks: list | None = None
+
+
+class ChunkQueryResult(BaseModel):
+    """Represents a single chunk result from a search query.
+
+    Stores individual search results with their relevance scores.
+
+    Attributes:
+        tenant_id: Identifier for the tenant context.
+        query: The search query text that produced this result.
+        chunk: The document chunk that matches the query.
+        similarity: Similarity score between the query and the chunk.
+    """
+
+    tenant_id: str
+    query_id: str
+    chunk: DocumentChunk
+    similarity: float
+
+    def __str__(self) -> str:
+        """Return a human-readable string representation of the ChunkQueryResult.
+
+        Returns:
+            A string displaying query, chunk ID, and similarity score.
+        """
+        return f"ChunkQueryResult(query={self.query_id}, chunk_id={self.chunk.chunk_id}, similarity={self.similarity})"
+
+
+class ChunkQueryResult(BaseModel):
+    """Represents a single chunk result from a search query.
+
+    Stores individual search results with their relevance scores.
+
+    Attributes:
+        tenant_id: Identifier for the tenant context.
+        query: The search query text that produced this result.
+        chunk: The document chunk that matches the query.
+        similarity: Similarity score between the query and the chunk.
+    """
+
+    tenant_id: str
+    query_id: str
+    chunk: DocumentChunk
+    similarity: float
+
+    def __str__(self) -> str:
+        """Return a human-readable string representation of the ChunkQueryResult.
+
+        Returns:
+            A string displaying query, chunk ID, and similarity score.
+        """
+        return f"ChunkQueryResult(query={self.query_id}, chunk_id={self.chunk.chunk_id}, similarity={self.similarity})"

@@ -3,12 +3,12 @@ from __future__ import annotations
 import uvicorn
 from fastapi import FastAPI
 
-from src.api.routers.document import router as document_router
-from src.api.routers.search import router as search_router
+from src.api.routers.v1.document import router as document_router
+from src.api.routers.v1.search import router as search_router
 
 # Create FastAPI app
 app = FastAPI(
-    title="G-DAI Search API",
+    title="GDAI Search API",
     description="API for document search using LLM and embeddings",
     version="1.0.0",
 )
@@ -21,7 +21,7 @@ app.include_router(document_router)
 # Default route
 @app.get("/")
 async def root():
-    return {"status": "ok", "message": "G-DAI Search API is running"}
+    return {"status": "ok", "message": "GDAI Search API is running"}
 
 
 # Health check endpoint

@@ -14,10 +14,10 @@ from fastapi import (
     status,
 )
 
-from src.actor.extractor.actor import document_extractor
-from src.api.models.document import DocumentUploadResponse
-from src.conf.conf import ExtractorConfig
-from src.conf.logger import logger
+from src.background_tasks.extract_document import document_extractor
+from src.config.logger import logger
+from src.config.settings import ExtractorConfig
+from src.schemas.document import DocumentUploadResponse
 
 router = APIRouter(prefix="/document", tags=["document"])
 

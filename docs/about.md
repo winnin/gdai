@@ -1,6 +1,6 @@
-# About G-DAI
+# About GDAI
 
-G-DAI was created to address the growing need for trustworthy, explainable, and scalable document search and question-answering systems. As organizations increasingly rely on large collections of documents, ensuring that answers are both accurate and auditable becomes critical.
+GDAI was created to address the growing need for trustworthy, explainable, and scalable document search and question-answering systems. As organizations increasingly rely on large collections of documents, ensuring that answers are both accurate and auditable becomes critical.
 
 ## Vision
 
@@ -15,4 +15,4 @@ To empower organizations with a platform that not only delivers precise answers 
 
 ## Acknowledgements
 
-G-DAI builds upon open-source technologies such as PostgreSQL, pgvector, FastAPI, and modern NLP/LLM frameworks.
+GDAI builds upon open-source technologies such as PostgreSQL, pgvector, FastAPI, and modern NLP/LLM frameworks.

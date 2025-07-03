@@ -26,6 +26,6 @@ The format follows the [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ### Added
 
-- First stable release of G-DAI.
+- First stable release of GDAI.
 - Document upload and indexing.
 - Basic semantic search.

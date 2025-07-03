@@ -1,4 +1,4 @@
-"""Centralized configuration for all G-DAI components.
+"""Centralized configuration for all GDAI components.
 
 This module provides an organized configuration structure with environment variable loading,
 validation, and access to settings organized by component.
@@ -35,6 +35,8 @@ class ConfigComponent:
 class DatabaseConfig(ConfigComponent):
     """Database connection configuration."""
 
+    DATABASE = os.getenv("DATABASE")
+
     # PGVector settings
     PGVECTOR_USER = os.getenv("PGVECTOR_USER")
     PGVECTOR_PASSWORD = os.getenv("PGVECTOR_PASSWORD")
@@ -47,6 +49,10 @@ class DatabaseConfig(ConfigComponent):
     @classmethod
     def validate(cls) -> bool:
         """Validates the database configuration."""
+        if not cls.DATABASE:
+            logger.error("DATABASE is not set")
+            return False
+
         if not cls.PGVECTOR_USER:
             logger.error("PGVECTOR_USER is not set")
             return False

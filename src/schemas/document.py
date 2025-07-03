@@ -118,10 +118,10 @@ class Document(BaseModel):
         return f"Name: {self.doc_name}, Pages: {len(self.texts)}"
 
 
-# class DocumentUploadResponse(BaseModel):
-#     """Response model for document upload endpoint."""
+class DocumentUploadResponse(BaseModel):
+    """Response model for document upload endpoint."""
 
-#     message: str
-#     document_name: str
-#     tenant_id: str
-#     status: str
+    message: str
+    document_name: str
+    tenant_id: str
+    status: str

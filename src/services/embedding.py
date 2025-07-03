@@ -8,8 +8,8 @@ import os
 import aiofiles
 
 from src.config.logger import logger
-from src.embeddings.cohere import EmbeddingModel
-from src.repositories.pgvector import DocumentRepository
+from src.embeddings.base import EmbeddingModel
+from src.repositories.base import DocumentRepository
 from src.schemas.chunk import DocumentChunk
 from src.schemas.document import Document
 

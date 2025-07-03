@@ -1,6 +1,6 @@
-# G-DAI: Multi-Tenant Vector Store with Auditable Semantic Search
+# GDAI: Multi-Tenant Vector Store with Auditable Semantic Search
 
-G-DAI is an open-source platform designed to provide a robust, multi-tenant vector store with advanced document processing and semantic search capabilities. It leverages Retrieval-Augmented Generation (RAG) and other semantic techniques to deliver accurate, auditable answers, al
+GDAI is an open-source platform designed to provide a robust, multi-tenant vector store with advanced document processing and semantic search capabilities. It leverages Retrieval-Augmented Generation (RAG) and other semantic techniques to deliver accurate, auditable answers, al
 
 [![Tests](https://github.com/winnin/gdai/actions/workflows/tests.yml/badge.svg)](https://github.com/winnin/gdai/actions/workflows/tests.yml)
 [![Pre-commit](https://github.com/winnin/gdai/actions/workflows/pre-commit.yml/badge.svg)](https://github.com/winnin/gdai/actions/workflows/pre-commit.yml)

@@ -104,18 +104,19 @@ class PyMuPDFExtractor(DocumentExtractor):
         text_data = self._join_paragraphs_between_pages(text_data)
         return text_data
 
-    def _extract_raw_tables(self) -> list[Table]:
+    def _extract_raw_tables(self, pdf_document) -> list[Table]:
         """Extract raw table data from PDF.
         Note: Basic table detection with PyMuPDF is limited.
         For production use, consider adding tabula-py or camelot-py integration.
         """
+        print(f"processing pdf images to extract tables {len(pdf_document)}")
         tables: list[Table] = []
         return tables
 
-    def _extract_raw_images(self) -> list[Image]:
+    def _extract_raw_images(self, pdf_document) -> list[Image]:
         """Extract raw image data from PDF."""
+        print(f"processing pdf images to extract images {len(pdf_document)}")
         images: list[Image] = []
-
         return images
 
     def _format_output(self, doc_name: str, dict_result: dict) -> Document:
