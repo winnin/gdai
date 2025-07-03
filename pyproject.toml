@@ -39,7 +39,7 @@ line-length = 180
 target-version = "py310"
 
 [tool.ruff.lint]
-select = ["E", "F", "UP", "I",  "ARG"]
+select = ["E", "F", "UP", "I", "ARG"]
 ignore = ["E203", "D203", "D213", "D212", "D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107", "ERA001"]
 
 [tool.ruff.lint.pydocstyle]
@@ -54,5 +54,8 @@ asyncio_default_fixture_loop_scope = "function"
 
 [tool.taskipy.tasks]
 configure = { cmd = "uv sync --all-groups & pre-commit install & pre-commit install --hook-type pre-push", help = "Configure the environment" }
-rundev = {cmd = "python -m dramatiq src.actor.extractor.actor src.actor.embedding.actor", help = "Run the development server with Dramatiq workers and API" }
+background-tasks = { cmd = "uv run dramatiq src.background_tasks.extract_document src.background_tasks.embedding", help = "Run the background tasks with Dramatiq workers" }
+api = { cmd = "uv run python -m src.api.main", help = "Run the FastAPI application" }
+
+run-dev = { cmd = "task background-tasks & task api", help = "Run the development server with Dramatiq workers and API" }
 tests = { cmd = "pytest", help = "Run all unit tests" }

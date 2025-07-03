@@ -51,9 +51,8 @@ GDAI is an open-source platform designed to provide a robust, multi-tenant vecto
 
 3. Setup pre-commit hooks:
 
-   ```sh
-   pre-commit install
-   pre-commit install --hook-type pre-push
+   ```
+   task configure
    ```
 
 4. Running PGVector and RabbitMQ using docker-compose
@@ -68,19 +67,13 @@ GDAI is an open-source platform designed to provide a robust, multi-tenant vecto
 
 > **Note:** Replace `your-cohere-api-key` and `your-openai-api-key` with your actual API keys.
 
-6. Running Dramatiq document processors
+6. Running GDAI in dev mode
 
 ```sh
-    python -m dramatiq src.extractor.actor src.embedding.actor src.search.actor
+   task run-dev
 ```
 
-5. Running API services
-
-```sh
-    python -m src.api.main
-```
-
-6. Use swagger to call API
+7. Use swagger to call API
 
    > **Link:** http://localhost:8000/docs.
 
