@@ -38,7 +38,7 @@ async def upload_document(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Document file is required",
             )
-        document_folder_path = ExtractorConfig.FOLDER_RAW_DOC_PATH
+        document_folder_path = os.path.join(ExtractorConfig.FOLDER_RAW_DOC_PATH, tenant_id)
         if not document_folder_path:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

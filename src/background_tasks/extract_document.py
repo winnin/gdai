@@ -43,7 +43,7 @@ def document_extractor(document_data: dict):
         if not tenant_id:
             logger.error("Tenant ID is required")
             raise ValueError("Tenant ID is required")
-        folder_path = Config.extractor.FOLDER_RAW_DOC_PATH or ""
+        folder_path = os.path.join(Config.extractor.FOLDER_RAW_DOC_PATH, tenant_id)
         document_full_path = os.path.join(folder_path, document_name)
 
         # Check if the file exists
@@ -62,7 +62,7 @@ def document_extractor(document_data: dict):
             logger.error(f"Document file {document_full_path} is empty")
             raise ValueError(f"Document file {document_full_path} is empty")
 
-        if file_size > Config.extractor.MAX_FILE_SIZE_MB * 1024 * 1024:  # Limite configurável
+        if file_size > Config.extractor.MAX_FILE_SIZE_MB * 1024 * 1024:  # configured limit in MB
             logger.error(f"Document file {document_full_path} exceeds maximum allowed size")
             raise ValueError(f"Document file {document_full_path} exceeds maximum allowed size")
 
@@ -83,14 +83,14 @@ def document_extractor(document_data: dict):
             logger.error(f"Failed to serialize document {document_name}: {e!s}")
             raise
 
-        output_folder = Config.extractor.FOLDER_EXTRACTED_DOC_PATH or ""
+        output_folder = os.path.join(Config.extractor.FOLDER_EXTRACTED_DOC_PATH, tenant_id)
         output_path = os.path.join(output_folder, f"{document_name}.json")
         try:
-            os.makedirs(os.path.dirname(output_path), exist_ok=True)  # Verificar se o diretório de saída existe
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)  # verify output directory exists, else create it
 
             # Check if there's enough disk space
             disk_usage = shutil.disk_usage(os.path.dirname(output_path))
-            if disk_usage.free < sys.getsizeof(extracted_doc_data_json) * 2:  # 2x para ter margem
+            if disk_usage.free < sys.getsizeof(extracted_doc_data_json) * 2:  # 2x as a safety margin
                 logger.error("Not enough disk space to save extracted document")
                 raise OSError("Not enough disk space to save extracted document")
 
@@ -107,14 +107,14 @@ def document_extractor(document_data: dict):
 
         # Send to next stage with error handling
         try:
-            logger.info(f"Document extraction for {document_name} completed successfully")
-            embedding_document.send({"document_name": f"{document_name}.json"})  # call next action
-            logger.info(f"Document {document_name} sent for embedding processing")
+            logger.info(f"Document extraction for {output_path} completed successfully")
+            embedding_document.send({"document_path": output_path})  # call next action
+            logger.info(f"Document {output_path} sent for embedding processing")
         except Exception as e:
             logger.error(f"Failed to enqueue document for embedding: {e!s}")
             raise
 
     except Exception as e:
-        logger.error(f"Failed to extract document {document_name}: {e!s}")
+        logger.error(f"Failed to extract document {output_path}: {e!s}")
         # Allows Dramatiq to retry based on max_retries settings
         raise

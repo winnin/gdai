@@ -46,13 +46,12 @@ GDAI is an open-source platform designed to provide a robust, multi-tenant vecto
    ```sh
    uv venv
    source .venv/bin/activate  # On Windows use: .venv\Scripts\activate
-   uv sync --all-groups  # Installs all dependencies including test packages
    ```
 
-3. Setup pre-commit hooks:
+3. Setup project configurations:
 
-   ```
-   task configure
+   ```sh
+   task configure-dev
    ```
 
 4. Running PGVector and RabbitMQ using docker-compose
@@ -64,8 +63,6 @@ GDAI is an open-source platform designed to provide a robust, multi-tenant vecto
 5. Define .env file
 
 > Create a .env file from .env.example
-
-> **Note:** Replace `your-cohere-api-key` and `your-openai-api-key` with your actual API keys.
 
 6. Running GDAI in dev mode
 

@@ -53,9 +53,8 @@ asyncio_default_fixture_loop_scope = "function"
 
 
 [tool.taskipy.tasks]
-configure = { cmd = "uv sync --all-groups & pre-commit install & pre-commit install --hook-type pre-push", help = "Configure the environment" }
-background-tasks = { cmd = "uv run dramatiq src.background_tasks.extract_document src.background_tasks.embedding", help = "Run the background tasks with Dramatiq workers" }
-api = { cmd = "uv run python -m src.api.main", help = "Run the FastAPI application" }
-
-run-dev = { cmd = "task background-tasks & task api", help = "Run the development server with Dramatiq workers and API" }
+configure-dev = { cmd = "uv sync --all-groups & pre-commit install & pre-commit install --hook-type pre-push", help = "Configure the environment" }
+run-background-tasks = { cmd = "set -a;. ./.env; set +a;   uv run dramatiq src.background_tasks.extract_document src.background_tasks.embedding --process $DRAMATIQ_NUM_PROCESSES --threads $DRAMATIQ_NUM_THREADS_PER_PROCESS", help = "Run the background tasks with Dramatiq workers" }
+run-api = { cmd = "uv run python -m src.api.main", help = "Run the FastAPI application" }
+run-dev = { cmd = "task run-background-tasks  & task run-api", help = "Run the development server with Dramatiq workers and API" }
 tests = { cmd = "pytest", help = "Run all unit tests" }

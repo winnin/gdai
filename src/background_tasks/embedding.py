@@ -41,16 +41,13 @@ def embedding_document(message_data: dict):
             logger.error(f"Invalid message data type: {type(message_data)}")
             raise TypeError("message_data must be a dictionary")
 
-        document_name = message_data.get("document_name")
-        if not document_name:
-            logger.error("Missing document_name in message data")
-            raise ValueError("document_name is required in message data")
+        document_full_path = message_data.get("document_path")
+        if not document_full_path:
+            logger.error("Missing document_path in message data")
+            raise ValueError("document_path is required in message data")
 
-        logger.info(f"Received document for embedding: {document_name}")
+        logger.info(f"Received document for embedding: {document_full_path}")
 
-        # Validate that the document name is provided
-        folder_path = Config.embedding.FOLDER_EXTRACTED_DOC_PATH or ""
-        document_full_path = os.path.join(folder_path, document_name)
         if not os.path.exists(document_full_path):
             logger.error(f"Document file {document_full_path} does not exist.")
 
@@ -71,13 +68,13 @@ def embedding_document(message_data: dict):
             logger.error(f"Insufficient memory to process embedding (Usage: {mem.percent}%)")
             raise RuntimeError(f"System memory usage too high ({mem.percent}%) for safe embedding processing")
         try:
-            logger.info(f"Beginning embedding for document {document_name} at {document_full_path}")
+            logger.info(f"Beginning embedding for document {document_full_path}")
             asyncio.run(embedding_service.process_document(document_full_path))
             process_time = time() - start_time
-            logger.info(f"Document embedding for {document_name} completed successfully in {process_time:.2f}s")
+            logger.info(f"Document embedding for {document_full_path} completed successfully in {process_time:.2f}s")
         except Exception as e:
-            logger.error(f"Error during embedding process for document {document_name}: {e!s}")
-            raise RuntimeError(f"Embedding process failed for document {document_name}") from e
+            logger.error(f"Error during embedding process for document {document_full_path}: {e!s}")
+            raise RuntimeError(f"Embedding process failed for document {document_full_path}") from e
 
     except Exception as e:
         # Log with context information for diagnostics
