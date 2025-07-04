@@ -46,6 +46,7 @@ GDAI is an open-source platform designed to provide a robust, multi-tenant vecto
    ```sh
    uv venv
    source .venv/bin/activate  # On Windows use: .venv\Scripts\activate
+   uv sync
    ```
 
 3. Setup project configurations:
