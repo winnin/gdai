@@ -4,26 +4,31 @@ This roadmap outlines the planned features and improvements for GDAI. The timeli
 
 ## August 2025
 
-- [ ] Embedding Open AI
+- [ ] OpenAI Embeddings
 - [ ] Image Extractor (OCR)
 - [ ] Query for a specific document
-- [ ] API following vector store from openai
-- [ ] Tests (coverage > 60%)
+- [ ] API compatible with OpenAI's vector store
+- [ ] Test coverage > 60%
+- [ ] Different chunking strategies
+- [ ] Support to REDIS as a broker
 
 ## September 2025
 
 - [ ] PPT Extractor
 - [ ] Turso as a repository option
 - [ ] Rerank RAG results
+- [ ] MCP interface
+- [ ] Support for embedding images
+- [ ] Support for embedding tables
 
 ## Future Ideas
 
 - [ ] Knowledge capabilities on search
 - [ ] Integration with cloud storage providers (AWS S3, GCP, Azure)
-- [ ] Benchmark on datasets ( bater com um cognee da vida)
+- [ ] Benchmark on datasets (compare with solutions like Cognee)
 - [ ] Handle temporal aspects (documents contradicting each other when written at different times)
 - [ ] How to converge RAG to become a "long-term memory"
-- [ ] Explainability capabilities on reasoning (linkar com memória)
+- [ ] Explainability capabilities on reasoning (link term memory)
 
 ---
 
