@@ -36,7 +36,7 @@ GDAI is an open-source platform designed to provide a robust, multi-tenant vecto
 
 1. Clone the repository:
 
-   ```bash
+   ```sh
    git clone https://github.com/winnin/gdai.git
    cd gdai
    ```
@@ -46,14 +46,12 @@ GDAI is an open-source platform designed to provide a robust, multi-tenant vecto
    ```sh
    uv venv
    source .venv/bin/activate  # On Windows use: .venv\Scripts\activate
-   uv sync --all-groups  # Installs all dependencies including test packages
    ```
 
-3. Setup pre-commit hooks:
+3. Setup project configurations:
 
    ```sh
-   pre-commit install
-   pre-commit install --hook-type pre-push
+   task configure-dev
    ```
 
 4. Running PGVector and RabbitMQ using docker-compose
@@ -64,69 +62,15 @@ GDAI is an open-source platform designed to provide a robust, multi-tenant vecto
 
 5. Define .env file
 
-```sh
+> Create a .env file from .env.example
 
-
-GDAI_LOG_LEVEL=DEBUG
-GDAI_LOG_FORMAT=[%(asctime)s] [GDAI] [%(levelname)s]: %(message)s
-GDAI_LOG_FILE_ENABLED=false
-GDAI_LOG_FILE_PATH=PROJECT_PATH/gdai/logs/gdai.log
-GDAI_LOG_FILE_MAX_SIZE_MB=10
-GDAI_LOG_FILE_BACKUP_COUNT=5
-
-RABBIT_MQ_HOST=localhost
-RABBIT_MQ_PORT=5672
-RABBIT_MQ_USER=rabbitmq
-RABBIT_MQ_PASSWORD=rabbitmq
-
-PGVECTOR_USER=testuser
-PGVECTOR_PASSWORD=testpwd
-PGVECTOR_DATABASE=vectordb
-PGVECTOR_HOST=localhost
-PGVECTOR_PORT=5555
-PGVECTOR_MIN_POOL_CONNECTIONS=2
-PGVECTOR_MAX_POOL_CONNECTIONS=10
-
-DOCUMENT_EXTRACTOR_FOLDER_SOURCE_PATH=PROJECT_PATH/gdai/DOC_FOLDER/raw
-DOCUMENT_EXTRACTOR_FOLDER_TARGET_PATH=/PROJECT_PATH/gdai/DOC_FOLDER/extracted
-DOCUMENT_EXTRACTOR_MAX_FILE_SIZE_MB=100
-DOCUMENT_EXTRACTOR=docling
-DOCUMENT_EXTRACTOR_MAX_RETRIES=3
-DOCUMENT_EXTRACTOR_RETRY_DELAY=5
-DOCUMENT_EXTRACTOR_QUEUE=extract_data
-
-EMBEDDING_FOLDER_SOURCE_PATH=PROJECT_PATH/gdai/DOC_FOLDER/extracted
-EMBEDDING_CHUNK_SIZE=1000
-EMBEDDING_CHUNK_OVERLAP=10
-EMBEDDING_MAX_RETRIES=3
-EMBEDDING_RETRY_DELAY=5
-EMBEDDING_QUEUE=embedding_documents
-EMBEDDING_MAX_MEMORY_USAGE_PERCENT=90
-EMBEDDING_MODEL=cohere/embed-v4.0
-EMBEDDING_API_KEY=your-cohere-api-key
-
-SEARCH_LLM_MODEL=openai/gpt-4o
-SEARCH_LLM_API_KEY=your-openai-api-key
-SEARCH_LLM_MAX_TOKENS=1000
-SEARCH_LLM_TEMPERATURE=0.7
-
-```
-
-> **Note:** Replace `your-cohere-api-key` and `your-openai-api-key` with your actual API keys.
-
-6. Running Dramatiq document processors
+6. Running GDAI in dev mode
 
 ```sh
-    python -m dramatiq src.extractor.actor src.embedding.actor src.search.actor
+   task run-dev
 ```
 
-5. Running API services
-
-```sh
-    python -m src.api.main
-```
-
-6. Use swagger to call API
+7. Use swagger to call API
 
    > **Link:** http://localhost:8000/docs.
 
@@ -136,16 +80,15 @@ Use the API to perform semantic search and retrieve answers with source referenc
 
 ## Documentation
 
-- [Project Overview](index.md)
-- [Contributing](contributing.md)
-- [Code of Conduct](code_of_conduct.md)
-- [About](about.md)
-- [Changelog] (CHANGELOG.md)
-- [Roadmap] (ROADMAP.md)
+- [Contributing](docs/contributing.md)
+- [Code of Conduct](docs/code_of_conduct.md)
+- [About](docs/about.md)
+- [Changelog](CHANGELOG.md)
+- [Roadmap](ROADMAP.md)
 
 ## Community & Contributing
 
-We welcome contributions! Please read the [contributing guidelines](contributing.md) and [code of conduct](code_of_conduct.md) before submitting issues or pull requests.
+We welcome contributions! Please read the [contributing guidelines](docs/contributing.md) and [code of conduct](docs/code_of_conduct.md) before submitting issues or pull requests.
 
 ## License
 

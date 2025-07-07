@@ -83,8 +83,8 @@ Use the API to perform semantic search and retrieve answers with source referenc
 - [Contributing](docs/contributing.md)
 - [Code of Conduct](docs/code_of_conduct.md)
 - [About](docs/about.md)
-- [Changelog]
-- [Roadmap]
+- [Changelog](CHANGELOG.md)
+- [Roadmap](ROADMAP.md)
 
 ## Community & Contributing
 
