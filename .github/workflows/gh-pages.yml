@@ -24,6 +24,8 @@ jobs:
         run: cp CHANGELOG.md docs/
       - name: Copy README files to docs directory
         run: cp README.md docs/index.md
+      - name: Test mkdocs build
+        run: mkdocs -V
       - name: Change links in index.md
         run: sed -Ei 's#docs/([a-zA-Z0-9_-]+\.md)#\1#g' docs/index.md
       - name: Build MkDocs site
