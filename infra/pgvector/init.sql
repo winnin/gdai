@@ -1,3 +1,34 @@
+/*
++-------------------+       +---------------------+       +---------------------+
+|     document      |       |   document_chunk    |       |     user_query      |
++-------------------+       +---------------------+       +---------------------+
+| PK | id           |<----->| PK | id             |       | PK | id           |
+|    | tenant_id    |       |    | tenant_id      |<---+  |    | tenant_id    |
+|    | name         |       |    | chunk_type     |    |  |    | query_text   |
+|    | type         |       |    | chunk_text     |    |  |    | result       |
+|    | created_at   |       |    | page_number    |    |  |    | status       |
+|    | updated_at   |       |    | embedding      |    |  |    | created_at   |
++-------------------+       | FK | fk_document_id |    |  |    | updated_at   |
+                            |    | created_at     |    |  +---------------------+
+                            |    | updated_at     |    |            ^
+                            +---------------------+    |            |
+                                                       |            |
+                                                       |            |
++------------------------------------------+          |            |
+|       user_query_document_chunk          |          |            |
++------------------------------------------+          |            |
+| PK | id                                 |           |            |
+| FK | fk_document_chunk_id               |-----------+            |
+| FK | fk_user_query_id                   |-----------------------+
+|    | similarity_type                    |
+|    | similarity_score                   |
+|    | created_at                         |
+|    | updated_at                         |
++------------------------------------------+
+
+
+*/
+
 -- Activate PGVector extension
 CREATE EXTENSION IF NOT EXISTS vector;
 
