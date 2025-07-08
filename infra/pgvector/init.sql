@@ -1,29 +1,68 @@
--- Ativa a extensão PGvector (caso não esteja ativada)
+-- Activate PGVector extension
 CREATE EXTENSION IF NOT EXISTS vector;
 
--- Tabela principal de documentos
+
+
+-- CREATE UPDATED_AT FUNCTION
+CREATE OR REPLACE FUNCTION set_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+
+
+---------------------------------------------DOCUMENT TABLE ------------------------------------------------------------------
+
+CREATE TYPE document_type AS ENUM ('pdf', 'pdf_as_image', 'docx','pptx', 'csv');
+
+-- Document main table
 CREATE TABLE document (
-    id VARCHAR(64) PRIMARY KEY,
-    name TEXT NOT NULL,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id VARCHAR(64) NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    name TEXT NOT NULL,
+    type document_type NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+CREATE INDEX idx_document_id ON document(id);
+CREATE INDEX idx_document_tenant_id ON document(tenant_id);
 
--- Tabela de chunk dos documentos com vetores
-CREATE TABLE document_chunk (
-    id VARCHAR(512) PRIMARY KEY,
+
+CREATE TRIGGER trigger_set_updated_at_document
+BEFORE UPDATE ON document
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_at();
+
+
+------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+---------------------------------------------DOCUMENT CHUNK TABLE ------------------------------------------------------------
+
+CREATE TYPE chunk_type as ENUM ('paragraph', 'size', 'image', 'table');
+
+CREATE TABLE document_chunk(
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id VARCHAR(64) NOT NULL,
+    chunk_type chunk_type NOT NULL,
     chunk_text TEXT NOT NULL CHECK (chunk_text <> ''),  -- Equivalente ao min_length=1
     page_number INTEGER NOT NULL CHECK (page_number >= 0),
-    begin_offset INTEGER NOT NULL CHECK (begin_offset >= 0),
-    end_offset INTEGER NOT NULL CHECK (end_offset >= 0),
     embedding VECTOR(1536),  -- Ajuste a dimensão conforme seu modelo
-    fk_doc_id VARCHAR(64) NOT NULL REFERENCES document(id) ON DELETE CASCADE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+    fk_document_id UUID NOT NULL REFERENCES document(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+)
 
--- Índice para buscas vetoriais (ajuste lists conforme seu dataset)
+
+
+-- VECTOR INDEX FOR VECTOR SEARCH
 CREATE INDEX idx_document_chunk_hnsw ON document_chunk
 USING hnsw (embedding vector_cosine_ops)
 WITH (
@@ -31,55 +70,83 @@ WITH (
     ef_construction = 64   -- Precisão durante construção (40-200)
 );
 
--- Índice para melhor performance nas relações
-CREATE INDEX idx_document_chunk_fk_doc_id ON document_chunk(fk_doc_id);
+
+
+CREATE INDEX idx_document_chunk_id ON document_chunk(id);
+CREATE INDEX idx_document_chunk_tenant_id ON document_chunk(tenant_id);
+CREATE INDEX idx_document_chunk_fk_doc_id ON document_chunk(fk_document_id);
 
 
 
--------------------------------------------------------
-DO $$ BEGIN
-    CREATE TYPE message_status AS ENUM ('pending', 'completed', 'failed');
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;
+CREATE TRIGGER trigger_set_updated_at_document_chunk
+BEFORE UPDATE ON document_chunk
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_at();
+
+
+---------------------------------------------------------------------------------------------------------------------------
 
 
 
-CREATE TABLE IF NOT EXISTS message (
+
+
+
+---------------------------------------------USER QUERY TABLE --------------------------------------------------------------
+
+CREATE TYPE query_status AS ENUM ('pending', 'completed', 'failed');
+
+
+CREATE TABLE IF NOT EXISTS user_query (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id VARCHAR(64) NOT NULL,
-    query_id VARCHAR(64),
-    query_text text,
+    query_text TEXT,
     result TEXT,
-    status message_status,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    status query_status,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 
-CREATE INDEX idx_message_tenant_id_and_query_id ON message(tenant_id, query_id);
-CREATE INDEX idx_message_status ON message(status);
+CREATE INDEX idx_user_query_id ON user_query(id);
+CREATE INDEX idx_user_query_tenant_id ON user_query(tenant_id);
 
 
--------------------------------------------------------
 
-CREATE TABLE IF NOT EXISTS token (
+CREATE TRIGGER trigger_set_updated_at_user_query
+BEFORE UPDATE ON user_query
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_at();
+
+
+
+------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+---------------------------------------------USER QUERY DOCUMENT CHUNK TABLE -------------------------------------------------
+
+CREATE TYPE similarity_type AS ENUM ('cosine', 'euclidean');
+
+
+CREATE TABLE IF NOT EXISTS user_query_document_chunk (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    fk_message_id UUID REFERENCES message(id),
-    token_number INTEGER,
-    token_text TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-
+    fk_document_chunk_id UUID NOT NULL REFERENCES document_chunk(id) ON DELETE CASCADE,
+    fk_user_query_id UUID NOT NULL REFERENCES user_query(id) ON DELETE CASCADE,
+    similarity_type similarity_type NOT NULL DEFAULT 'cosine',
+    similarity_score FLOAT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE INDEX idx_token_fk_message_id ON token(fk_message_id);
 
--------------------------------------------------------
+CREATE INDEX idx_user_query_document_chunk_fk_document_chunk_id_and_fk_user_query_id ON user_query_document_chunk(fk_document_chunk_id, fk_user_query_id);
 
-CREATE TABLE chunk_message (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    fk_document_chunk_id VARCHAR(512) NOT NULL REFERENCES document_chunk(id) ON DELETE CASCADE,
-    fk_message_id UUID NOT NULL REFERENCES message(id) ON DELETE CASCADE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
 
-CREATE INDEX idx_chunk_message_fk_document_chunk_id_and_fk_message_id ON chunk_message(fk_document_chunk_id, fk_message_id);
+
+CREATE TRIGGER trigger_set_updated_at_user_query_document_chunk
+BEFORE UPDATE ON user_query_document_chunk
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_at();
