@@ -102,12 +102,16 @@ class Document(BaseModel):
         images (Optional[list[Image]]): List of images extracted from the document, if any.
     """
 
+    id: str | None = Field(default="")
     tenant_id: str | None = Field(default="")
-    doc_id: str | None = Field(default="")
-    doc_name: str
+    name: str
+    status: str
+    type: str
     texts: list[Text]
     tables: list[Table] | None = Field(default_factory=list)
     images: list[Image] | None = Field(default_factory=list)
+    created_at: str | None = Field(default=None)
+    updated_at: str | None = Field(default=None)
 
     def __str__(self) -> str:
         """Return a human-readable string representation of the Document.
@@ -115,7 +119,7 @@ class Document(BaseModel):
         Returns:
             str: A string displaying the document ID, name, and number of pages.
         """
-        return f"Name: {self.doc_name}, Pages: {len(self.texts)}"
+        return f"Name: {self.name}, Pages: {len(self.texts) }, Type: {self.type}, Status: {self.status}"
 
 
 class DocumentUploadResponse(BaseModel):

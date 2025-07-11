@@ -9,7 +9,7 @@ import aiofiles
 
 from src.config.logger import logger
 from src.embeddings.base import EmbeddingModel
-from src.repositories.base import DocumentRepository
+from src.repositories.base import PGVectorDocumentRepository
 from src.schemas.chunk import DocumentChunk
 from src.schemas.document import Document
 
@@ -20,7 +20,7 @@ class EmbeddingDocumentService:
     def __init__(
         self,
         embedding_model: EmbeddingModel,
-        document_repository: DocumentRepository,
+        document_repository: PGVectorDocumentRepository,
         chunk_size: int = 1000,
         chunk_overlap: int = 50,
     ):
@@ -36,7 +36,7 @@ class EmbeddingDocumentService:
         """Process document: load, chunk, embed, and store in repository."""
         document = await self._load_document(document_path)
         document_chunks = await self._chunk_document(document)
-        logger.info(f"Document {document.doc_name} has {len(document_chunks)} chunks after processing.")
+        logger.info(f"Document {document.name} has {len(document_chunks)} chunks after processing.")
         await self._embed_chunks(document_chunks, self.embedding_model)
         await self.repository.insert_document(document, document_chunks)
 
@@ -61,11 +61,11 @@ class EmbeddingDocumentService:
             chunk_text = text[i : i + self.chunk_size]
             chunk_id = f"{tenant_id}_{doc_name}_{doc_id}_{page_number}_{i}"
             chunk = DocumentChunk(
-                chunk_id=chunk_id,
+                id=chunk_id,
                 doc_name=doc_name,
-                doc_id=doc_id,
+                document_id=doc_id,
                 tenant_id=tenant_id,
-                chunk_text=chunk_text,
+                chunk=chunk_text,
                 page_number=page_number,
                 begin_offset=i,
                 end_offset=i + self.chunk_size,
@@ -81,11 +81,11 @@ class EmbeddingDocumentService:
         for j, paragraph in enumerate(paragraphs):
             chunk_id = f"{tenant_id}_{doc_name}_{doc_id}_{page_number}_{j}"
             chunk = DocumentChunk(
-                chunk_id=chunk_id,
+                id=chunk_id,
                 doc_name=doc_name,
-                doc_id=doc_id,
+                document_id=doc_id,
                 tenant_id=tenant_id,
-                chunk_text=paragraph.strip(),
+                chunk=paragraph.strip(),
                 page_number=page_number,
                 begin_offset=0,  # Adjust as needed
                 end_offset=len(paragraph.strip()),  # Adjust as needed
@@ -105,8 +105,8 @@ class EmbeddingDocumentService:
                 page_chunks.extend(
                     await self._chunk_page(
                         doc.tenant_id,
-                        doc.doc_id,
-                        doc.doc_name,
+                        doc.id,
+                        doc.name,
                         page_number,
                         doc.texts[i].text,
                     )
@@ -118,8 +118,8 @@ class EmbeddingDocumentService:
                 page_chunks.extend(
                     await self._chunk_document_by_paragraph(
                         doc.tenant_id,
-                        doc.doc_id,
-                        doc.doc_name,
+                        doc.id,
+                        doc.name,
                         page_number,
                         doc.texts[i],
                     )
@@ -132,7 +132,7 @@ class EmbeddingDocumentService:
         batch_size = 64
         for i in range(0, len(chunks), batch_size):
             batch = chunks[i : i + batch_size]
-            texts = [chunk.chunk_text[:1024] for chunk in batch]
+            texts = [chunk.chunk[:1024] for chunk in batch]
             embeddings = await embedding_model.generate_texts_embeddings(texts)
             for chunk, embedding in zip(batch, embeddings, strict=False):
                 chunk.embedding = embedding

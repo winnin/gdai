@@ -8,32 +8,32 @@ class BaseRepository(ABC):
     """
 
     @abstractmethod
-    async def create(self, *args, **kwargs):
+    async def create(self, tenant_id: str, *args, **kwargs):
         """Create a new record in the repository."""
         pass
 
     @abstractmethod
-    async def read(self, *args, **kwargs):
+    async def read(self, tenant_id: str, *args, **kwargs):
         """Read a record from the repository."""
         pass
 
     @abstractmethod
-    async def update(self, *args, **kwargs):
+    async def update(self, tenant_id: str, *args, **kwargs):
         """Update an existing record in the repository."""
         pass
 
     @abstractmethod
-    async def delete(self, *args, **kwargs):
+    async def delete(self, tenant_id: str, *args, **kwargs):
         """Delete a record from the repository."""
         pass
 
     @abstractmethod
-    async def delete_many(self, filter_criteria, *args, **kwargs):
+    async def delete_many(self, tenant_id: str, filter_criteria, *args, **kwargs):
         """Delete multiple records based on filter criteria."""
         pass
 
     @abstractmethod
-    async def get_by_id(self, id: str, *args, **kwargs):
+    async def get_by_id(self, tenant_id: str, id: str, *args, **kwargs):
         """Get a record by its ID."""
         pass
 
@@ -44,14 +44,19 @@ class DocumentRepository(BaseRepository):
     This class extends BaseRepository and implements methods specific to document management.
     """
 
+    @abstractmethod
+    async def get_all_documents_by_tenant_id(self, tenant_id: str, *args, **kwargs) -> list[dict]:
+        """Get all documents associated with a specific tenant ID."""
+        pass
 
-class DocumentChunkRepository(BaseRepository):
+
+class ChunkRepository(BaseRepository):
     """A repository for managing document chunks.
 
     This class extends BaseRepository and implements methods specific to document chunk management.
     """
 
-    async def get_by_document_id(self, document_id: str, *args, **kwargs):
+    async def get_by_document_id(self, tenant_id: str, document_id: str, *args, **kwargs):
         """Get all chunks associated with a specific document ID."""
         pass
 
@@ -59,7 +64,7 @@ class DocumentChunkRepository(BaseRepository):
         """Get all chunks associated with a specific tenant ID."""
         pass
 
-    async def search_by_similarity(self, vector, limit: int, *args, **kwargs):
+    async def search_by_similarity(self, tenant_id: str, vector, limit: int, *args, **kwargs):
         """Search for chunks similar to a given vector."""
         pass
 

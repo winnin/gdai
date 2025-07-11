@@ -5,26 +5,24 @@ class DocumentChunk(BaseModel):
     """Represents a chunk of text extracted from a document.
 
     Attributes:
-        chunk_id (str): Unique identifier for the text chunk.
+        id (str): Unique identifier for the text chunk.
         tenant_id (str): Identifier for the tenant.
-        doc_id (str): Unique identifier for the document.
-        chunk_text (str): The text content of the chunk.
+        document_id (str): Unique identifier for the document.
+        chunk (str): The text content of the chunk.
         page_number (int): Page number from which the chunk was extracted.
-        begin_offset (int): Starting offset within the page.
-        end_offset (int): Ending offset within the page.
         embedding (Optional[list[float]]): Embedding vector for the text chunk, if available.
-        doc_id (str): The ID of the document the chunk belongs to.
+
     """
 
+    id: str
     tenant_id: str
-    chunk_id: str
-    doc_id: str
-    doc_name: str
-    chunk_text: str = Field(min_length=1)
+    document_id: str
+    type: str
+    chunk: str = Field(min_length=1)
     page_number: int = Field(ge=0)  # Must be >= 0
-    begin_offset: int = Field(ge=0)  # Must be >= 0
-    end_offset: int = Field(ge=0)  # Must be >= 0
     embedding: list[float] | None = Field(default_factory=list)
+    created_at: str | None = Field(default=None)
+    updated_at: str | None = Field(default=None)
 
     def __str__(self) -> str:
         """Return a human-readable string representation of the DocumentChunk.
@@ -32,25 +30,28 @@ class DocumentChunk(BaseModel):
         Returns:
             str: A string displaying the chunk ID, page number, and offsets.
         """
-        return f"DocumentChunk(chunk_id={self.chunk_id}, page_number={self.page_number}, offsets=({self.begin_offset}, {self.end_offset}))"
+        return f"DocumentChunk(chunk_id={self.id}, page_number={self.page_number}, offsets=({self.begin_offset}, {self.end_offset}))"
 
-    @field_validator("end_offset")
-    def validate_end_offset(cls, value, info: ValidationInfo):
-        """Validates that the end offset is greater than or equal to the begin offset.
+    @field_validator("page_number")
+    def validate_page_number(cls, value, _: ValidationInfo):
+        if value < 0:
+            raise ValueError("page_number deve ser maior ou igual a 0")
+        return value
 
-        Args:
-            value (int): The end offset to validate.
-            info (ValidationInfo): Additional validation context.
+    @field_validator("embedding")
+    def validate_embedding(cls, value, _: ValidationInfo):
+        if value is not None and not all(isinstance(x, float) for x in value):
+            raise ValueError("Todos os elementos de embedding devem ser float")
+        return value
 
-        Returns:
-            int: The validated end offset.
+    @field_validator("chunk")
+    def validate_chunk(cls, value, _: ValidationInfo):
+        if not value or not value.strip():
+            raise ValueError("chunk não pode ser vazio")
+        return value
 
-        Raises:
-            ValueError: If the end offset is less than the begin offset.
-        """
-        begin_offset = info.data["begin_offset"]
-        if begin_offset is None:
-            raise ValueError("begin_offset must be provided before validating end_offset")
-        if value < begin_offset:
-            raise ValueError("end_offset must be greater than or equal to begin_offset")
+    @field_validator("id", "tenant_id", "document_id", "type")
+    def validate_non_empty_str(cls, value, info: ValidationInfo):
+        if not value or not isinstance(value, str) or not value.strip():
+            raise ValueError(f"{info.field_name} não pode ser vazio")
         return value

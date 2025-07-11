@@ -20,7 +20,7 @@ This roadmap outlines the planned features and improvements for GDAI. The timeli
 - [ ] MCP interface
 - [ ] Support for embedding images
 - [ ] Support for embedding tables
-- [ ] Support to A2A connection  
+- [ ] Support to A2A connection
 
 ## Future Ideas
 

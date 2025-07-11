@@ -128,7 +128,7 @@ class PyMuPDFExtractor(DocumentExtractor):
 
         # Create a Document object
         doc = Document(
-            doc_name=doc_name,
+            name=doc_name,
             texts=pages_text,
             tables=tables,
             images=images,
@@ -231,7 +231,7 @@ class DoclingPDFExtractor(DocumentExtractor):
 
         # create a Document object
         doc = Document(
-            doc_name=doc_name,
+            name=doc_name,
             texts=pages_text,
             tables=tables,
             images=images,

@@ -12,18 +12,18 @@ class RepositoryFactory:
     def get_repository():
         db_backend = getattr(Config.db, "DATABASE", "pgvector").lower()
         if db_backend == "pgvector":
-            from src.repositories.pgvector import DocumentRepository, SearchRepository
+            from src.repositories.pgvector import PGVectorDocumentRepository, SearchRepository
 
             return RepositoryBundle(
-                document=DocumentRepository(),
+                document=PGVectorDocumentRepository(),
                 search=SearchRepository(),
             )
-        elif db_backend == "turso":
-            from src.repositories.turso import DocumentRepository, SearchRepository
+        # elif db_backend == "turso":
+        #     from src.repositories.turso import DocumentRepository, SearchRepository
 
-            return RepositoryBundle(
-                document=DocumentRepository(),
-                search=SearchRepository(),
-            )
+        #     return RepositoryBundle(
+        #         document=PGVectorDocumentRepository(),
+        #         search=SearchRepository(),
+        #     )
         else:
             raise ValueError(f"Unsupported database backend: {db_backend}")

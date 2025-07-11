@@ -39,5 +39,5 @@ class ExtractDocumentService:
         if not isinstance(document, Document):
             raise TypeError("extract_document_data must return a Document instance")
         document.tenant_id = tenant_id
-        document.doc_id = str(uuid.uuid4())
+        document.id = str(uuid.uuid4())
         return document
