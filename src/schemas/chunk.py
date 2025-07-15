@@ -8,10 +8,12 @@ class DocumentChunk(BaseModel):
         id (str): Unique identifier for the text chunk.
         tenant_id (str): Identifier for the tenant.
         document_id (str): Unique identifier for the document.
+        type (str): Type of the chunk (e.g., "paragraph", "heading", etc.).
         chunk (str): The text content of the chunk.
         page_number (int): Page number from which the chunk was extracted.
-        embedding (Optional[list[float]]): Embedding vector for the text chunk, if available.
-
+        embedding (list[float] | None): Embedding vector for the text chunk, if available.
+        created_at (str | None): Timestamp when the chunk was created.
+        updated_at (str | None): Timestamp when the chunk was last updated.
     """
 
     id: str

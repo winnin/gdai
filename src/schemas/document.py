@@ -94,12 +94,16 @@ class Document(BaseModel):
     the original document file.
 
     Attributes:
-        tenant_id (Optional[str]): Identifier for the tenant. Defaults to empty string.
-        doc_id (str): Unique identifier for the document.
-        doc_name (str): The name or title of the document.
+        id (str | None): Unique identifier for the document. Defaults to empty string.
+        tenant_id (str | None): Identifier for the tenant. Defaults to empty string.
+        name (str): The name or title of the document.
+        status (str): Current status of the document (e.g., "processing", "completed").
+        type (str): The type or format of the document (e.g., "pdf", "docx").
         texts (list[Text]): List of text elements extracted from the document.
-        tables (Optional[list[Table]]): List of tables extracted from the document, if any.
-        images (Optional[list[Image]]): List of images extracted from the document, if any.
+        tables (list[Table] | None): List of tables extracted from the document, if any.
+        images (list[Image] | None): List of images extracted from the document, if any.
+        created_at (str | None): Timestamp when the document was created. Defaults to None.
+        updated_at (str | None): Timestamp when the document was last updated. Defaults to None.
     """
 
     id: str | None = Field(default="")

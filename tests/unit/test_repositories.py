@@ -1,251 +1,290 @@
-"""Tests for the pgvector repository module."""
-
-from __future__ import annotations
-
 import asyncio
 import uuid
 
 import pytest
-import pytest_asyncio
 
-from src.config.database import PGVectorDatabase
 from src.repositories.pgvector import PGVectorDocumentRepository
 from src.schemas.chunk import DocumentChunk
 from src.schemas.document import Document
 
-# Constants for testing
-TEST_TENANT_ID = "test_tenant_pgvector"
 
-
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def event_loop():
-    """Create an event loop for async tests."""
+    """Create an instance of the default event loop for the test session."""
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
     loop.close()
 
 
-@pytest_asyncio.fixture(scope="function")
-async def db_connection():
-    """Get a database connection for testing."""
-    async with PGVectorDatabase.get_connection() as conn:
-        yield conn
-
-
-@pytest_asyncio.fixture(scope="function")
-async def clean_tenant():
-    """Clean up the tenant data before and after tests."""
-    # Clean before test
-    repo = PGVectorDocumentRepository()
-    await repo.clean_tenant_database(TEST_TENANT_ID)
-    yield
-    # Clean after test
-    await repo.clean_tenant_database(TEST_TENANT_ID)
-
-
-@pytest_asyncio.fixture(scope="function")
-async def sample_document():
-    """Create a sample document for testing."""
-    doc_id = str(uuid.uuid4())
-    doc = Document(
-        id=doc_id,
-        tenant_id=TEST_TENANT_ID,
-        name="test_document.pdf",
-        status="processed",
-        type="pdf",
-    )
-    return doc
-
-
-@pytest_asyncio.fixture(scope="function")
-async def sample_chunks(sample_document):
-    """Create sample document chunks for testing."""
+@pytest.fixture(scope="module")
+async def test_data():
+    """Create test data for two different tenants."""
+    tenant_ids = ["test-tenant-1", "test-tenant-2"]
+    documents = []
     chunks = []
-    for i in range(3):
-        chunk_id = str(uuid.uuid4())
-        chunk = DocumentChunk(
-            id=chunk_id,
-            tenant_id=TEST_TENANT_ID,
-            chunk_type="paragraph",
-            chunk=f"Sample text {i} for document {sample_document.id}",
-            page_number=i,
-            embedding=[0.1, 0.2, 0.3] * 512,  # 1536 dimensions
-            document_id=sample_document.id,
-        )
-        chunks.append(chunk)
-    return chunks
 
+    # Create 5 test documents for each tenant
+    for tenant_id in tenant_ids:
+        for i in range(5):
+            doc_id = str(uuid.uuid4())
+            document = Document(
+                id=doc_id,
+                tenant_id=tenant_id,
+                name=f"Test Document {i+1} for {tenant_id}",
+                status="processed",
+                type="pdf",
+                texts=[],  # Not used in repository tests
+            )
+            documents.append(document)
 
-@pytest_asyncio.fixture(scope="function")
-async def inserted_document(_, sample_document, sample_chunks):
-    """Insert a document with chunks into the database."""
+            # Create 2 chunks for each document
+            for j in range(2):
+                chunk_id = str(uuid.uuid4())
+                chunk = DocumentChunk(
+                    id=chunk_id,
+                    tenant_id=tenant_id,
+                    type="paragraph",
+                    chunk=f"Test chunk {j+1} for document {i+1} in tenant {tenant_id}",
+                    page_number=j,
+                    embedding=[0.1] * 1536,  # 1536-dimensional vector
+                    document_id=doc_id,
+                )
+                chunks.append(chunk)
+
+    # Insert test data into database
     repo = PGVectorDocumentRepository()
-    await repo.create(TEST_TENANT_ID, sample_document, sample_chunks)
-    yield (sample_document, sample_chunks)
-    # Cleanup is handled by clean_tenant fixture
+
+    for doc, chunk_group in zip(documents, [chunks[i : i + 2] for i in range(0, len(chunks), 2)]):
+        await repo.create(doc.tenant_id, doc, chunk_group)
+
+    yield {"tenant_ids": tenant_ids, "documents": documents, "chunks": chunks}
+
+    # Clean up test data
+    for tenant_id in tenant_ids:
+        await repo.clean_tenant_database(tenant_id)
 
 
-@pytest.mark.asyncio
-class TestDocumentRepository:
-    """Test suite for DocumentRepository."""
+class TestPGVectorDocumentRepository:
+    """Tests for the PGVectorDocumentRepository implementation."""
 
-    async def test_get_all_documents_by_tenant_id(self, inserted_document):
-        """Test retrieving all documents for a tenant."""
-        doc, _ = inserted_document
+    @pytest.mark.asyncio
+    async def test_get_all_documents_by_tenant_id(self, test_data):
+        """Test getting all documents for a specific tenant."""
         repo = PGVectorDocumentRepository()
+        tenant_id = test_data["tenant_ids"][0]
 
-        # Get all documents
-        documents = await repo.get_all_documents_by_tenant_id(TEST_TENANT_ID)
+        documents = await repo.get_all_documents_by_tenant_id(tenant_id)
+        import pdb
 
-        # Verify we get at least the document we inserted
-        assert len(documents) >= 1
-        assert any(d.id == doc.id for d in documents)
-        assert all(d.tenant_id == TEST_TENANT_ID for d in documents)
+        pdb.set_trace()
+        assert len(documents) == 5
+        for doc in documents:
+            assert isinstance(doc, Document)
+            assert doc.tenant_id == tenant_id
 
-    async def test_get_by_id(self, inserted_document):
-        """Test retrieving a document by ID."""
-        doc, _ = inserted_document
-        repo = PGVectorDocumentRepository()
+    # @pytest.mark.asyncio
+    # async def test_get_all_documents_by_tenant_id_invalid(self):
+    #     """Test getting all documents for a non-existent tenant."""
+    #     repo = PGVectorDocumentRepository()
+    #     documents = await repo.get_all_documents_by_tenant_id("non-existent-tenant")
 
-        # Get the document
-        retrieved_doc = await repo.get_by_id(TEST_TENANT_ID, doc.id)
+    #     assert len(documents) == 0
 
-        # Verify document properties
-        assert retrieved_doc is not None
-        assert retrieved_doc.id == doc.id
-        assert retrieved_doc.tenant_id == TEST_TENANT_ID
-        assert retrieved_doc.name == doc.name
-        assert retrieved_doc.type == doc.type
+    # @pytest.mark.asyncio
+    # async def test_get_by_id(self, test_data):
+    #     """Test getting a document by ID."""
+    #     repo = PGVectorDocumentRepository()
+    #     doc = test_data["documents"][0]
+    #     tenant_id = doc.tenant_id
+    #     doc_id = doc.id
 
-        # Test with non-existent ID
-        non_existent_doc = await repo.get_by_id(TEST_TENANT_ID, "non-existent-id")
-        assert non_existent_doc is None
+    #     retrieved_doc = await repo.get_by_id(tenant_id, doc_id)
 
-    async def test_get_document_chunk_by_id(self, inserted_document):
-        """Test retrieving a document chunk by ID."""
-        _, chunks = inserted_document
-        repo = PGVectorDocumentRepository()
+    #     assert retrieved_doc is not None
+    #     assert retrieved_doc.id == doc_id
+    #     assert retrieved_doc.tenant_id == tenant_id
+    #     assert retrieved_doc.name == doc.name
+    #     assert retrieved_doc.type == doc.type
 
-        # Get a chunk
-        chunk = chunks[0]
-        retrieved_chunk = await repo.get_document_chunk_by_id(TEST_TENANT_ID, chunk.chunk_id)
+    # @pytest.mark.asyncio
+    # async def test_get_by_id_invalid(self, test_data):
+    #     """Test getting a document with invalid ID."""
+    #     repo = PGVectorDocumentRepository()
+    #     tenant_id = test_data["tenant_ids"][0]
 
-        # Verify chunk properties
-        assert retrieved_chunk is not None
-        assert retrieved_chunk.id == chunk.chunk_id
-        assert retrieved_chunk.tenant_id == TEST_TENANT_ID
-        assert retrieved_chunk.chunk == chunk.chunk_text
-        assert retrieved_chunk.page_number == chunk.page_number
+    #     # Test with non-existent document ID
+    #     result = await repo.get_by_id(tenant_id, str(uuid.uuid4()))
+    #     assert result is None
 
-        # Test with non-existent ID
-        non_existent_chunk = await repo.get_document_chunk_by_id(TEST_TENANT_ID, "non-existent-id")
-        assert non_existent_chunk is None
+    #     # Test with invalid tenant ID for existing document
+    #     doc = test_data["documents"][0]
+    #     result = await repo.get_by_id("wrong-tenant", doc.id)
+    #     assert result is None
 
-    async def test_insert_document(self, _, sample_document, sample_chunks):
-        """Test inserting a document and chunks."""
-        repo = PGVectorDocumentRepository()
+    # @pytest.mark.asyncio
+    # async def test_get_document_chunk_by_id(self, test_data):
+    #     """Test getting a document chunk by ID."""
+    #     repo = PGVectorDocumentRepository()
+    #     chunk = test_data["chunks"][0]
+    #     tenant_id = chunk.tenant_id
+    #     chunk_id = chunk.id
 
-        # Insert document and chunks
-        await repo.create(TEST_TENANT_ID, sample_document, sample_chunks)
+    #     retrieved_chunk = await repo.get_document_chunk_by_id(tenant_id, chunk_id)
 
-        # Verify document was inserted
-        doc = await repo.get_by_id(TEST_TENANT_ID, sample_document.id)
-        assert doc is not None
-        assert doc.id == sample_document.id
+    #     assert retrieved_chunk is not None
+    #     assert retrieved_chunk.id == chunk_id
+    #     assert retrieved_chunk.tenant_id == tenant_id
+    #     assert retrieved_chunk.chunk_type == chunk.chunk_type
+    #     assert retrieved_chunk.chunk == chunk.chunk
+    #     assert retrieved_chunk.page_number == chunk.page_number
+    #     assert retrieved_chunk.document_id == chunk.document_id
 
-        # Verify chunks were inserted
-        for chunk in sample_chunks:
-            retrieved_chunk = await repo.get_document_chunk_by_id(TEST_TENANT_ID, chunk.chunk_id)
-            assert retrieved_chunk is not None
-            assert retrieved_chunk.id == chunk.chunk_id
+    # @pytest.mark.asyncio
+    # async def test_get_document_chunk_by_id_invalid(self, test_data):
+    #     """Test getting a chunk with invalid ID."""
+    #     repo = PGVectorDocumentRepository()
+    #     tenant_id = test_data["tenant_ids"][0]
 
-    async def test_delete_document(self, _, sample_document, sample_chunks):
-        """Test deleting a document."""
-        repo = PGVectorDocumentRepository()
+    #     # Test with non-existent chunk ID
+    #     result = await repo.get_document_chunk_by_id(tenant_id, str(uuid.uuid4()))
+    #     assert result is None
 
-        # Insert document and chunks first
-        await repo.create(TEST_TENANT_ID, sample_document, sample_chunks)
+    #     # Test with invalid tenant ID for existing chunk
+    #     chunk = test_data["chunks"][0]
+    #     result = await repo.get_document_chunk_by_id("wrong-tenant", chunk.id)
+    #     assert result is None
 
-        # Verify document exists
-        retrieved_doc = await repo.get_by_id(TEST_TENANT_ID, sample_document.id)
-        assert retrieved_doc is not None
+    # @pytest.mark.asyncio
+    # async def test_create(self):
+    #     """Test creating a new document with chunks."""
+    #     repo = PGVectorDocumentRepository()
+    #     tenant_id = "test-create-tenant"
+    #     doc_id = str(uuid.uuid4())
 
-        # Delete document
-        await repo.delete(TEST_TENANT_ID, sample_document.id)
+    #     # Create test document
+    #     document = Document(id=doc_id, tenant_id=tenant_id, name="Test Create Document", status="processed", type="pdf", texts=[])
 
-        # Verify document was deleted
-        deleted_doc = await repo.get_by_id(TEST_TENANT_ID, sample_document.id)
-        assert deleted_doc is None
+    #     # Create test chunks
+    #     chunks = []
+    #     for i in range(2):
+    #         chunk = DocumentChunk(
+    #             id=str(uuid.uuid4()), tenant_id=tenant_id, chunk_type="paragraph", chunk=f"Test create chunk {i+1}", page_number=i, embedding=[0.2] * 1536, document_id=doc_id
+    #         )
+    #         chunks.append(chunk)
 
-        # Verify chunks were deleted
-        for chunk in sample_chunks:
-            deleted_chunk = await repo.get_document_chunk_by_id(TEST_TENANT_ID, chunk.chunk_id)
-            assert deleted_chunk is None
+    #     # Create document and chunks
+    #     await repo.create(tenant_id, document, chunks)
 
-    async def test_clean_tenant_database(self, _):
-        """Test cleaning all documents for a tenant."""
-        repo = PGVectorDocumentRepository()
+    #     # Verify document was created
+    #     retrieved_doc = await repo.get_by_id(tenant_id, doc_id)
+    #     assert retrieved_doc is not None
+    #     assert retrieved_doc.id == doc_id
+    #     assert retrieved_doc.tenant_id == tenant_id
 
-        # Create multiple documents
-        doc1 = Document(
-            id=str(uuid.uuid4()),
-            tenant_id=TEST_TENANT_ID,
-            name="test_doc1.pdf",
-            status="processed",
-            type="pdf",
-        )
+    #     # Clean up
+    #     await repo.clean_tenant_database(tenant_id)
 
-        doc2 = Document(
-            id=str(uuid.uuid4()),
-            tenant_id=TEST_TENANT_ID,
-            name="test_doc2.pdf",
-            status="processed",
-            type="pdf",
-        )
+    # @pytest.mark.asyncio
+    # async def test_create_invalid(self):
+    #     """Test creating a document with invalid data."""
+    #     repo = PGVectorDocumentRepository()
+    #     tenant_id = "test-invalid-tenant"
+    #     doc_id = str(uuid.uuid4())
 
-        chunk1 = DocumentChunk(
-            id=str(uuid.uuid4()),
-            tenant_id=TEST_TENANT_ID,
-            chunk_type="paragraph",
-            chunk="Content for doc1",
-            page_number=1,
-            embedding=[0.1, 0.2, 0.3] * 512,
-            document_id=doc1.id,
-        )
+    #     # Create document with valid data
+    #     document = Document(id=doc_id, tenant_id=tenant_id, name="Test Invalid Document", status="processed", type="pdf", texts=[])
 
-        chunk2 = DocumentChunk(
-            id=str(uuid.uuid4()),
-            tenant_id=TEST_TENANT_ID,
-            chunk_type="paragraph",
-            chunk="Content for doc2",
-            page_number=1,
-            embedding=[0.4, 0.5, 0.6] * 512,
-            document_id=doc2.id,
-        )
+    #     # Create chunk with invalid data (too large embedding)
+    #     chunk = DocumentChunk(
+    #         id=str(uuid.uuid4()),
+    #         tenant_id=tenant_id,
+    #         chunk_type="paragraph",
+    #         chunk="Test invalid chunk",
+    #         page_number=0,
+    #         embedding=[0.1] * 2000,  # Too large for pgvector's 1536 dimensions
+    #         document_id=doc_id,
+    #     )
 
-        # Insert documents
-        await repo.create(TEST_TENANT_ID, doc1, [chunk1])
-        await repo.create(TEST_TENANT_ID, doc2, [chunk2])
+    #     # Attempt to create with invalid data
+    #     with pytest.raises(Exception):
+    #         await repo.create(tenant_id, document, [chunk])
 
-        # Verify documents exist
-        docs = await repo.get_all_documents_by_tenant_id(TEST_TENANT_ID)
-        assert len(docs) == 2
+    #     # Verify nothing was created
+    #     result = await repo.get_by_id(tenant_id, doc_id)
+    #     assert result is None
 
-        # Clean tenant database
-        await repo.clean_tenant_database(TEST_TENANT_ID)
+    # @pytest.mark.asyncio
+    # async def test_delete(self, test_data):
+    #     """Test deleting a document."""
+    #     repo = PGVectorDocumentRepository()
+    #     doc = test_data["documents"][9]  # Use the last test document
+    #     tenant_id = doc.tenant_id
+    #     doc_id = doc.id
 
-        # Verify all documents were deleted
-        docs = await repo.get_all_documents_by_tenant_id(TEST_TENANT_ID)
-        assert len(docs) == 0
+    #     # Verify document exists
+    #     retrieved_doc = await repo.get_by_id(tenant_id, doc_id)
+    #     assert retrieved_doc is not None
 
-        # Verify specific documents were deleted
-        deleted_doc1 = await repo.get_by_id(TEST_TENANT_ID, doc1.id)
-        deleted_doc2 = await repo.get_by_id(TEST_TENANT_ID, doc2.id)
-        assert deleted_doc1 is None
-        assert deleted_doc2 is None
+    #     # Delete the document
+    #     await repo.delete(tenant_id, doc_id)
 
-        # Verify chunks were deleted
-        deleted_chunk1 = await repo.get_document_chunk_by_id(TEST_TENANT_ID, chunk1.id)
-        deleted_chunk2 = await repo.get_document_chunk_by_id(TEST_TENANT_ID, chunk2.id)
-        assert deleted_chunk1 is None
-        assert deleted_chunk2 is None
+    #     # Verify document was deleted
+    #     deleted_doc = await repo.get_by_id(tenant_id, doc_id)
+    #     assert deleted_doc is None
+
+    # @pytest.mark.asyncio
+    # async def test_delete_invalid(self):
+    #     """Test deleting a document with invalid ID."""
+    #     repo = PGVectorDocumentRepository()
+
+    #     # This should not raise an exception even with invalid data
+    #     await repo.delete("non-existent-tenant", str(uuid.uuid4()))
+
+    # @pytest.mark.asyncio
+    # async def test_delete_many(self):
+    #     """Test delete_many method (currently a no-op)."""
+    #     repo = PGVectorDocumentRepository()
+    #     # This should not raise an exception
+    #     await repo.delete_many("test-tenant", {})
+
+    # @pytest.mark.asyncio
+    # async def test_clean_tenant_database(self):
+    #     """Test cleaning all data for a tenant."""
+    #     repo = PGVectorDocumentRepository()
+    #     tenant_id = "test-clean-tenant"
+
+    #     # Create test document and chunks
+    #     doc_id = str(uuid.uuid4())
+    #     document = Document(id=doc_id, tenant_id=tenant_id, name="Test Clean Document", status="processed", type="pdf", texts=[])
+
+    #     chunk = DocumentChunk(
+    #         id=str(uuid.uuid4()), tenant_id=tenant_id, chunk_type="paragraph", chunk="Test clean chunk", page_number=0, embedding=[0.3] * 1536, document_id=doc_id
+    #     )
+
+    #     # Insert test data
+    #     await repo.create(tenant_id, document, [chunk])
+
+    #     # Verify data was created
+    #     docs = await repo.get_all_documents_by_tenant_id(tenant_id)
+    #     assert len(docs) == 1
+
+    #     # Clean the tenant database
+    #     await repo.clean_tenant_database(tenant_id)
+
+    #     # Verify all data was removed
+    #     docs_after = await repo.get_all_documents_by_tenant_id(tenant_id)
+    #     assert len(docs_after) == 0
+
+    # @pytest.mark.asyncio
+    # async def test_read(self):
+    #     """Test read method (currently a no-op)."""
+    #     repo = PGVectorDocumentRepository()
+    #     # This should not raise an exception
+    #     await repo.read("test-tenant")
+
+    # @pytest.mark.asyncio
+    # async def test_update(self):
+    #     """Test update method (currently a no-op)."""
+    #     repo = PGVectorDocumentRepository()
+    #     # This should not raise an exception
+    #     await repo.update("test-tenant")

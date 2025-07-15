@@ -85,13 +85,13 @@ CREATE TABLE document_chunk(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id VARCHAR(64) NOT NULL,
     type chunk_type NOT NULL,
-    chunk TEXT NOT NULL CHECK (chunk_text <> ''),  -- Equivalente ao min_length=1
+    chunk TEXT NOT NULL CHECK (chunk <> ''),  -- Equivalente ao min_length=1
     page_number INTEGER NOT NULL CHECK (page_number >= 0),
     embedding VECTOR(1536),  -- Ajuste a dimensão conforme seu modelo
     fk_document_id UUID NOT NULL REFERENCES document(id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-)
+);
 
 
 
@@ -170,7 +170,7 @@ CREATE TABLE IF NOT EXISTS query_document_chunk (
     fk_query_id UUID NOT NULL REFERENCES query(id) ON DELETE CASCADE,
     similarity_type similarity_type NOT NULL DEFAULT 'cosine',
     similarity_score FLOAT NOT NULL,
-    type query_type NOT NULL DEFAULT
+    type query_type NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
