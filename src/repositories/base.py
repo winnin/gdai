@@ -59,8 +59,15 @@ class DocumentChunkRepository(BaseRepository):
         pass
 
     @abstractmethod
-    async def search_by_similarity(self, tenant_id: str, document_ids: list, vector, limit: int, *args, **kwargs):
+    async def search_by_similarity(self, tenant_id: str, vector: list[float], similarity_threshold: float, limit: int, *args, **kwargs):
         """Search for chunks similar to a given vector."""
+        pass
+
+    @abstractmethod
+    async def search_by_similarity_on_specific_documents(
+        self, tenant_id: str, vector: list[float], document_ids: list[str], similarity_threshold: float, limit: int, *args, **kwargs
+    ):
+        """Search for chunks similar to a given vector within specific documents."""
         pass
 
     @abstractmethod
