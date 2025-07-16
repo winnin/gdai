@@ -428,28 +428,149 @@ class PGVectorQueryRepository(QueryRepository):
 
     async def get_all(self, tenant_id: str) -> list[dict]:
         """Get all records associated with a specific tenant ID."""
-        pass
+        async with PGVectorDatabase.get_connection() as connection:
+            results = await connection.fetch(
+                """
+                SELECT id,
+                       tenant_id,
+                       query,
+                       result,
+                       status,
+                       created_at,
+                       updated_at
+                FROM query
+                WHERE tenant_id = $1
+                """,
+                tenant_id,
+            )
+            return [
+                Query(
+                    id=result["id"],
+                    tenant_id=result["tenant_id"],
+                    query=result["query"],
+                    result=result["result"],
+                    status=result["status"],
+                    created_at=result["created_at"],
+                    updated_at=result["updated_at"],
+                )
+                for result in results
+            ]
 
     async def get_by_id(self, tenant_id: str, query_id: str):
         """Get a record by its ID."""
-        pass
+        async with PGVectorDatabase.get_connection() as connection:
+            result = await connection.fetchrow(
+                """
+                SELECT id,
+                       tenant_id,
+                       query,
+                       result,
+                       status,
+                       created_at,
+                       updated_at
+                FROM query
+                WHERE tenant_id = $1 AND id = $2
+                """,
+                tenant_id,
+                query_id,
+            )
+            if result:
+                return Query(
+                    id=result["id"],
+                    tenant_id=result["tenant_id"],
+                    query=result["query"],
+                    result=result["result"],
+                    status=result["status"],
+                    created_at=result["created_at"],
+                    updated_at=result["updated_at"],
+                )
+            return None
 
-    async def create(self, tenant_id: str, query: list[Query]):
+    async def insert(self, tenant_id: str, query: Query):
         """Create a new record in the repository."""
-        pass
+        async with PGVectorDatabase.get_connection() as connection:
+            await connection.execute(
+                """
+                INSERT INTO query (tenant_id, query, result, status, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, $6)
+                """,
+                tenant_id,
+                query.query,
+                query.result,
+                query.status,
+                query.created_at,
+                query.updated_at,
+            )
 
     async def update(self, tenant_id: str, query: Query):
         """Update an existing record in the repository."""
-        pass
+        async with PGVectorDatabase.get_connection() as connection:
+            await connection.execute(
+                """
+                UPDATE query
+                SET query = $1, result = $2, status = $3, updated_at = NOW()
+                WHERE tenant_id = $4 AND id = $5
+                """,
+                query.query,
+                query.result,
+                query.status,
+                tenant_id,
+                query.id,
+            )
 
     async def delete(self, tenant_id: str, query_id: str):
         """Delete a record from the repository."""
-        pass
+        async with PGVectorDatabase.get_connection() as connection:
+            await connection.execute(
+                """
+                DELETE FROM query
+                WHERE tenant_id = $1 AND id = $2
+                """,
+                tenant_id,
+                query_id,
+            )
 
     async def delete_all(self, tenant_id: str):
         """Delete all records associated with a specific tenant ID."""
-        pass
+        async with PGVectorDatabase.get_connection() as connection:
+            await connection.execute(
+                """
+                DELETE FROM query
+                WHERE tenant_id = $1
+                """,
+                tenant_id,
+            )
 
     async def get_related_chunks(self, tenant_id, query_id, limit: int = 100):
         """Get chunks related to a specific query."""
-        pass
+        async with PGVectorDatabase.get_connection() as connection:
+            results = await connection.fetch(
+                """
+                SELECT dc.id,
+                       dc.tenant_id,
+                       dc.fk_document_id,
+                       dc.type,
+                       dc.chunk,
+                       dc.page_number,
+                       dc.embedding
+                FROM document_chunk dc
+                JOIN query q ON dc.fk_document_id = q.id
+                WHERE q.tenant_id = $1 AND q.id = $2
+                LIMIT $3
+                """,
+                tenant_id,
+                query_id,
+                limit,
+            )
+            return [
+                DocumentChunk(
+                    id=result["id"],
+                    tenant_id=result["tenant_id"],
+                    document_id=result["fk_document_id"],
+                    type=result["type"],
+                    chunk=result["chunk"],
+                    page_number=result["page_number"],
+                    embedding=result["embedding"],
+                )
+                for result in results
+            ]

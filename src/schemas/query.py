@@ -34,8 +34,6 @@ class Query(BaseModel):
     query: str = Field(min_length=1, max_length=1000)
     result: str | None = Field(default=None)
     status: str = Field(default="pending")
-    type: str = Field()
-    query_num_chunks: int = Field(ge=1, le=1000)
     created_at: str | None = Field(default=None)
     updated_at: str | None = Field(default=None)
     chunks: list[QueryDocumentChunk] = Field(default_factory=list)
