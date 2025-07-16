@@ -18,7 +18,7 @@ class BaseRepository(ABC):
         pass
 
     @abstractmethod
-    async def create(self, tenant_id: str, *args, **kwargs):
+    async def insert(self, tenant_id: str, *args, **kwargs):
         """Create a new record in the repository."""
         pass
 
@@ -53,12 +53,24 @@ class DocumentChunkRepository(BaseRepository):
     This class extends BaseRepository and implements methods specific to document chunk management.
     """
 
+    @abstractmethod
     async def get_by_document_id(self, tenant_id: str, document_id: str, *args, **kwargs):
         """Get all chunks associated with a specific document ID."""
         pass
 
-    async def search_by_similarity(self, tenant_id: str, vector, limit: int, *args, **kwargs):
+    @abstractmethod
+    async def search_by_similarity(self, tenant_id: str, document_ids: list, vector, limit: int, *args, **kwargs):
         """Search for chunks similar to a given vector."""
+        pass
+
+    @abstractmethod
+    async def insert_batch(self, tenant_id: str, items: list):
+        """Insert multiple records in the repository."""
+        pass
+
+    @abstractmethod
+    async def update_batch(self, tenant_id: str, items: list, *args, **kwargs):
+        """Update an existing record in the repository."""
         pass
 
 

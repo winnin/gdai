@@ -24,6 +24,7 @@ class PGVectorDocumentRepository(DocumentRepository):
                 SELECT id,
                        tenant_id,
                        name,
+                       status,
                        type,
                        created_at,
                        updated_at
@@ -37,6 +38,7 @@ class PGVectorDocumentRepository(DocumentRepository):
                     id=result["id"],
                     tenant_id=result["tenant_id"],
                     name=result["name"],
+                    status=result["status"],
                     type=result["type"],
                     created_at=result["created_at"],
                     updated_at=result["updated_at"],
@@ -49,9 +51,10 @@ class PGVectorDocumentRepository(DocumentRepository):
         async with PGVectorDatabase.get_connection() as connection:
             result = await connection.fetchrow(
                 """
-                SELECT id,
+                 SELECT id,
                        tenant_id,
                        name,
+                       status,
                        type,
                        created_at,
                        updated_at
@@ -67,56 +70,81 @@ class PGVectorDocumentRepository(DocumentRepository):
                 id=result["id"],
                 tenant_id=result["tenant_id"],
                 name=result["name"],
+                status=result["status"],
                 type=result["type"],
                 created_at=result["created_at"],
                 updated_at=result["updated_at"],
             )
             return doc
 
-    async def create(self, tenant_id: str, document: list[Document]):
+    async def insert(self, tenant_id: str, document: Document):
         """Insert document and chunks into database."""
         try:
             async with PGVectorDatabase.get_connection() as connection:
                 async with connection.transaction():
                     await connection.execute(
                         """
-                        INSERT INTO document (id, tenant_id, name, type)
-                        VALUES ($1, $2, $3, $4)
+                        INSERT INTO document (id, tenant_id, name, status, type)
+                        VALUES ($1, $2, $3, $4, $5)
                         ON CONFLICT (id) DO NOTHING;
                         """,
                         document.id,
                         tenant_id,
                         document.name,
+                        document.status,
                         document.type,
                     )
         except Exception as e:
             logger.error(f"Error inserting document: {e}")
 
-    async def update(self, tenant_id: str):
-        """Update an existing record in the repository."""
-        pass
+    async def update(self, tenant_id: str, document: Document):
+        """Update document by ID."""
+        try:
+            async with PGVectorDatabase.get_connection() as connection:
+                async with connection.transaction():
+                    await connection.execute(
+                        """
+                        UPDATE document
+                        SET name = $1, status = $2, type = $3, updated_at = NOW()
+                        WHERE id = $4 AND tenant_id = $5
+                        """,
+                        document.name,
+                        document.status,
+                        document.type,
+                        document.id,
+                        tenant_id,
+                    )
+        except Exception as e:
+            logger.error(f"Error updating document: {e}")
 
     async def delete(self, tenant_id: str, document_id: str):
         """Delete document by ID."""
         try:
             async with PGVectorDatabase.get_connection() as connection:
-                async with connection.transaction():
-                    await connection.execute(
-                        "DELETE FROM document_chunk WHERE fk_document_id = $1 AND tenant_id = $2",
-                        document_id,
-                        tenant_id,
-                    )
-                    await connection.execute(
-                        "DELETE FROM document WHERE id = $1 AND tenant_id = $2",
-                        document_id,
-                        tenant_id,
-                    )
+                await connection.execute(
+                    """
+                    DELETE FROM document
+                    WHERE id = $1 AND tenant_id = $2
+                    """,
+                    document_id,
+                    tenant_id,
+                )
         except Exception as e:
             logger.error(f"Error deleting document: {e}")
 
     async def delete_all(self, tenant_id: str):
-        """Delete multiple records based on filter criteria."""
-        pass
+        """Delete all documents for a specific tenant."""
+        try:
+            async with PGVectorDatabase.get_connection() as connection:
+                await connection.execute(
+                    """
+                    DELETE FROM document
+                    WHERE tenant_id = $1
+                    """,
+                    tenant_id,
+                )
+        except Exception as e:
+            logger.error(f"Error deleting all documents: {e}")
 
 
 class PGVectorDocumentChunkRepository(DocumentChunkRepository):
