@@ -35,13 +35,13 @@ class PGVectorDocumentRepository(DocumentRepository):
             )
             return [
                 Document(
-                    id=result["id"],
+                    id=str(result["id"]),
                     tenant_id=result["tenant_id"],
                     name=result["name"],
                     status=result["status"],
                     type=result["type"],
-                    created_at=result["created_at"],
-                    updated_at=result["updated_at"],
+                    created_at=str(result["created_at"]),
+                    updated_at=str(result["updated_at"]),
                 )
                 for result in results
             ]
@@ -66,14 +66,15 @@ class PGVectorDocumentRepository(DocumentRepository):
             )
             if result is None:
                 return None
+
             doc = Document(
-                id=result["id"],
+                id=str(result["id"]),
                 tenant_id=result["tenant_id"],
                 name=result["name"],
                 status=result["status"],
                 type=result["type"],
-                created_at=result["created_at"],
-                updated_at=result["updated_at"],
+                created_at=str(result["created_at"]),
+                updated_at=str(result["updated_at"]),
             )
             return doc
 
@@ -182,8 +183,8 @@ class PGVectorDocumentChunkRepository(DocumentChunkRepository):
                     chunk=result["chunk"],
                     page_number=result["page_number"],
                     embedding=result["embedding"] or [],
-                    created_at=result["created_at"],
-                    updated_at=result["updated_at"],
+                    created_at=str(result["created_at"]),
+                    updated_at=str(result["updated_at"]),
                 )
                 for result in results
             ]
@@ -217,9 +218,9 @@ class PGVectorDocumentChunkRepository(DocumentChunkRepository):
                 type=result["type"],
                 chunk=result["chunk"],
                 page_number=result["page_number"],
-                embedding=result["embedding"] or [],
-                created_at=result["created_at"],
-                updated_at=result["updated_at"],
+                embedding=result["embedding"],
+                created_at=str(result["created_at"]),
+                updated_at=str(result["updated_at"]),
             )
 
     async def insert(self, tenant_id: str, chunks: DocumentChunk):
@@ -239,7 +240,7 @@ class PGVectorDocumentChunkRepository(DocumentChunkRepository):
                         chunks.type,
                         chunks.chunk,
                         chunks.page_number,
-                        chunks.embedding or [],
+                        chunks.embedding,
                     )
         except Exception as e:
             logger.error(f"Error inserting document chunk: {e}")
@@ -420,6 +421,32 @@ class PGVectorDocumentChunkRepository(DocumentChunkRepository):
         except Exception as e:
             logger.error(f"Error inserting batch of document chunks: {e}")
 
+    async def update_batch(self, tenant_id, items: list[DocumentChunk]):
+        """Update multiple document chunks in the database."""
+        try:
+            async with PGVectorDatabase.get_connection() as connection:
+                async with connection.transaction():
+                    await connection.executemany(
+                        """
+                        UPDATE document_chunk
+                        SET type = $1, chunk = $2, page_number = $3, embedding = $4, updated_at = NOW()
+                        WHERE id = $5 AND tenant_id = $6
+                        """,
+                        [
+                            (
+                                chunk.type,
+                                chunk.chunk,
+                                chunk.page_number,
+                                chunk.embedding or [],
+                                chunk.id,
+                                tenant_id,
+                            )
+                            for chunk in items
+                        ],
+                    )
+        except Exception as e:
+            logger.error(f"Error updating batch of document chunks: {e}")
+
 
 class PGVectorQueryRepository(QueryRepository):
     def __init__(self):
@@ -450,8 +477,8 @@ class PGVectorQueryRepository(QueryRepository):
                     query=result["query"],
                     result=result["result"],
                     status=result["status"],
-                    created_at=result["created_at"],
-                    updated_at=result["updated_at"],
+                    created_at=str(result["created_at"]),
+                    updated_at=str(result["updated_at"]),
                 )
                 for result in results
             ]
@@ -481,8 +508,8 @@ class PGVectorQueryRepository(QueryRepository):
                     query=result["query"],
                     result=result["result"],
                     status=result["status"],
-                    created_at=result["created_at"],
-                    updated_at=result["updated_at"],
+                    created_at=str(result["created_at"]),
+                    updated_at=str(result["updated_at"]),
                 )
             return None
 

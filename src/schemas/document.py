@@ -111,7 +111,7 @@ class Document(BaseModel):
     name: str
     status: str
     type: str
-    texts: list[Text]
+    texts: list[Text] | None = Field(default_factory=list)
     tables: list[Table] | None = Field(default_factory=list)
     images: list[Image] | None = Field(default_factory=list)
     created_at: str | None = Field(default=None)
