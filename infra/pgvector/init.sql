@@ -8,7 +8,7 @@
 |    | type         |       |    | chunk_text     |    |  |    | result       |
 |    | created_at   |       |    | page_number    |    |  |    | status       |
 |    | updated_at   |       |    | embedding      |    |  |    | created_at   |
-+-------------------+       | FK | fk_document_id |    |  |    | updated_at   |
++-------------------+       | FK | document_id |    |  |    | updated_at   |
                             |    | created_at     |    |  +---------------------+
                             |    | updated_at     |    |            ^
                             +---------------------+    |            |
@@ -18,8 +18,8 @@
 |       query_document_chunk          |          |            |
 +------------------------------------------+          |            |
 | PK | id                                 |           |            |
-| FK | fk_document_chunk_id               |-----------+            |
-| FK | fk_query_id                   |-----------------------+
+| FK | document_chunk_id               |-----------+            |
+| FK | query_id                   |-----------------------+
 |    | similarity_type                    |
 |    | similarity_score                   |
 |    | created_at                         |
@@ -84,7 +84,7 @@ CREATE TABLE document_chunk(
     chunk TEXT NOT NULL CHECK (chunk <> ''),  -- Equivalente ao min_length=1
     page_number INTEGER NOT NULL CHECK (page_number >= 0),
     embedding VECTOR(1536),  -- Ajuste a dimensão conforme seu modelo
-    fk_document_id UUID NOT NULL REFERENCES document(id) ON DELETE CASCADE,
+    document_id UUID NOT NULL REFERENCES document(id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -103,7 +103,7 @@ WITH (
 
 CREATE INDEX idx_document_chunk_id ON document_chunk(id);
 CREATE INDEX idx_document_chunk_tenant_id ON document_chunk(tenant_id);
-CREATE INDEX idx_document_chunk_fk_doc_id ON document_chunk(fk_document_id);
+CREATE INDEX idx_document_chunk_doc_id ON document_chunk(document_id);
 
 
 
@@ -157,8 +157,8 @@ EXECUTE FUNCTION set_updated_at();
 
 CREATE TABLE IF NOT EXISTS query_document_chunk (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    fk_document_chunk_id UUID NOT NULL REFERENCES document_chunk(id) ON DELETE CASCADE,
-    fk_query_id UUID NOT NULL REFERENCES query(id) ON DELETE CASCADE,
+    document_chunk_id UUID NOT NULL REFERENCES document_chunk(id) ON DELETE CASCADE,
+    query_id UUID NOT NULL REFERENCES query(id) ON DELETE CASCADE,
     similarity_type VARCHAR(16) NOT NULL DEFAULT 'cosine',
     similarity_score FLOAT NOT NULL,
     type VARCHAR(16) NOT NULL,
@@ -167,7 +167,7 @@ CREATE TABLE IF NOT EXISTS query_document_chunk (
 );
 
 
-CREATE INDEX idx_query_document_chunk_fk_document_chunk_id_and_fk_query_id ON query_document_chunk(fk_document_chunk_id, fk_query_id);
+CREATE INDEX idx_query_document_chunk_document_chunk_id_and_query_id ON query_document_chunk(document_chunk_id, query_id);
 
 
 

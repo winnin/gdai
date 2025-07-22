@@ -1,22 +1,25 @@
+from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 
-def __uuid_to_str(v: UUID | str | None) -> str | None:
-    """Convert UUID objects to strings.
+class Util:
+    @staticmethod
+    def uuid_to_str(v: UUID | str | None) -> str | None:
+        """Convert UUID objects to strings.
 
-    Args:
-        v: A UUID object, string, or None
+        Args:
+            v: A UUID object, string, or None
 
-    Returns:
-        The string representation of the UUID or None
-    """
-    if v is None:
-        return None
-    if isinstance(v, UUID):
-        return str(v)
-    return v
+        Returns:
+            The string representation of the UUID or None
+        """
+        if v is None:
+            return None
+        if isinstance(v, UUID):
+            return str(v)
+        return v
 
 
 class Text(BaseModel):
@@ -132,11 +135,11 @@ class Document(BaseModel):
     texts: list[Text] | None = Field(default_factory=list)
     tables: list[Table] | None = Field(default_factory=list)
     images: list[Image] | None = Field(default_factory=list)
-    created_at: str | None = Field(default=None)
-    updated_at: str | None = Field(default=None)
+    created_at: datetime | None = Field(default=None)
+    updated_at: datetime | None = Field(default=None)
 
     model_config = {
-        "from_attributes": True  # Allow conversion from SQLAlchemy models to Pydantic models
+        "from_attributes": True,  # Allow conversion from SQLAlchemy models to Pydantic models
     }
 
     def __str__(self) -> str:
@@ -149,7 +152,7 @@ class Document(BaseModel):
 
     @field_validator("id")
     def validate_id(cls, v):
-        return __uuid_to_str(v)
+        return Util.uuid_to_str(v)
 
 
 class DocumentChunk(BaseModel):
@@ -169,16 +172,16 @@ class DocumentChunk(BaseModel):
 
     id: str | UUID | None = Field(default=None)
     tenant_id: str
-    document_id: str
+    document_id: str | UUID | None = Field(default=None)
     type: str
     chunk: str = Field(min_length=1)
     page_number: int = Field(ge=0)  # Must be >= 0
     embedding: list[float] | None = Field(default_factory=list)
-    created_at: str | None = Field(default=None)
-    updated_at: str | None = Field(default=None)
+    created_at: datetime | None = Field(default=None)
+    updated_at: datetime | None = Field(default=None)
 
     model_config = {
-        "from_attributes": True  # Allow conversion from SQLAlchemy models to Pydantic models
+        "from_attributes": True,  # Allow conversion from SQLAlchemy models to Pydantic models
     }
 
     def __str__(self) -> str:
@@ -207,15 +210,13 @@ class DocumentChunk(BaseModel):
             raise ValueError("chunk não pode ser vazio")
         return value
 
-    @field_validator("id", "tenant_id", "document_id", "type")
-    def validate_non_empty_str(cls, value, info: ValidationInfo):
-        if not value or not isinstance(value, str) or not value.strip():
-            raise ValueError(f"{info.field_name} não pode ser vazio")
-        return value
-
     @field_validator("id")
     def validate_id(cls, v):
-        return __uuid_to_str(v)
+        return Util.uuid_to_str(v)
+
+    @field_validator("document_id")
+    def validate_document_id(cls, v):
+        return Util.uuid_to_str(v)
 
 
 class QueryDocumentChunk(DocumentChunk):
@@ -229,7 +230,7 @@ class QueryDocumentChunk(DocumentChunk):
     similarity: float = Field(default=0.0)
     similarity_type: str = Field(default="cosine", description="Type of similarity metric used (e.g., cosine, dot_product).")
     model_config = {
-        "from_attributes": True  # Allow conversion from SQLAlchemy models to Pydantic models
+        "from_attributes": True,  # Allow conversion from SQLAlchemy models to Pydantic models
     }
 
 
@@ -252,14 +253,14 @@ class Query(BaseModel):
     query: str = Field(min_length=1, max_length=1000)
     result: str | None = Field(default=None)
     status: str = Field(default="pending")
-    created_at: str | None = Field(default=None)
-    updated_at: str | None = Field(default=None)
+    created_at: datetime | None = Field(default=None)
+    updated_at: datetime | None = Field(default=None)
     chunks: list[QueryDocumentChunk] = Field(default_factory=list)
 
     model_config = {
-        "from_attributes": True  # Allow conversion from SQLAlchemy models to Pydantic models
+        "from_attributes": True,  # Allow conversion from SQLAlchemy models to Pydantic models
     }
 
     @field_validator("id")
     def validate_id(cls, v):
-        return __uuid_to_str(v)
+        return Util.uuid_to_str(v)
