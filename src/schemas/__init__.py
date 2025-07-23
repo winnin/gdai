@@ -1,1 +1,1 @@
-# from .schemas import Document, DocumentChunk, Image, Query, Table, Text  # noqa: F401
+from .schemas import Chunk, ChunkTypeEnum, Document, DocumentStatusEnum, DocumentTypeEnum, Query, QueryChunkLink, QueryStatusEnum, SimilarityTypeEnum  # noqa: F401

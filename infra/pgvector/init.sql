@@ -80,7 +80,7 @@ CREATE TABLE chunk(
     type chunktypeenum NOT NULL,
     chunk TEXT NOT NULL CHECK (chunk <> ''),  -- Equivalente ao min_length=1
     page_number INTEGER NOT NULL CHECK (page_number >= 0),
-    embedding VECTOR,
+    embedding VECTOR(1536),
     document_id UUID NOT NULL REFERENCES document(id) ON DELETE CASCADE,
     created_at TIMESTAMP WITHOUT TIME ZONE,
     updated_at TIMESTAMP WITHOUT TIME ZONE
@@ -146,6 +146,6 @@ CREATE TABLE query_chunk_link (
         PRIMARY KEY (query_id, chunk_id),
         FOREIGN KEY(query_id) REFERENCES query (id),
         FOREIGN KEY(chunk_id) REFERENCES chunk (id)
-)
+);
 
 CREATE INDEX idx_query_chunk_link_chunk_id_query_id ON query_chunk_link(chunk_id, query_id);

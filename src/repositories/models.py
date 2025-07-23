@@ -1,14 +1,14 @@
-from __future__ import annotations
-
 import datetime
 import enum
+import uuid
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import Column, DateTime, Enum, Float, ForeignKey, Integer, String
+from sqlalchemy import Column, DateTime, Enum, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
-from src.config.sqlalchemy import Base
+Base = declarative_base()
 
 
 class DocumentStatusEnum(str, enum.Enum):
@@ -22,7 +22,6 @@ class DocumentTypeEnum(str, enum.Enum):
     pdf = "pdf"
     docx = "docx"
     txt = "txt"
-    # Adicione outros tipos conforme necessário
 
 
 class ChunkTypeEnum(str, enum.Enum):
@@ -43,64 +42,70 @@ class SimilarityTypeEnum(str, enum.Enum):
     euclidean = "euclidean"
 
 
-class QueryTypeEnum(str, enum.Enum):
-    text = "text"
-    image = "image"
-    table = "table"
+class BaseModel:
+    """Base model for all tables."""
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(String, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=datetime.datetime.now(datetime.timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=datetime.datetime.now(datetime.timezone.utc), onupdate=datetime.datetime.now(datetime.timezone.utc))
 
 
-class DocumentModel(Base):
+class Document(Base, BaseModel):
+    """Document model."""
+
     __tablename__ = "document"
-    id = Column(UUID(as_uuid=True), primary_key=True)
-    tenant_id = Column(String(64), nullable=False)
-    name = Column(String, nullable=False)
-    status = Column(Enum(DocumentStatusEnum, create_constraint=False, native_enum=False), default=DocumentStatusEnum.uploaded)
-    type = Column(Enum(DocumentTypeEnum, create_constraint=False, native_enum=False), nullable=False)
-    created_at = Column(DateTime(timezone=True), default=datetime.datetime.now(datetime.timezone.utc))
-    updated_at = Column(DateTime(timezone=True), default=datetime.datetime.now(datetime.timezone.utc), onupdate=datetime.datetime.now(datetime.timezone.utc))
-    # Relationship
-    chunks = relationship("DocumentChunkModel", back_populates="document")
+
+    name = Column(String, default="")
+    status = Column(Enum(DocumentStatusEnum), default=DocumentStatusEnum.uploaded)
+    type = Column(Enum(DocumentTypeEnum), default=DocumentTypeEnum.pdf)
+
+    # Relationships
+    chunks = relationship("Chunk", back_populates="document", cascade="all, delete-orphan")
 
 
-class DocumentChunkModel(Base):
-    __tablename__ = "document_chunk"
-    id = Column(UUID(as_uuid=True), primary_key=True)
-    tenant_id = Column(String(64), nullable=False)
-    type = Column(Enum(ChunkTypeEnum, create_constraint=False, native_enum=False), nullable=False)
-    chunk = Column(String, nullable=False)
-    page_number = Column(Integer, nullable=False)
-    embedding = Column(Vector(1536))
-    document_id = Column(UUID(as_uuid=True), ForeignKey("document.id", ondelete="CASCADE"), nullable=False)
-    created_at = Column(DateTime(timezone=True), default=datetime.datetime.now(datetime.timezone.utc))
-    updated_at = Column(DateTime(timezone=True), default=datetime.datetime.now(datetime.timezone.utc), onupdate=datetime.datetime.now(datetime.timezone.utc))
-    # Relationship
-    document = relationship("DocumentModel", back_populates="chunks")
-    query_document_chunks = relationship("QueryDocumentChunkModel", back_populates="document_chunk")
+class Chunk(Base, BaseModel):
+    """Chunk model."""
+
+    __tablename__ = "chunk"
+
+    type = Column(Enum(ChunkTypeEnum), nullable=False)
+    chunk = Column(Text, default="")
+    page_number = Column(Integer)
+    embedding = Column(Vector)
+
+    # Relationships
+    document_id = Column(UUID(as_uuid=True), ForeignKey("document.id"))
+    document = relationship("Document", back_populates="chunks")
+
+    chunk_queries = relationship("QueryChunkLink", back_populates="chunk")
 
 
-class QueryModel(Base):
+class Query(Base, BaseModel):
+    """Query model."""
+
     __tablename__ = "query"
-    id = Column(UUID(as_uuid=True), primary_key=True)
-    tenant_id = Column(String(64), nullable=False)
-    query = Column(String, nullable=False)
-    result = Column(String)
-    status = Column(Enum(QueryStatusEnum, create_constraint=False, native_enum=False), nullable=False, default=QueryStatusEnum.pending)
-    created_at = Column(DateTime(timezone=True), default=datetime.datetime.now(datetime.timezone.utc))
-    updated_at = Column(DateTime(timezone=True), default=datetime.datetime.now(datetime.timezone.utc), onupdate=datetime.datetime.now(datetime.timezone.utc))
-    # Relationship
-    query_document_chunks = relationship("QueryDocumentChunkModel", back_populates="query")
+
+    query = Column(Text, default="")
+    result = Column(Text, default="")
+    status = Column(Enum(QueryStatusEnum), default=QueryStatusEnum.pending)
+    similarity = Column(Enum(SimilarityTypeEnum), default=SimilarityTypeEnum.cosine)
+
+    # Relationships
+    query_chunks = relationship("QueryChunkLink", back_populates="query")
 
 
-class QueryDocumentChunkModel(Base):
-    __tablename__ = "query_document_chunk"
-    id = Column(UUID(as_uuid=True), primary_key=True)
-    document_chunk_id = Column(UUID(as_uuid=True), ForeignKey("document_chunk.id", ondelete="CASCADE"), nullable=False)
-    query_id = Column(UUID(as_uuid=True), ForeignKey("query.id", ondelete="CASCADE"), nullable=False)
-    similarity_type = Column(Enum(SimilarityTypeEnum, create_constraint=False, native_enum=False), nullable=False, default=SimilarityTypeEnum.cosine)
-    similarity_score = Column(Float, nullable=False)
+class QueryChunkLink(Base):
+    """Query to Chunk link model."""
+
+    __tablename__ = "query_chunk_link"
+
+    query_id = Column(UUID(as_uuid=True), ForeignKey("query.id"), primary_key=True)
+    chunk_id = Column(UUID(as_uuid=True), ForeignKey("chunk.id"), primary_key=True)
+    similarity_score = Column(Float, default=0.0)
     created_at = Column(DateTime(timezone=True), default=datetime.datetime.now(datetime.timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=datetime.datetime.now(datetime.timezone.utc), onupdate=datetime.datetime.now(datetime.timezone.utc))
 
     # Relationships
-    document_chunk = relationship("DocumentChunkModel", back_populates="query_document_chunks")
-    query = relationship("QueryModel", back_populates="query_document_chunks")
+    query = relationship("Query", back_populates="query_chunks")
+    chunk = relationship("Chunk", back_populates="chunk_queries")

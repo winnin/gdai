@@ -1,240 +1,205 @@
+import datetime
+import uuid
+from uuid import UUID
+
 import pytest
 from pydantic import ValidationError
 
-from src.schemas import Document, DocumentChunk, Image, Table, Text
-
-
-class TestTextSchema:
-    """Test suite for the Text schema."""
-
-    def test_valid_text_creation(self):
-        """Test creating a valid Text instance."""
-        text = Text(page=1, text="Sample text content")
-        assert text.page == 1
-        assert text.text == "Sample text content"
-
-    def test_text_str_method(self):
-        """Test the string representation of Text."""
-        text = Text(page=1, text="Sample text content")
-        assert str(text).startswith("Page 1: Sample text content")
-
-    def test_text_len_method(self):
-        """Test the length method of Text."""
-        text = Text(page=1, text="Sample text content")
-        assert len(text) == len("Sample text content")
-
-    def test_text_getitem_method(self):
-        """Test the getitem method of Text."""
-        text = Text(page=1, text="Sample text content")
-        assert text[0:6] == "Sample"
-
-    def test_text_missing_required_field(self):
-        """Test validation error when required field is missing."""
-        with pytest.raises(ValidationError):
-            Text(page=1)  # Missing 'text' field
-
-        with pytest.raises(ValidationError):
-            Text(text="Sample")  # Missing 'page' field
-
-
-class TestImageSchema:
-    """Test suite for the Image schema."""
-
-    def test_valid_image_creation(self):
-        """Test creating a valid Image instance."""
-        image = Image(page=1, position_x=10, position_y=20, width=200, height=150)
-        assert image.page == 1
-        assert image.position_x == 10
-        assert image.position_y == 20
-        assert image.width == 200
-        assert image.height == 150
-
-    def test_image_str_method(self):
-        """Test the string representation of Image."""
-        image = Image(page=1, position_x=10, position_y=20, width=200, height=150)
-        expected_str = "Image on page 1: Position(10, 20), Size(200x150)"
-        assert str(image) == expected_str
-
-    def test_image_missing_required_field(self):
-        """Test validation error when required fields are missing."""
-        with pytest.raises(ValidationError):
-            Image(position_x=10, position_y=20, width=200, height=150)  # Missing 'page'
-
-        with pytest.raises(ValidationError):
-            Image(page=1, position_y=20, width=200, height=150)  # Missing 'position_x'
-
-        with pytest.raises(ValidationError):
-            Image(page=1, position_x=10, width=200, height=150)  # Missing 'position_y'
-
-        with pytest.raises(ValidationError):
-            Image(page=1, position_x=10, position_y=20, height=150)  # Missing 'width'
-
-        with pytest.raises(ValidationError):
-            Image(page=1, position_x=10, position_y=20, width=200)  # Missing 'height'
-
-
-class TestTableSchema:
-    """Test suite for the Table schema."""
-
-    def test_valid_table_creation(self):
-        """Test creating a valid Table instance."""
-        cells = [
-            {"content": "Cell 1", "position_x": 0, "position_y": 0, "width": 100, "height": 50},
-            {"content": "Cell 2", "position_x": 100, "position_y": 0, "width": 100, "height": 50},
-        ]
-        table = Table(page=1, cells=cells)
-        assert table.page == 1
-        assert len(table.cells) == 2
-        assert table.cells[0]["content"] == "Cell 1"
-        assert table.cells[1]["content"] == "Cell 2"
-
-    def test_table_str_method(self):
-        """Test the string representation of Table."""
-        cells = [
-            {"content": "Cell 1", "position_x": 0, "position_y": 0, "width": 100, "height": 50},
-            {"content": "Cell 2", "position_x": 100, "position_y": 0, "width": 100, "height": 50},
-        ]
-        table = Table(page=1, cells=cells)
-        assert str(table) == "Table on page 1: 2 cells"
-
-    def test_empty_table(self):
-        """Test creating a Table with no cells."""
-        table = Table(page=1, cells=[])
-        assert table.page == 1
-        assert len(table.cells) == 0
-        assert str(table) == "Table on page 1: 0 cells"
-
-    def test_table_missing_required_field(self):
-        """Test validation error when required fields are missing."""
-        cells = [{"content": "Cell 1", "position_x": 0, "position_y": 0, "width": 100, "height": 50}]
-
-        with pytest.raises(ValidationError):
-            Table(cells=cells)  # Missing 'page'
-
-        with pytest.raises(ValidationError):
-            Table(page=1)  # Missing 'cells'
+from src.schemas.schemas import (
+    Chunk,
+    ChunkTypeEnum,
+    Document,
+    DocumentStatusEnum,
+    DocumentTypeEnum,
+    Query,
+    QueryChunkLink,
+    QueryStatusEnum,
+    SimilarityTypeEnum,
+)
 
 
 class TestDocumentSchema:
     """Test suite for the Document schema."""
 
+    @staticmethod
+    def valid_document_data():
+        return {
+            "id": uuid.uuid4(),
+            "tenant_id": "tenant-456",
+            "name": "test_document.pdf",
+            "status": DocumentStatusEnum.processed,
+            "type": DocumentTypeEnum.pdf,
+        }
+
     def test_valid_document_creation(self):
         """Test creating a valid Document instance with minimal fields."""
-        doc = Document(name="test_document.pdf", status="processed", type="pdf", texts=[Text(page=1, text="Sample content")])
+        data = self.valid_document_data()
+        doc = Document(**data)
         assert doc.name == "test_document.pdf"
-        assert doc.status == "processed"
-        assert doc.type == "pdf"
-        assert len(doc.texts) == 1
-        assert doc.id == ""  # Default value
-        assert doc.tenant_id == ""  # Default value
-        assert isinstance(doc.tables, list)
-        assert len(doc.tables) == 0  # Default empty list
-        assert isinstance(doc.images, list)
-        assert len(doc.images) == 0  # Default empty list
-
-    def test_document_with_all_fields(self):
-        """Test creating a Document instance with all fields."""
-        doc = Document(
-            id="doc-123",
-            tenant_id="tenant-456",
-            name="complete_document.pdf",
-            status="processed",
-            type="pdf",
-            texts=[Text(page=1, text="Text content")],
-            tables=[Table(page=1, cells=[{"content": "Cell 1", "position_x": 0, "position_y": 0, "width": 100, "height": 50}])],
-            images=[Image(page=2, position_x=10, position_y=20, width=200, height=100)],
-        )
-        assert doc.id == "doc-123"
+        assert doc.status == DocumentStatusEnum.processed
+        assert doc.type == DocumentTypeEnum.pdf
+        assert doc.id == data["id"]
         assert doc.tenant_id == "tenant-456"
-        assert len(doc.texts) == 1
-        assert len(doc.tables) == 1
-        assert len(doc.images) == 1
+        assert isinstance(doc.chunks, list)
+        assert len(doc.chunks) == 0
 
-    def test_document_str_method(self):
-        """Test the string representation of Document."""
-        doc = Document(id="doc-123", tenant_id="tenant-456", name="test_document.pdf", status="processed", type="pdf", texts=[Text(page=1, text="Sample content")])
-        str_repr = str(doc)
-        assert "test_document.pdf" in str_repr
+    def test_document_with_defaults(self):
+        """Test creating a Document instance with default values."""
+        doc = Document(tenant_id="tenant-456")
+        assert doc.name == ""
+        assert doc.status == DocumentStatusEnum.uploaded
+        assert doc.type == DocumentTypeEnum.pdf
+        assert doc.id is None
+        assert doc.tenant_id == "tenant-456"
+        assert isinstance(doc.chunks, list)
+        assert len(doc.chunks) == 0
 
-    def test_document_missing_required_fields(self):
-        """Test validation error when required fields are missing."""
-        with pytest.raises(ValidationError):
-            Document(status="processed", type="pdf", texts=[])  # Missing 'name'
+    @pytest.mark.parametrize(
+        "field,value,error_expected",
+        [
+            ("tenant_id", "", True),  # tenant_id can't be empty
+            ("name", "", False),  # name can be empty (has default "")
+            ("status", "invalid", True),  # invalid enum value
+            ("type", "invalid", True),  # invalid enum value
+        ],
+    )
+    def test_field_validation(self, field, value, error_expected):
+        data = self.valid_document_data()
+        data[field] = value
+        if error_expected:
+            with pytest.raises(ValidationError):
+                Document(**data)
+        else:
+            doc = Document(**data)
+            assert getattr(doc, field) == value
 
-        with pytest.raises(ValidationError):
-            Document(name="test.pdf", type="pdf", texts=[])  # Missing 'status'
 
-        with pytest.raises(ValidationError):
-            Document(name="test.pdf", status="processed", texts=[])  # Missing 'type'
-
-
-class TestDocumentChunk:
-    """Test suite for the DocumentChunk schema."""
+class TestChunkSchema:
+    """Test suite for the Chunk schema."""
 
     @staticmethod
     def valid_chunk_data():
         return {
-            "id": "chunk-1",
+            "id": uuid.uuid4(),
             "tenant_id": "tenant-1",
-            "document_id": "doc-1",
-            "type": "text",
-            "chunk": "Conteúdo do chunk.",
+            "document_id": uuid.uuid4(),
+            "type": ChunkTypeEnum.paragraph,
+            "chunk": "Content of the chunk.",
             "page_number": 1,
             "embedding": [0.1, 0.2, 0.3],
-            "created_at": "2024-01-01T00:00:00Z",
-            "updated_at": "2024-01-02T00:00:00Z",
-            "begin_offset": 0,
-            "end_offset": 10,
         }
 
-    def test_valid_document_chunk(self):
+    def test_valid_chunk_creation(self):
         data = self.valid_chunk_data()
-        chunk = DocumentChunk(**data)
+        chunk = Chunk(**data)
         assert chunk.id == data["id"]
-        assert chunk.page_number == data["page_number"]
+        assert chunk.tenant_id == data["tenant_id"]
+        assert chunk.document_id == data["document_id"]
+        assert chunk.type == ChunkTypeEnum.paragraph
+        assert chunk.chunk == "Content of the chunk."
+        assert chunk.page_number == 1
+        assert chunk.embedding == [0.1, 0.2, 0.3]
 
     @pytest.mark.parametrize(
         "field,value",
         [
             ("tenant_id", ""),
-            ("document_id", ""),
-            # ("type", ""),
+            ("type", None),
         ],
     )
-    def test_empty_string_fields_raise(self, field, value):
+    def test_required_fields(self, field, value):
         data = self.valid_chunk_data()
         data[field] = value
         with pytest.raises(ValidationError):
-            DocumentChunk(**data)
-
-    def test_chunk_cannot_be_empty(self):
-        data = self.valid_chunk_data()
-        data["chunk"] = "   "
-        with pytest.raises(ValidationError):
-            DocumentChunk(**data)
-
-    def test_page_number_negative(self):
-        data = self.valid_chunk_data()
-        data["page_number"] = -1
-        with pytest.raises(ValidationError):
-            DocumentChunk(**data)
-
-    def test_embedding_must_be_float(self):
-        data = self.valid_chunk_data()
-        data["embedding"] = [0.1, "not-a-float", 0.3]
-        with pytest.raises(ValidationError):
-            DocumentChunk(**data)
+            Chunk(**data)
 
     def test_embedding_can_be_none(self):
         data = self.valid_chunk_data()
         data["embedding"] = None
-        chunk = DocumentChunk(**data)
+        chunk = Chunk(**data)
         assert chunk.embedding is None
 
-    def test_created_at_and_updated_at_can_be_none(self):
+    def test_embedding_must_be_float_list(self):
         data = self.valid_chunk_data()
-        data["created_at"] = None
-        data["updated_at"] = None
-        chunk = DocumentChunk(**data)
-        assert chunk.created_at is None
-        assert chunk.updated_at is None
+        data["embedding"] = [0.1, "not-a-float", 0.3]
+        with pytest.raises(ValidationError):
+            Chunk(**data)
+
+
+class TestQuerySchema:
+    """Test suite for the Query schema."""
+
+    @staticmethod
+    def valid_query_data():
+        return {
+            "id": uuid.uuid4(),
+            "tenant_id": "tenant-1",
+            "query": "What is the meaning of life?",
+            "result": "42",
+            "status": QueryStatusEnum.completed,
+            "similarity": SimilarityTypeEnum.cosine,
+        }
+
+    def test_valid_query_creation(self):
+        data = self.valid_query_data()
+        query = Query(**data)
+        assert query.id == data["id"]
+        assert query.tenant_id == data["tenant_id"]
+        assert query.query == data["query"]
+        assert query.result == data["result"]
+        assert query.status == QueryStatusEnum.completed
+        assert query.similarity == SimilarityTypeEnum.cosine
+        assert isinstance(query.query_chunks, list)
+        assert len(query.query_chunks) == 0
+
+    def test_query_with_defaults(self):
+        query = Query(tenant_id="tenant-1")
+        assert query.query == ""
+        assert query.result == ""
+        assert query.status == QueryStatusEnum.pending
+        assert query.similarity == SimilarityTypeEnum.cosine
+        assert isinstance(query.id, UUID)
+        assert query.tenant_id == "tenant-1"
+        assert isinstance(query.query_chunks, list)
+        assert len(query.query_chunks) == 0
+
+
+class TestQueryChunkLinkSchema:
+    """Test suite for the QueryChunkLink schema."""
+
+    @staticmethod
+    def valid_link_data():
+        return {
+            "query_id": uuid.uuid4(),
+            "chunk_id": uuid.uuid4(),
+            "similarity_score": 0.85,
+        }
+
+    def test_valid_link_creation(self):
+        data = self.valid_link_data()
+        link = QueryChunkLink(**data)
+        assert link.query_id == data["query_id"]
+        assert link.chunk_id == data["chunk_id"]
+        assert link.similarity_score == 0.85
+        assert isinstance(link.created_at, datetime.datetime)
+        assert isinstance(link.updated_at, datetime.datetime)
+
+    def test_link_with_defaults(self):
+        data = self.valid_link_data()
+        link = QueryChunkLink(**data)
+        assert link.similarity_score == 0.85
+        assert isinstance(link.created_at, datetime.datetime)
+        assert isinstance(link.updated_at, datetime.datetime)
+
+    @pytest.mark.parametrize(
+        "field,value",
+        [
+            ("query_id", None),
+            ("chunk_id", None),
+        ],
+    )
+    def test_required_fields(self, field, value):
+        data = self.valid_link_data()
+        data[field] = value
+        with pytest.raises(ValidationError):
+            QueryChunkLink(**data)
