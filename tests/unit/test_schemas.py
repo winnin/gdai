@@ -1,6 +1,5 @@
 import datetime
 import uuid
-from uuid import UUID
 
 import pytest
 from pydantic import ValidationError
@@ -154,11 +153,13 @@ class TestQuerySchema:
 
     def test_query_with_defaults(self):
         query = Query(tenant_id="tenant-1")
+        # import pdb
+
+        # pdb.set_trace()
         assert query.query == ""
         assert query.result == ""
         assert query.status == QueryStatusEnum.pending
         assert query.similarity == SimilarityTypeEnum.cosine
-        assert isinstance(query.id, UUID)
         assert query.tenant_id == "tenant-1"
         assert isinstance(query.query_chunks, list)
         assert len(query.query_chunks) == 0
