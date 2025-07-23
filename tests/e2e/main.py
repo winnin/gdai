@@ -1,7 +1,7 @@
 # from src.actor.extractor.actor import document_extractor
 from __future__ import annotations
 
-from src.background_tasks.embedding import embedding_document
+from gdai.background_tasks.embedding import embedding_document
 
 if __name__ == "__main__":
     # Example usage

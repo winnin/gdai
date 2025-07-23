@@ -1,6 +1,6 @@
-from src.config.settings import Config
-from src.llms.base import LLMModel
-from src.llms.openai import OpenAIModel
+from gdai.config.settings import Config
+from gdai.llms.base import LLMModel
+from gdai.llms.openai import OpenAIModel
 
 
 class LLMFactory:

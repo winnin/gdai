@@ -3,8 +3,8 @@ import uuid
 
 import pytest
 
-from src.repositories.pgvector import PGVectorDocumentChunkRepository, PGVectorDocumentRepository, PGVectorQueryRepository
-from src.schemas import Document, DocumentChunk, Query
+from gdai.repositories.pgvector import PGVectorDocumentChunkRepository, PGVectorDocumentRepository, PGVectorQueryRepository
+from gdai.schemas import Document, DocumentChunk, Query
 
 
 @pytest.fixture(scope="module")

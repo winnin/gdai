@@ -5,12 +5,12 @@ from time import time
 
 import psutil
 
-from src.config.broker import dramatiq
-from src.config.logger import logger
-from src.config.settings import Config
-from src.embeddings import EmbeddingFactory
-from src.repositories import RepositoryFactory
-from src.services.embedding import EmbeddingDocumentService
+from gdai.config.broker import dramatiq
+from gdai.config.logger import logger
+from gdai.config.settings import Config
+from gdai.embeddings import EmbeddingFactory
+from gdai.repositories import RepositoryFactory
+from gdai.services.embedding import EmbeddingDocumentService
 
 try:
     document_repository = RepositoryFactory.get_repository().document

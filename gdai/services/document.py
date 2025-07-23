@@ -3,9 +3,9 @@ from __future__ import annotations
 import os
 import uuid
 
-from src.document_extractors.base import DocumentExtractor
-from src.document_extractors.exceptions import FileNotFoundException
-from src.schemas.document import Document
+from gdai.document_extractors.base import DocumentExtractor
+from gdai.document_extractors.exceptions import FileNotFoundException
+from gdai.schemas.document import Document
 
 
 class ExtractDocumentService:

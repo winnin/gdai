@@ -7,8 +7,8 @@ import fitz  # PyMuPDF
 from docling.datamodel.pipeline_options import PdfPipelineOptions
 from docling.document_converter import DocumentConverter, InputFormat, PdfFormatOption
 
-from src.document_extractors.base import DocumentExtractor
-from src.schemas.document import Document, Image, Table, Text
+from gdai.document_extractors.base import DocumentExtractor
+from gdai.schemas.document import Document, Image, Table, Text
 
 
 class PyMuPDFExtractor(DocumentExtractor):

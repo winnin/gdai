@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from src.api.deps import get_search_service
-from src.config.logger import logger
-from src.schemas.query import SearchRequest, SearchResponse
+from gdai.api.deps import get_search_service
+from gdai.config.logger import logger
+from gdai.schemas.query import SearchRequest, SearchResponse
 
 router = APIRouter(prefix="/search", tags=["search"])
 

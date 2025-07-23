@@ -3,8 +3,8 @@ from __future__ import annotations
 import dramatiq
 from dramatiq.brokers.rabbitmq import RabbitmqBroker
 
-from src.config.logger import logger
-from src.config.settings import Config
+from gdai.config.logger import logger
+from gdai.config.settings import Config
 
 
 def _get_broker_url():

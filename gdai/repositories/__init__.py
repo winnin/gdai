@@ -1,4 +1,4 @@
-from src.config.settings import Config
+from gdai.config.settings import Config
 
 
 class RepositoryBundle:
@@ -12,7 +12,7 @@ class RepositoryFactory:
     def get_repository():
         db_backend = getattr(Config.db, "DATABASE", "pgvector").lower()
         if db_backend == "pgvector":
-            from src.repositories.pgvector import PGVectorDocumentRepository, SearchRepository
+            from gdai.repositories.pgvector import PGVectorDocumentRepository, SearchRepository
 
             return RepositoryBundle(
                 document=PGVectorDocumentRepository(),

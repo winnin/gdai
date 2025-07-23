@@ -2,8 +2,8 @@ import asyncio
 
 import cohere
 
-from src.config.settings import Config
-from src.embeddings.base import EmbeddingModel
+from gdai.config.settings import Config
+from gdai.embeddings.base import EmbeddingModel
 
 
 class CohereEmbeddingModel(EmbeddingModel):

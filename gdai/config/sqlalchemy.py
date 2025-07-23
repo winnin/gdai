@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-from src.config.settings import Config
+from gdai.config.settings import Config
 
 user = Config.db.PGVECTOR_USER
 password = Config.db.PGVECTOR_PASSWORD

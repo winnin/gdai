@@ -5,11 +5,11 @@ import os
 import shutil
 import sys
 
-from src.config.broker import dramatiq  # with broked configured
-from src.config.logger import logger
-from src.config.settings import Config
-from src.document_extractors.pdf_extractor import PyMuPDFExtractor
-from src.services.document import ExtractDocumentService
+from gdai.config.broker import dramatiq  # with broked configured
+from gdai.config.logger import logger
+from gdai.config.settings import Config
+from gdai.document_extractors.pdf_extractor import PyMuPDFExtractor
+from gdai.services.document import ExtractDocumentService
 
 from .embedding import embedding_document
 

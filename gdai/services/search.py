@@ -1,7 +1,7 @@
 # The SearchService class has been moved to src/api/services/search_service.py
 from __future__ import annotations
 
-from src.llms.openai import LLMModel
+from gdai.llms.openai import LLMModel
 
 
 class SearchService:

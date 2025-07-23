@@ -14,10 +14,10 @@ from fastapi import (
     status,
 )
 
-from src.background_tasks.extract_document import document_extractor
-from src.config.logger import logger
-from src.config.settings import ExtractorConfig
-from src.schemas.document import DocumentUploadResponse
+from gdai.background_tasks.extract_document import document_extractor
+from gdai.config.logger import logger
+from gdai.config.settings import ExtractorConfig
+from gdai.schemas.document import DocumentUploadResponse
 
 router = APIRouter(prefix="/document", tags=["document"])
 

@@ -5,11 +5,11 @@ from __future__ import annotations
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.future import select
 
-from src.config.logger import logger
-from src.config.sqlalchemy import SessionLocal
-from src.repositories.base import DocumentChunkRepository, DocumentRepository, QueryRepository
-from src.repositories.models import ChunkTypeEnum, DocumentChunkModel, DocumentModel, DocumentStatusEnum, DocumentTypeEnum, QueryModel
-from src.schemas import Document, DocumentChunk, Query
+from gdai.config.logger import logger
+from gdai.config.sqlalchemy import SessionLocal
+from gdai.repositories.base import DocumentChunkRepository, DocumentRepository, QueryRepository
+from gdai.repositories.models import ChunkTypeEnum, DocumentChunkModel, DocumentModel, DocumentStatusEnum, DocumentTypeEnum, QueryModel
+from gdai.schemas import Document, DocumentChunk, Query
 
 
 class PGVectorDocumentRepository(DocumentRepository):

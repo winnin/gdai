@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from fastapi import HTTPException, status
 
-from src.config.logger import logger
-from src.embeddings import EmbeddingFactory
-from src.llms import LLMFactory
-from src.repositories import RepositoryFactory
-from src.services.search import SearchService
+from gdai.config.logger import logger
+from gdai.embeddings import EmbeddingFactory
+from gdai.llms import LLMFactory
+from gdai.repositories import RepositoryFactory
+from gdai.services.search import SearchService
 
 
 async def get_search_service():

@@ -7,11 +7,11 @@ import os
 
 import aiofiles
 
-from src.config.logger import logger
-from src.embeddings.base import EmbeddingModel
-from src.repositories.base import PGVectorDocumentRepository
-from src.schemas.chunk import DocumentChunk
-from src.schemas.document import Document
+from gdai.config.logger import logger
+from gdai.embeddings.base import EmbeddingModel
+from gdai.repositories.base import PGVectorDocumentRepository
+from gdai.schemas.chunk import DocumentChunk
+from gdai.schemas.document import Document
 
 
 class EmbeddingDocumentService:

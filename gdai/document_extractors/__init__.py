@@ -1,5 +1,5 @@
-from src.config.settings import Config
-from src.document_extractors.pdf_extractor import DoclingPDFExtractor, PyMuPDFExtractor
+from gdai.config.settings import Config
+from gdai.document_extractors.pdf_extractor import DoclingPDFExtractor, PyMuPDFExtractor
 
 
 class DocumentExtractorFactory:

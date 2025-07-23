@@ -5,7 +5,7 @@ from uuid import UUID
 import pytest
 from pydantic import ValidationError
 
-from src.schemas.schemas import (
+from gdai.schemas.schemas import (
     Chunk,
     ChunkTypeEnum,
     Document,

@@ -3,8 +3,8 @@ from __future__ import annotations
 import uvicorn
 from fastapi import FastAPI
 
-from src.api.routers.v1.document import router as document_router
-from src.api.routers.v1.search import router as search_router
+from gdai.api.routers.v1.document import router as document_router
+from gdai.api.routers.v1.search import router as search_router
 
 # Create FastAPI app
 app = FastAPI(
