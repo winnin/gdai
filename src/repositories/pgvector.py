@@ -233,9 +233,10 @@ class PGVectorQueryRepository(QueryRepository):
                 query=query.query,
                 result=query.result,
                 status=query.status,
-                created_at=query.created_at,
-                updated_at=query.updated_at,
             )
+            import pdb
+
+            pdb.set_trace()  # noqa: E702
             session.add(db_query)
             await session.commit()
 

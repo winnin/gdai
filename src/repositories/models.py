@@ -98,9 +98,9 @@ class QueryDocumentChunkModel(Base):
     query_id = Column(UUID(as_uuid=True), ForeignKey("query.id", ondelete="CASCADE"), nullable=False)
     similarity_type = Column(Enum(SimilarityTypeEnum, create_constraint=False, native_enum=False), nullable=False, default=SimilarityTypeEnum.cosine)
     similarity_score = Column(Float, nullable=False)
-    type = Column(Enum(QueryTypeEnum, create_constraint=False, native_enum=False), nullable=False)
     created_at = Column(DateTime(timezone=True), default=datetime.datetime.now(datetime.timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=datetime.datetime.now(datetime.timezone.utc), onupdate=datetime.datetime.now(datetime.timezone.utc))
+
     # Relationships
     document_chunk = relationship("DocumentChunkModel", back_populates="query_document_chunks")
     query = relationship("QueryModel", back_populates="query_document_chunks")

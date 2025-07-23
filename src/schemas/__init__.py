@@ -1,1 +1,1 @@
-from .schemas import Document, DocumentChunk, Query  # noqa: F401
+# from .schemas import Document, DocumentChunk, Image, Query, Table, Text  # noqa: F401
