@@ -47,7 +47,7 @@ class DocumentRepository(BaseRepository):
     pass
 
 
-class DocumentChunkRepository(BaseRepository):
+class ChunkRepository(BaseRepository):
     """A repository for managing document chunks.
 
     This class extends BaseRepository and implements methods specific to document chunk management.

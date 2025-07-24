@@ -4,17 +4,7 @@ import uuid
 import pytest
 from pydantic import ValidationError
 
-from gdai.schemas.schemas import (
-    Chunk,
-    ChunkTypeEnum,
-    Document,
-    DocumentStatusEnum,
-    DocumentTypeEnum,
-    Query,
-    QueryChunkLink,
-    QueryStatusEnum,
-    SimilarityTypeEnum,
-)
+from gdai.schemas.schemas import Chunk, ChunkTypeEnum, Document, DocumentStatusEnum, DocumentTypeEnum, Query, QueryStatusEnum, ResultChunk, SimilarityTypeEnum
 
 
 class TestDocumentSchema:
@@ -148,59 +138,102 @@ class TestQuerySchema:
         assert query.result == data["result"]
         assert query.status == QueryStatusEnum.completed
         assert query.similarity == SimilarityTypeEnum.cosine
-        assert isinstance(query.query_chunks, list)
-        assert len(query.query_chunks) == 0
+        assert isinstance(query.result_chunks, list)
+        assert len(query.result_chunks) == 0
 
     def test_query_with_defaults(self):
         query = Query(tenant_id="tenant-1")
-        # import pdb
 
-        # pdb.set_trace()
         assert query.query == ""
         assert query.result == ""
         assert query.status == QueryStatusEnum.pending
         assert query.similarity == SimilarityTypeEnum.cosine
         assert query.tenant_id == "tenant-1"
-        assert isinstance(query.query_chunks, list)
-        assert len(query.query_chunks) == 0
+        assert isinstance(query.result_chunks, list)
+        assert len(query.result_chunks) == 0
 
 
-class TestQueryChunkLinkSchema:
-    """Test suite for the QueryChunkLink schema."""
+class TestResultChunkSchema:
+    """Test suite for the ResultChunk schema."""
 
     @staticmethod
-    def valid_link_data():
+    def valid_result_chunk_data():
         return {
-            "query_id": uuid.uuid4(),
-            "chunk_id": uuid.uuid4(),
-            "similarity_score": 0.85,
+            "chunk": "This is a chunk of text from a document.",
+            "type": ChunkTypeEnum.paragraph,
+            "page_number": 5,
+            "similarity_score": 0.92,
         }
 
-    def test_valid_link_creation(self):
-        data = self.valid_link_data()
-        link = QueryChunkLink(**data)
-        assert link.query_id == data["query_id"]
-        assert link.chunk_id == data["chunk_id"]
-        assert link.similarity_score == 0.85
-        assert isinstance(link.created_at, datetime.datetime)
-        assert isinstance(link.updated_at, datetime.datetime)
+    def test_valid_result_chunk_creation(self):
+        """Test creating a valid ResultChunk instance."""
+        data = self.valid_result_chunk_data()
+        result_chunk = ResultChunk(**data)
+        assert result_chunk.chunk == data["chunk"]
+        assert result_chunk.type == ChunkTypeEnum.paragraph
+        assert result_chunk.page_number == 5
+        assert result_chunk.similarity_score == 0.92
+        assert isinstance(result_chunk.created_at, datetime.datetime)
+        assert isinstance(result_chunk.updated_at, datetime.datetime)
 
-    def test_link_with_defaults(self):
-        data = self.valid_link_data()
-        link = QueryChunkLink(**data)
-        assert link.similarity_score == 0.85
-        assert isinstance(link.created_at, datetime.datetime)
-        assert isinstance(link.updated_at, datetime.datetime)
+    def test_result_chunk_with_defaults(self):
+        """Test creating a ResultChunk instance with default values."""
+        result_chunk = ResultChunk(
+            chunk="Default chunk",
+            type=ChunkTypeEnum.paragraph,
+            page_number=1,
+        )
+        assert result_chunk.chunk == "Default chunk"
+        assert result_chunk.type == ChunkTypeEnum.paragraph
+        assert result_chunk.page_number == 1
+        assert result_chunk.similarity_score == 0.0  # Default value
+        assert isinstance(result_chunk.created_at, datetime.datetime)
+        assert isinstance(result_chunk.updated_at, datetime.datetime)
 
     @pytest.mark.parametrize(
         "field,value",
         [
-            ("query_id", None),
-            ("chunk_id", None),
+            ("chunk", None),  # chunk can't be None
+            ("type", None),  # type can't be None
+            ("type", "invalid"),  # type must be valid enum
+            ("page_number", None),  # page_number can't be None
+            ("page_number", "not-an-int"),  # page_number must be int
+            ("similarity_score", "not-a-float"),  # similarity_score must be float
         ],
     )
-    def test_required_fields(self, field, value):
-        data = self.valid_link_data()
+    def test_required_fields_and_types(self, field, value):
+        """Test field requirements and type validations."""
+        data = self.valid_result_chunk_data()
         data[field] = value
         with pytest.raises(ValidationError):
-            QueryChunkLink(**data)
+            ResultChunk(**data)
+
+    def test_can_parse_datetime_strings(self):
+        """Test that created_at and updated_at can parse ISO datetime strings."""
+        data = self.valid_result_chunk_data()
+        data["created_at"] = "2023-07-23T14:30:00Z"
+        data["updated_at"] = "2023-07-23T15:45:00Z"
+
+        result_chunk = ResultChunk(**data)
+        assert result_chunk.created_at.year == 2023
+        assert result_chunk.created_at.month == 7
+        assert result_chunk.created_at.day == 23
+        assert result_chunk.created_at.hour == 14
+        assert result_chunk.created_at.minute == 30
+
+        assert result_chunk.updated_at.year == 2023
+        assert result_chunk.updated_at.month == 7
+        assert result_chunk.updated_at.day == 23
+        assert result_chunk.updated_at.hour == 15
+        assert result_chunk.updated_at.minute == 45
+
+    def test_similarity_score_validation(self):
+        """Test that similarity_score is validated as a float between 0 and 1."""
+        data = self.valid_result_chunk_data()
+
+        # Test valid values
+        valid_scores = [0.0, 0.5, 1.0]
+        for score in valid_scores:
+            data["similarity_score"] = score
+            result_chunk = ResultChunk(**data)
+            assert result_chunk.similarity_score == score

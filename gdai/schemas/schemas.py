@@ -1,39 +1,9 @@
 import datetime
-import enum
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-
-class DocumentStatusEnum(str, enum.Enum):
-    uploaded = "uploaded"
-    processing = "processing"
-    processed = "processed"
-    failed = "failed"
-
-
-class DocumentTypeEnum(str, enum.Enum):
-    pdf = "pdf"
-    docx = "docx"
-    txt = "txt"
-
-
-class ChunkTypeEnum(str, enum.Enum):
-    paragraph = "paragraph"
-    size = "size"
-    image = "image"
-    table = "table"
-
-
-class QueryStatusEnum(str, enum.Enum):
-    pending = "pending"
-    completed = "completed"
-    failed = "failed"
-
-
-class SimilarityTypeEnum(str, enum.Enum):
-    cosine = "cosine"
-    euclidean = "euclidean"
+from gdai.commons.enums import ChunkTypeEnum, DocumentStatusEnum, DocumentTypeEnum, QueryStatusEnum, SimilarityTypeEnum
 
 
 class BaseSchema(BaseModel):
@@ -63,12 +33,13 @@ class Query(BaseSchema):
     result: str = ""
     status: QueryStatusEnum = QueryStatusEnum.pending
     similarity: SimilarityTypeEnum = SimilarityTypeEnum.cosine
-    query_chunks: list["QueryChunkLink"] | None = []
+    result_chunks: list["ResultChunk"] | None = []
 
 
-class QueryChunkLink(BaseModel):
-    query_id: UUID
-    chunk_id: UUID
+class ResultChunk(BaseModel):
+    chunk: str
+    type: ChunkTypeEnum
+    page_number: int
     similarity_score: float = 0.0
     created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
     updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
