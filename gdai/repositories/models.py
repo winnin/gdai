@@ -16,7 +16,11 @@ class BaseModel:
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String, nullable=False)
     created_at = Column(DateTime(timezone=True), default=datetime.datetime.now(datetime.timezone.utc))
-    updated_at = Column(DateTime(timezone=True), default=datetime.datetime.now(datetime.timezone.utc), onupdate=datetime.datetime.now(datetime.timezone.utc))
+    updated_at = Column(
+        DateTime(timezone=True),
+        default=datetime.datetime.now(datetime.timezone.utc),
+        onupdate=datetime.datetime.now(datetime.timezone.utc),
+    )
 
 
 class QueryChunkLinkModel(Base):
@@ -28,7 +32,11 @@ class QueryChunkLinkModel(Base):
     chunk_id = Column(UUID(as_uuid=True), ForeignKey("chunk.id"), primary_key=True)
     similarity_score = Column(Float, default=0.0)
     created_at = Column(DateTime(timezone=True), default=datetime.datetime.now(datetime.timezone.utc))
-    updated_at = Column(DateTime(timezone=True), default=datetime.datetime.now(datetime.timezone.utc), onupdate=datetime.datetime.now(datetime.timezone.utc))
+    updated_at = Column(
+        DateTime(timezone=True),
+        default=datetime.datetime.now(datetime.timezone.utc),
+        onupdate=datetime.datetime.now(datetime.timezone.utc),
+    )
 
     # Relationships
     query = relationship("QueryModel", back_populates="query_chunks")

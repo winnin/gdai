@@ -43,3 +43,13 @@ class ResultChunk(BaseModel):
     similarity_score: float = 0.0
     created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
     updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
+
+
+class RawDocument(BaseModel):
+    name: str = Field(min_length=1)
+    path: str = Field(min_length=1)
+    tenant_id: str = Field(min_length=1)
+    type: DocumentTypeEnum
+    texts: list[tuple[int, str]] | None = None  # List of tuples (page_number, text)
+    tables: list[tuple[int, str]] | None = None  # List of tuples (page_number, table_data)
+    images: list[tuple[int, str]] | None = None  # List of tuples (page_number, image_data)

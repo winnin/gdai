@@ -4,7 +4,18 @@ import uuid
 import pytest
 from pydantic import ValidationError
 
-from gdai.schemas.schemas import Chunk, ChunkTypeEnum, Document, DocumentStatusEnum, DocumentTypeEnum, Query, QueryStatusEnum, ResultChunk, SimilarityTypeEnum
+from gdai.schemas.schemas import (
+    Chunk,
+    ChunkTypeEnum,
+    Document,
+    DocumentStatusEnum,
+    DocumentTypeEnum,
+    Query,
+    QueryStatusEnum,
+    RawDocument,
+    ResultChunk,
+    SimilarityTypeEnum,
+)
 
 
 class TestDocumentSchema:
@@ -237,3 +248,101 @@ class TestResultChunkSchema:
             data["similarity_score"] = score
             result_chunk = ResultChunk(**data)
             assert result_chunk.similarity_score == score
+
+
+class TestRawDocumentSchema:
+    """Test suite for the RawDocument schema."""
+
+    @staticmethod
+    def valid_raw_document_data():
+        return {
+            "name": "sample_document.pdf",
+            "path": "/path/to/document.pdf",
+            "tenant_id": "tenant-123",
+            "type": DocumentTypeEnum.pdf,
+            "texts": [(1, "Page 1 content"), (2, "Page 2 content")],
+            "tables": [(1, "Table data in CSV format")],
+            "images": [(2, "base64encoded_image_data")],
+        }
+
+    def test_valid_raw_document_creation(self):
+        """Test creating a valid RawDocument instance."""
+        data = self.valid_raw_document_data()
+        raw_doc = RawDocument(**data)
+
+        assert raw_doc.name == "sample_document.pdf"
+        assert raw_doc.path == "/path/to/document.pdf"
+        assert raw_doc.tenant_id == "tenant-123"
+        assert raw_doc.type == DocumentTypeEnum.pdf
+        assert len(raw_doc.texts) == 2
+        assert raw_doc.texts[0][0] == 1
+        assert raw_doc.texts[1][1] == "Page 2 content"
+        assert len(raw_doc.tables) == 1
+        assert len(raw_doc.images) == 1
+
+    def test_minimal_raw_document_creation(self):
+        """Test creating a RawDocument with only required fields."""
+        raw_doc = RawDocument(
+            name="minimal.pdf", path="/path/minimal.pdf", tenant_id="tenant-min", type=DocumentTypeEnum.pdf
+        )
+
+        assert raw_doc.name == "minimal.pdf"
+        assert raw_doc.path == "/path/minimal.pdf"
+        assert raw_doc.tenant_id == "tenant-min"
+        assert raw_doc.type == DocumentTypeEnum.pdf
+        assert raw_doc.texts is None
+        assert raw_doc.tables is None
+        assert raw_doc.images is None
+
+    @pytest.mark.parametrize(
+        "field,value",
+        [
+            ("name", ""),  # name can't be empty
+            ("path", ""),  # path can't be empty
+            ("tenant_id", ""),  # tenant_id can't be empty
+            ("type", None),  # type is required
+            ("type", "invalid"),  # type must be valid enum
+        ],
+    )
+    def test_required_fields_and_types(self, field, value):
+        """Test field requirements and type validations."""
+        data = self.valid_raw_document_data()
+        data[field] = value
+        with pytest.raises(ValidationError):
+            RawDocument(**data)
+
+    def test_optional_fields_structure(self):
+        """Test validation of the structure of optional fields."""
+        data = self.valid_raw_document_data()
+
+        # Test invalid texts structure
+        data["texts"] = ["not_a_tuple", "another_not_tuple"]
+        with pytest.raises(ValidationError):
+            RawDocument(**data)
+
+        # Test invalid tuple structure in texts
+        data["texts"] = [(1, "valid"), ("not_int", "invalid")]
+        with pytest.raises(ValidationError):
+            RawDocument(**data)
+
+        # Test invalid tables structure
+        data = self.valid_raw_document_data()
+        data["tables"] = [1, 2, 3]  # not tuples
+        with pytest.raises(ValidationError):
+            RawDocument(**data)
+
+        # Test invalid images structure
+        data = self.valid_raw_document_data()
+        data["images"] = [(1, 2, 3)]  # wrong tuple size
+        with pytest.raises(ValidationError):
+            RawDocument(**data)
+
+    def test_document_type_validation(self):
+        """Test that the document type is properly validated."""
+        data = self.valid_raw_document_data()
+
+        # Test all valid document types
+        for doc_type in DocumentTypeEnum:
+            data["type"] = doc_type
+            raw_doc = RawDocument(**data)
+            assert raw_doc.type == doc_type

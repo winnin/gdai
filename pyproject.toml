@@ -9,18 +9,16 @@ dependencies = [
     "asyncpg>=0.30.0",
     "click>=8.1.8",
     "cohere>=5.15.0",
-    "docling>=2.31.0",
     "dramatiq[rabbitmq,watch]>=1.17.1",
     "fastapi-cli>=0.0.7",
     "fastapi[standard]>=0.115.12",
-    "fitz>=0.0.1.dev2",
     "langchain[openai]>=0.3.25",
     "langgraph>=0.4.7",
     "mkdocs>=1.6.1",
     "mkdocs-dracula-theme>=1.0.7",
-    "pgvector[sqlalchemy]>=0.4.0",
+    "pgvector>=0.4.1",
     "pre-commit>=4.2.0",
-    "pymupdf>=1.26.1",
+    "pymupdf>=1.26.3",
     "python-dotenv>=1.1.0",
     "rich>=13.9.4",
     "scipy>=1.15.2",
@@ -36,7 +34,7 @@ test = ["pytest>=8.4.0", "pytest-cov>=6.2.1", "pre-commit>=4.2.0", "pytest-async
 
 
 [tool.ruff]
-line-length = 180
+line-length = 120
 target-version = "py310"
 
 [tool.ruff.lint]
@@ -44,7 +42,7 @@ select = ["E", "F", "UP", "I", "ARG"]
 ignore = ["E203", "D203", "D213", "D212", "D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107", "ERA001"]
 
 [tool.ruff.lint.pydocstyle]
-convention = "google" # Use estilo Google para docstrings
+convention = "google" # Use Google style to docstrings
 
 
 [tool.pytest.ini_options]

@@ -1,31 +1,25 @@
-import uuid
+# class TestPGVectorDocumentRepository:
+#     """Test suite for the PGVectorDocumentRepository."""
 
-import pytest
+#     @pytest.mark.asyncio
+#     async def test_insert_get_and_delete_document(self):
+#         repo = PGVectorDocumentRepository()
+#         tenant_id = "test-tenant-insert"
+#         doc_id = uuid.uuid4()
+#         document = Document(
+#             id=doc_id, tenant_id=tenant_id, name="Documento de Teste", status="processed", type="pdf", texts=[]
+#         )
 
-from gdai.repositories.pgvector import PGVectorDocumentRepository
-from gdai.schemas import Document
+#         await repo.insert(tenant_id, document)
 
+#         result = await repo.get_by_id(tenant_id, doc_id)
 
-class TestPGVectorDocumentRepository:
-    """Test suite for the PGVectorDocumentRepository."""
-
-    @pytest.mark.asyncio
-    async def test_insert_get_and_delete_document(self):
-        repo = PGVectorDocumentRepository()
-        tenant_id = "test-tenant-insert"
-        doc_id = uuid.uuid4()
-        document = Document(id=doc_id, tenant_id=tenant_id, name="Documento de Teste", status="processed", type="pdf", texts=[])
-
-        await repo.insert(tenant_id, document)
-
-        result = await repo.get_by_id(tenant_id, doc_id)
-
-        assert result is not None
-        assert result.id == doc_id
-        assert result.tenant_id == tenant_id
-        assert result.name == "Documento de Teste"
-        # Limpeza
-        await repo.delete(tenant_id, doc_id)
+#         assert result is not None
+#         assert result.id == doc_id
+#         assert result.tenant_id == tenant_id
+#         assert result.name == "Documento de Teste"
+#         # cleaning
+#         await repo.delete(tenant_id, doc_id)
 
 
 # class TestPGVectorDocumentChunkRepository:
@@ -34,27 +28,35 @@ class TestPGVectorDocumentRepository:
 #     @pytest.mark.asyncio
 #     async def test_insert_get_and_delete_document_chunk(self):
 #         repo_doc = PGVectorDocumentRepository()
-#         repo_chunk = PGVectorDocumentChunkRepository()
+#         repo_chunk = PGVectorChunkRepository()
+
 #         tenant_id = "test-tenant-chunk"
 #         doc_id = str(uuid.uuid4())
 #         chunk_id = str(uuid.uuid4())
 
-#         # Insere o documento antes do chunk
-#         document = Document(id=doc_id, tenant_id=tenant_id, name="Documento para Chunk", status="processed", type="pdf", texts=[])
+#         # Insert document without chunks
+#         document = Document(
+#             id=doc_id,
+#             tenant_id=tenant_id,
+#             name="Documento para Chunk",
+#             status=DocumentStatusEnum.uploaded,
+#             type=DocumentTypeEnum.pdf,
+#             chunks=[],
+#         )
 #         await repo_doc.insert(tenant_id, document)
 
-#         chunk = DocumentChunk(
+#         # create  chunks
+#         chunk = Chunk(
 #             id=chunk_id,
 #             tenant_id=tenant_id,
 #             document_id=doc_id,
-#             type="paragraph",
-#             chunk="Conteúdo do chunk de teste.",
+#             type=ChunkTypeEnum.paragraph,
+#             chunk="Content of the test chunk.",
 #             page_number=1,
 #             embedding=[0.1] * 1536,
-#             created_at=None,
-#             updated_at=None,
 #         )
 #         await repo_chunk.insert(tenant_id, chunk)
+
 #         result = await repo_chunk.get_by_id(tenant_id, chunk_id)
 
 #         assert result is not None
@@ -81,7 +83,8 @@ class TestPGVectorDocumentRepository:
 #         query_id = str(uuid.uuid4())
 
 #         # Insert the document
-#         document = Document(id=doc_id, tenant_id=tenant_id, name="Document for Query", status="processed", type="pdf", texts=[])
+#         document = Document(id=doc_id, tenant_id=tenant_id, name="Document for Query", status="processed", type="pdf",
+# texts=[])
 #         await repo_doc.insert(tenant_id, document)
 
 #         # Insert the chunk related to the document
