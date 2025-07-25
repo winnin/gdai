@@ -46,7 +46,13 @@ convention = "google" # Use Google style to docstrings
 
 
 [tool.pytest.ini_options]
-filterwarnings = ["ignore::pydantic.warnings.PydanticDeprecatedSince20"]
+filterwarnings = [
+    "ignore::pydantic.warnings.PydanticDeprecatedSince20",
+    "ignore:.*swigvarlink has no __module__ attribute:DeprecationWarning:importlib._bootstrap",
+    "ignore:.*SwigPyObject has no __module__ attribute:DeprecationWarning:importlib._bootstrap",
+    "ignore:.*SwigPyPacked has no __module__ attribute:DeprecationWarning:importlib._bootstrap",
+    "ignore:builtin type swigvarlink has no __module__ attribute:DeprecationWarning:sys",
+]
 asyncio_mode = "strict"
 asyncio_default_fixture_loop_scope = "function"
 
