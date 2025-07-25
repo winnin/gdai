@@ -57,7 +57,9 @@ class SearchService:
         embedded_query = (await self.embedding_model.generate_texts_embeddings([query]))[0]
 
         # Retrieve chunks using vector similarity search
-        chunks_result = await self.repository.get_chunks_by_vector_similarity(tenant_id, query_id, embedded_query, chunks_limit)
+        chunks_result = await self.repository.get_chunks_by_vector_similarity(
+            tenant_id, query_id, embedded_query, chunks_limit
+        )
 
         # Here you could add reranking logic if needed
 
@@ -147,7 +149,9 @@ class SearchService:
             # retrieve the chunks from the database based on the query
             chunks_result = await self._retrieve_relevant_chunks(tenant_id, query_id, query, chunks_limit)
 
-            if not chunks_result:  # ??????? if nothing is found is it a error or just no results? avoid answer something out of the rag
+            if (
+                not chunks_result
+            ):  # ??????? if nothing is found is it a error or just no results? avoid answer something out of the rag
                 await self._handle_no_results(message_id)
                 return {
                     "msg": "There is no relevant information available.",
