@@ -99,7 +99,6 @@ class RawDocumentMapper:
 
         # Create the document
         document = Document(
-            id=raw_document.id,
             tenant_id=raw_document.tenant_id,
             name=raw_document.name,
             type=raw_document.type,

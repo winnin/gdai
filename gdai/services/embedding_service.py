@@ -23,7 +23,7 @@ class EmbeddingDocumentService:
 
         # change document status
         document = await self.repository.get_document(tenant_id, document_id)
-        document.status = DocumentStatusEnum.PROCESSING
+        document.status = DocumentStatusEnum.processing
         await self.repository.update_document(document)
 
         # get chunks
@@ -41,5 +41,5 @@ class EmbeddingDocumentService:
         await self.repository.update_chunks(chunks)
 
         # change status of document and chunks
-        document.status.DocumentStatusEnum.processed
+        document.status = DocumentStatusEnum.processed
         await self.repository.update_document(document)
