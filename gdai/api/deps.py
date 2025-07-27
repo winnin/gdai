@@ -6,7 +6,7 @@ from gdai.config.logger import logger
 from gdai.embeddings import EmbeddingFactory
 from gdai.llms import LLMFactory
 from gdai.repositories import RepositoryFactory
-from gdai.services.search import SearchService
+from gdai.services.search_service import SearchService
 
 
 async def get_search_service():

@@ -3,7 +3,7 @@ from __future__ import annotations
 from langchain_core.messages import HumanMessage
 from langchain_openai import ChatOpenAI
 
-from .base import LLMModel
+from .base_llm import LLMModel
 
 
 class OpenAIModel(LLMModel):

@@ -3,7 +3,7 @@ from __future__ import annotations
 import pymupdf
 
 from gdai.commons.enums import DocumentTypeEnum
-from gdai.extractors.base import DocumentExtractor
+from gdai.extractors.base_extractor import DocumentExtractor
 from gdai.schemas import RawDocument
 
 

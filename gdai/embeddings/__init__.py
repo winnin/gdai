@@ -1,5 +1,5 @@
 from gdai.config.settings import Config
-from gdai.embeddings.cohere import CohereEmbeddingModel
+from gdai.embeddings.cohere_embedding import CohereEmbeddingModel
 
 
 class EmbeddingFactory:

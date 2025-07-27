@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 
 from gdai.commons.enums import DocumentTypeEnum
-from gdai.extractors.pdf import PDFExtractor
+from gdai.extractors.pdf_extractor import PDFExtractor
 
 
 class TestPDFExtractor:

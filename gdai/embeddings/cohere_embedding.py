@@ -3,7 +3,7 @@ import asyncio
 import cohere
 
 from gdai.config.settings import Config
-from gdai.embeddings.base import EmbeddingModel
+from gdai.embeddings.base_embedding import EmbeddingModel
 
 
 class CohereEmbeddingModel(EmbeddingModel):
@@ -54,10 +54,13 @@ class CohereEmbeddingModel(EmbeddingModel):
         """
         if not texts:
             raise ValueError("The list of texts cannot be empty.")
+
         if any(not text.strip() for text in texts):
             raise ValueError("The texts cannot be empty strings.")
+
         if len(texts) > 96:
             raise ValueError("The maximum number of texts is 96.")
+
         try:
             res = await self.cohere.embed(
                 texts=texts,
