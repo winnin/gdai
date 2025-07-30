@@ -1,4 +1,5 @@
 import asyncio
+import uuid
 from time import time
 
 from gdai.config.broker import dramatiq
@@ -19,7 +20,7 @@ def embedding_document(document_data: dict):
         logger.info(f"Received document data: {document_data}")
 
         # Validate document_id
-        document_id = document_data.get("document_id")
+        document_id = uuid.UUID(document_data.get("document_id"))
         if not document_id:
             logger.error("document_id is required")
             raise ValueError("document_id is required")
@@ -33,9 +34,11 @@ def embedding_document(document_data: dict):
         try:
             logger.info(f"Beginning embedding for document_id {document_id}")
             start_time = time()
+
             embedding_model = asyncio.run(EmbeddingFactory.get_embedding())
             repository = RepositoryFactory.get_repository()
             service = EmbeddingDocumentService(embedding_model=embedding_model, repository=repository, batch_size=64)
+
             asyncio.run(service.process_document(tenant_id, document_id))
             process_time = time() - start_time
             logger.info(f"Document embedding for {document_id} completed successfully in {process_time:.2f}s")

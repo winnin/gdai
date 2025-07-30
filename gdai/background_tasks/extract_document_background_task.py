@@ -4,7 +4,7 @@ import asyncio
 from time import time
 
 from gdai.background_tasks.embedding_background_task import embedding_document
-from gdai.chunker import ChunkerFactory
+from gdai.chunkers import ChunkerFactory
 from gdai.config.broker import dramatiq  # with broked configured
 from gdai.config.logger import logger
 from gdai.config.settings import Config
@@ -42,7 +42,7 @@ def document_extractor(document_data: dict):
             document_extension = document_path.split(".")[-1].lower()
             document_extractor = ExtractorFactory.get_extractor(extractor_type=document_extension)
             repository = RepositoryFactory.get_repository()
-            chunker = ChunkerFactory.get_chunker(chunker_type="sentence")
+            chunker = ChunkerFactory.get_chunker(chunker_type="sentence")  # TODO: change chunker by type
             service = ExtractDocumentService(repository, document_extractor, chunker)
             document = asyncio.run(service.extract_data_from_document(tenant_id, document_path))
             logger.info(f"Document extraction completed for {document_path}")
@@ -54,7 +54,7 @@ def document_extractor(document_data: dict):
 
         try:
             embedding_document.send(
-                {"document_path": document_path, "tenant_id": tenant_id, "document_id": document.id}
+                {"document_path": document_path, "tenant_id": tenant_id, "document_id": str(document.id)}
             )  # call next action
             logger.info(f"Document {document.name} sent for embedding processing")
         except Exception as e:

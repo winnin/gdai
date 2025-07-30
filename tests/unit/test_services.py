@@ -4,12 +4,12 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
-from gdai.chunker.base_chunker import BaseChunker
+from gdai.chunkers.base_chunker import BaseChunker
 from gdai.commons.enums import ChunkTypeEnum, DocumentStatusEnum, DocumentTypeEnum
 from gdai.embeddings.base_embedding import EmbeddingModel
 from gdai.extractors.base_extractor import DocumentExtractor
 from gdai.extractors.exceptions import FileNotFoundException
-from gdai.repositories.base import BaseRepository
+from gdai.repositories.base_repository import BaseRepository
 from gdai.schemas import Chunk, Document
 from gdai.schemas.schemas import RawDocument
 from gdai.services import ExtractDocumentService

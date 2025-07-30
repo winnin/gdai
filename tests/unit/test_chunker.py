@@ -1,6 +1,6 @@
 import pytest
 
-from gdai.chunker.sentence_chunker import DocumentTextChunkerBySentence
+from gdai.chunkers.sentence_chunker import DocumentTextChunkerBySentence
 
 
 class TestDocumentTextChunkerBySentence:

@@ -3,8 +3,9 @@ from __future__ import annotations
 import uvicorn
 from fastapi import FastAPI
 
-from gdai.api.routers.v1.document import router as document_router
-from gdai.api.routers.v1.search import router as search_router
+from gdai.api.routers.v1.document_router import router as document_router
+
+# from gdai.api.routers.v1.search import router as search_router
 
 # Create FastAPI app
 app = FastAPI(
@@ -14,7 +15,7 @@ app = FastAPI(
 )
 
 # Include the search and document routers
-app.include_router(search_router)
+# app.include_router(search_router)
 app.include_router(document_router)
 
 
@@ -32,4 +33,4 @@ async def health():
 
 if __name__ == "__main__":
     # Run the application
-    uvicorn.run("src.api.main:app", host="0.0.0.0", port=8000, reload=True, log_level="info")
+    uvicorn.run("gdai.api.main:app", host="0.0.0.0", port=8000, reload=True, log_level="info")

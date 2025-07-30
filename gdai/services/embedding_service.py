@@ -6,7 +6,7 @@ import uuid
 
 from gdai.commons.enums import DocumentStatusEnum
 from gdai.embeddings.base_embedding import EmbeddingModel
-from gdai.repositories.base import BaseRepository
+from gdai.repositories.base_repository import BaseRepository
 
 
 class EmbeddingDocumentService:
@@ -24,15 +24,15 @@ class EmbeddingDocumentService:
         # change document status
         document = await self.repository.get_document(tenant_id, document_id)
         document.status = DocumentStatusEnum.processing
-        await self.repository.update_document(document)
 
+        await self.repository.update_document(document)
         # get chunks
-        chunks = self.repository.get_document_chunks(tenant_id, document_id)
+        chunks = await self.repository.get_document_chunks(tenant_id, document_id)
 
         # for each chunk send a embedding request (check implementation in embeddings)
         for i in range(0, len(chunks), self.batch_size):
             batch = chunks[i : i + self.batch_size]
-            texts = [chunk.chunk[:1024] for chunk in batch]
+            texts = [chunk.chunk[:1024] for chunk in batch]  # PUT LIMIT ON TEXT LENGTH ON .ENV
             embeddings = await self.embedding_model.generate_texts_embeddings(texts)
             for chunk, embedding in zip(batch, embeddings, strict=False):
                 chunk.embedding = embedding

@@ -1,7 +1,6 @@
 """Mapper for converting between Document schemas and DocumentModel ORM models."""
 
 from gdai.commons.enums import ChunkTypeEnum, DocumentStatusEnum
-from gdai.mappers.chunk_mapper import ChunkMapper
 from gdai.repositories.models import DocumentModel
 from gdai.schemas.schemas import Chunk, Document, RawDocument
 
@@ -19,11 +18,14 @@ class DocumentMapper:
         Returns:
             DocumentModel: The equivalent database model
         """
+
         document_model = DocumentModel(
             tenant_id=document.tenant_id,
             name=document.name,
             status=document.status,
             type=document.type,
+            created_at=document.created_at,
+            updated_at=document.updated_at,
         )
 
         return document_model
@@ -38,6 +40,7 @@ class DocumentMapper:
         Returns:
             Document: The equivalent schema object
         """
+
         return Document(
             id=model.id,
             tenant_id=model.tenant_id,
@@ -46,7 +49,7 @@ class DocumentMapper:
             type=model.type,
             created_at=model.created_at,
             updated_at=model.updated_at,
-            chunks=[ChunkMapper.to_schema(chunk) for chunk in model.chunks],
+            chunks=[],
         )
 
 

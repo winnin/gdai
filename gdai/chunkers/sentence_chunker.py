@@ -1,6 +1,6 @@
 from chonkie import SentenceChunker
 
-from gdai.chunker.base_chunker import BaseChunker
+from gdai.chunkers.base_chunker import BaseChunker
 
 
 class DocumentTextChunkerBySentence(BaseChunker):

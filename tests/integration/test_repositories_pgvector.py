@@ -6,7 +6,7 @@ from datetime import datetime
 import pytest
 
 from gdai.commons.enums import ChunkTypeEnum, DocumentStatusEnum, DocumentTypeEnum
-from gdai.repositories.pgvector import PGVectorRepository
+from gdai.repositories.pgvector_repository import PGVectorRepository
 from gdai.schemas.schemas import Document
 
 

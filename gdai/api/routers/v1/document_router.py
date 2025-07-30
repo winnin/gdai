@@ -14,10 +14,10 @@ from fastapi import (
     status,
 )
 
+from gdai.api.routers.v1.types import DocumentUploadResponse
 from gdai.background_tasks.extract_document_background_task import document_extractor
 from gdai.config.logger import logger
 from gdai.config.settings import ExtractorConfig
-from gdai.schemas import DocumentUploadResponse
 
 router = APIRouter(prefix="/document", tags=["document"])
 
@@ -48,7 +48,7 @@ async def upload_document(
         file_path = os.path.join(document_folder_path, document.filename)
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(document.file, buffer)
-        document_data = {"document_name": document.filename, "tenant_id": tenant_id}
+        document_data = {"document_path": file_path, "tenant_id": tenant_id}
         document_extractor.send(document_data)
         logger.info(f"Document {document.filename} uploaded successfully for tenant: {tenant_id}")
         return DocumentUploadResponse(

@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import os
 
-from gdai.chunker.base_chunker import BaseChunker
+from gdai.chunkers.base_chunker import BaseChunker
 from gdai.config.logger import logger
 from gdai.config.settings import Config
 from gdai.extractors.base_extractor import DocumentExtractor
 from gdai.extractors.exceptions import FileNotFoundException
 from gdai.mappers import RawDocumentMapper
-from gdai.repositories.base import BaseRepository
+from gdai.repositories.base_repository import BaseRepository
 from gdai.schemas import Document
 
 
@@ -39,8 +39,10 @@ class ExtractDocumentService:
         Raises:
             FileNotFoundException: If the document file does not exist.
         """
+
         # Validate the input
         self.__validate_input(tenant_id, document_path)
+
         raw_document = self.document_extractor.extract_document_data(tenant_id, document_path)
 
         # Chunk document

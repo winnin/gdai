@@ -145,7 +145,6 @@ class ExtractorConfig(ConfigComponent):
     """Document extractor configuration."""
 
     FOLDER_RAW_DOC_PATH = os.getenv("DOCUMENT_EXTRACTOR_FOLDER_SOURCE_PATH")
-    FOLDER_EXTRACTED_DOC_PATH = os.getenv("DOCUMENT_EXTRACTOR_FOLDER_TARGET_PATH")
     MAX_FILE_SIZE_MB = int(os.getenv("DOCUMENT_EXTRACTOR_MAX_FILE_SIZE_MB", "100"))
     EXTRACTOR = os.getenv("DOCUMENT_EXTRACTOR", "docling")
     MAX_RETRIES = int(os.getenv("DOCUMENT_EXTRACTOR_MAX_RETRIES", "3"))
@@ -166,21 +165,6 @@ class ExtractorConfig(ConfigComponent):
             try:
                 raw_path.mkdir(parents=True, exist_ok=True)
                 logger.info(f"Directory created: {cls.FOLDER_RAW_DOC_PATH}")
-            except Exception as e:
-                logger.error(f"Could not create directory: {e}")
-                return False
-
-        if not cls.FOLDER_EXTRACTED_DOC_PATH:
-            logger.error("DOCUMENT_EXTRACTOR_FOLDER_EXTRACTED_DOC_PATH is not set")
-            return False
-
-        extracted_path = Path(cls.FOLDER_EXTRACTED_DOC_PATH)
-        if not extracted_path.exists():
-            logger.warning(f"Extracted documents directory does not exist: {cls.FOLDER_EXTRACTED_DOC_PATH}")
-            # Try to create the directory
-            try:
-                extracted_path.mkdir(parents=True, exist_ok=True)
-                logger.info(f"Directory created: {cls.FOLDER_EXTRACTED_DOC_PATH}")
             except Exception as e:
                 logger.error(f"Could not create directory: {e}")
                 return False
