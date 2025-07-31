@@ -26,7 +26,6 @@ class PDFExtractor(DocumentExtractor):
 
             # Close the document
             pdf_document.close()
-
             # Create a RawDocument instance with the extracted data
             raw_document = RawDocument(
                 name=document_path.split("/")[-1],

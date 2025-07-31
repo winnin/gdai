@@ -189,7 +189,6 @@ class ExtractorConfig(ConfigComponent):
 class EmbeddingConfig(ConfigComponent):
     """Document embedding service configuration."""
 
-    FOLDER_EXTRACTED_DOC_PATH = os.getenv("EMBEDDING_FOLDER_SOURCE_PATH")
     CHUNK_SIZE = int(os.getenv("EMBEDDING_CHUNK_SIZE") or 0)
     CHUNK_OVERLAP = int(os.getenv("EMBEDDING_CHUNK_OVERLAP") or 0)
     MAX_RETRIES = int(os.getenv("EMBEDDING_MAX_RETRIES") or 0)
@@ -199,15 +198,6 @@ class EmbeddingConfig(ConfigComponent):
 
     @classmethod
     def validate(cls) -> bool:
-        """Validates the embedding configuration."""
-        if not cls.FOLDER_EXTRACTED_DOC_PATH:
-            logger.error("EMBEDDING_FOLDER_SOURCE_PATH is not set")
-            return False
-
-        if not cls.FOLDER_EXTRACTED_DOC_PATH:
-            logger.error("EMBEDDING_FOLDER_SOURCE_PATH is not set")
-            return False
-
         if cls.CHUNK_SIZE <= 0:
             logger.error("EMBEDDING_CHUNK_SIZE must be a positive value")
             return False

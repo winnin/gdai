@@ -43,6 +43,7 @@ class ExtractDocumentService:
         # Validate the input
         self.__validate_input(tenant_id, document_path)
 
+        # Extract document data
         raw_document = self.document_extractor.extract_document_data(tenant_id, document_path)
 
         # Chunk document

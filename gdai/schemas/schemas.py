@@ -9,8 +9,8 @@ from gdai.commons.enums import ChunkTypeEnum, DocumentStatusEnum, DocumentTypeEn
 class BaseSchema(BaseModel):
     id: UUID | None = None
     tenant_id: str = Field(min_length=1)
-    created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
-    updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
+    created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now())
+    updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now())
 
 
 class Document(BaseSchema):
@@ -41,8 +41,8 @@ class ResultChunk(BaseModel):
     type: ChunkTypeEnum
     page_number: int
     similarity_score: float = 0.0
-    created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
-    updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
+    created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now())
+    updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now())
 
 
 class RawDocument(BaseModel):

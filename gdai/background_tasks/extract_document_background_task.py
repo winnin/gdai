@@ -53,9 +53,7 @@ def document_extractor(document_data: dict):
             raise
 
         try:
-            embedding_document.send(
-                {"document_path": document_path, "tenant_id": tenant_id, "document_id": str(document.id)}
-            )  # call next action
+            embedding_document.send({"tenant_id": tenant_id, "document_id": str(document.id)})  # call next action
             logger.info(f"Document {document.name} sent for embedding processing")
         except Exception as e:
             logger.error(f"Failed to enqueue document for embedding: {e!s}")
