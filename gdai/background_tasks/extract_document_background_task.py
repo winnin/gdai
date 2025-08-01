@@ -42,7 +42,7 @@ def document_extractor(document_data: dict):
             document_extension = document_path.split(".")[-1].lower()
             document_extractor = ExtractorFactory.get_extractor(extractor_type=document_extension)
             repository = RepositoryFactory.get_repository()
-            chunker = ChunkerFactory.get_chunker(chunker_type="sentence")  # TODO: change chunker by type
+            chunker = ChunkerFactory.get_chunker(chunker_type="sentence")
             service = ExtractDocumentService(repository, document_extractor, chunker)
             document = asyncio.run(service.extract_data_from_document(tenant_id, document_path))
             logger.info(f"Document extraction completed for {document_path}")

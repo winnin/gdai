@@ -1,6 +1,8 @@
 from gdai.config.settings import Config
 from gdai.embeddings.cohere_embedding import CohereEmbeddingModel
 
+from .base_embedding import EmbeddingModel  # noqa: F401
+
 
 class EmbeddingFactory:
     @staticmethod

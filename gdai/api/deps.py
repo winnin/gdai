@@ -16,11 +16,11 @@ async def get_search_service():
     try:
         embedding_model = await EmbeddingFactory.get_embedding()
         llm_model = await LLMFactory.get_llm()
-        search_repository = RepositoryFactory.get_repository().search
+        repository = RepositoryFactory.get_repository()
         search_service = SearchService(
             llm_model=llm_model,
             embedding_model=embedding_model,
-            repository=search_repository,
+            repository=repository,
         )
         return search_service
     except Exception as e:

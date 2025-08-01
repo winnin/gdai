@@ -14,8 +14,8 @@ if __name__ == "__main__":
     # document_extractor.send(document_data)
     embedding_document(
         {
-            "tenant_id": "fabricioo",
-            "document_id": "c1cd31a8-1875-4552-aff9-66b4fb08d471",
+            "tenant_id": "jogorpg",
+            "document_id": "883a6902-5b81-4c6a-9b41-23a6cb23c054",
         }
     )
     # embedding_document({"document_name": "arte_guerra.pdf.json"})

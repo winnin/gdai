@@ -4,6 +4,7 @@ import uvicorn
 from fastapi import FastAPI
 
 from gdai.api.routers.v1.document_router import router as document_router
+from gdai.api.routers.v1.search_router import router as search_router
 
 # from gdai.api.routers.v1.search import router as search_router
 
@@ -17,6 +18,7 @@ app = FastAPI(
 # Include the search and document routers
 # app.include_router(search_router)
 app.include_router(document_router)
+app.include_router(search_router, prefix="/v1", tags=["search"])
 
 
 # Default route

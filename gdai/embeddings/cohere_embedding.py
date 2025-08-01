@@ -2,7 +2,6 @@ import asyncio
 
 import cohere
 
-from gdai.config.settings import Config
 from gdai.embeddings.base_embedding import EmbeddingModel
 
 
@@ -72,19 +71,3 @@ class CohereEmbeddingModel(EmbeddingModel):
             return res.embeddings.float_
         except Exception as e:
             raise Exception(f"Failed to generate embeddings for texts: {e}") from e
-
-
-class EmbeddingModelFactory:
-    """A factory class to create instances of embedding models."""
-
-    @staticmethod
-    async def create() -> EmbeddingModel:
-        """Create an instance of the specified embedding model.
-
-        Returns:
-            EmbeddingModel: An instance of the specified embedding model.
-        """
-        if Config.ai.EMBEDDING_MODEL == "cohere/embed-v4.0":
-            return await CohereEmbeddingModel.create(Config.ai.EMBEDDING_MODEL_API_KEY or "")
-        else:
-            raise ValueError(f"Unsupported embedding model: {Config.ai.EMBEDDING_MODEL}")

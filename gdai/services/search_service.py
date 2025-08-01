@@ -1,7 +1,13 @@
 # The SearchService class has been moved to src/api/services/search_service.py
 from __future__ import annotations
 
-from gdai.llms.openai_llm import LLMModel
+from gdai.api.routers.v1.types import SearchResponse
+from gdai.commons.enums import SimilarityTypeEnum
+from gdai.config.logger import logger
+from gdai.embeddings import EmbeddingModel
+from gdai.llms import LLMModel
+from gdai.repositories import BaseRepository
+from gdai.schemas import Chunk
 
 
 class SearchService:
@@ -29,7 +35,7 @@ class SearchService:
 
     """
 
-    def __init__(self, llm_model: LLMModel, embedding_model, repository):
+    def __init__(self, llm_model: LLMModel, embedding_model: EmbeddingModel, repository: BaseRepository):
         """Initialize the SearchService.
 
         Args:
@@ -40,42 +46,6 @@ class SearchService:
         self.llm_model = llm_model
         self.embedding_model = embedding_model
         self.repository = repository
-
-    async def _retrieve_relevant_chunks(self, tenant_id: str, query_id: str, query: str, chunks_limit: int):
-        """Retrieve relevant document chunks based on the embedded query.
-
-        Args:
-            tenant_id (str): The ID of the tenant.
-            query_id (str): The ID of the query.
-            query (str): The query text.
-            chunks_limit (int): The maximum number of chunks to retrieve.
-
-        Returns:
-            List[ChunkQueryResult]: A list of document chunks sorted by similarity.
-        """
-        # Generate embedding for the query
-        embedded_query = (await self.embedding_model.generate_texts_embeddings([query]))[0]
-
-        # Retrieve chunks using vector similarity search
-        chunks_result = await self.repository.get_chunks_by_vector_similarity(
-            tenant_id, query_id, embedded_query, chunks_limit
-        )
-
-        # Here you could add reranking logic if needed
-
-        return chunks_result
-
-    async def _handle_no_results(self, message_id: str):
-        """Handle the case when no relevant chunks are found.
-
-        Args:
-            message_id (str): The ID of the message.
-
-        Returns:
-            None
-        """
-        await self.repository.update_message_status(message_id, "failed")
-        return
 
     async def _process_llm_stream(self, prompt: str) -> str:
         """Process the streaming response from the LLM and store tokens.
@@ -92,7 +62,7 @@ class SearchService:
             full_response += chunk
         return full_response
 
-    async def _generate_answer(self, message_id: str, query: str, chunks_result) -> dict:
+    async def _generate_answer(self, query: str, chunks: list[Chunk]) -> str:
         """Generate an answer using the LLM based on the query and relevant chunks.
 
         Args:
@@ -104,7 +74,7 @@ class SearchService:
             dict: The generated answer and used chunks.
         """
         # Format chunks for the prompt
-        chunks_text = "\n\n".join([chunk_res.chunk.chunk_text for chunk_res in chunks_result])
+        chunks_text = "\n\n".join([chunk.chunk for chunk in chunks])
 
         # Prepare the prompt for the LLM
         prompt = self.__PROMPT_TEMPLATE_TO_SOLVE_QUERY.format(query=query, chunks=chunks_text)
@@ -112,55 +82,52 @@ class SearchService:
         # Get streaming response from LLM and store tokens
         answer_text = await self._process_llm_stream(prompt)
 
-        # Update message with final answer
-        await self.repository.update_message_text_and_status(message_id, answer_text)
-
         if answer_text is None or "There is no relevant information" in answer_text:
-            await self._handle_no_results(message_id)
-            return {"msg": "There is no relevant information available.", "chunks": []}
+            return {"msg": "There is no relevant information available."}
 
-        chunks_used = [
-            {
-                "document": chunk.chunk.doc_name,
-                "tenant_id": chunk.chunk.tenant_id,
-                "chunk_id": chunk.chunk.chunk_id,
-                "text": chunk.chunk.chunk_text,
-                "page_number": chunk.chunk.page_number,
-            }
-            for chunk in chunks_result
-        ]
-        return {"msg": answer_text, "chunks": chunks_used}
+        return {"msg": answer_text}
 
-    async def answer_query(self, tenant_id: str, query_id: str, query: str, chunks_limit: int = 3) -> dict:
+    async def answer_query(self, tenant_id: str, query: str, document_ids_to_search=[], chunks_limit: int = 3) -> dict:
         """Answer a query by searching for relevant documents and generating a response.
 
         Args:
             tenant_id (str): The ID of the tenant.
-            query_id (str): The ID of the query.
             query (str): The query text.
             chunks_limit (int): The maximum number of chunks to use.
 
         Returns:
             dict: The answer to the query and the used chunks.
         """
-        # create in table message a new message with the query with status pending
-        message_id = await self.repository.create_message_entry(tenant_id, query_id, query)
+        # insert query in database
+        query_id = await self.repository.insert_query(tenant_id, query, SimilarityTypeEnum.cosine)
+
+        # embedding query
+        embedded_query = (await self.embedding_model.generate_texts_embeddings([query]))[0]
+        print(document_ids_to_search)
+        chunks = []
         try:
-            # retrieve the chunks from the database based on the query
-            chunks_result = await self._retrieve_relevant_chunks(tenant_id, query_id, query, chunks_limit)
+            chunks = await self.repository.search_chunks_by_similarity(
+                tenant_id=tenant_id,
+                query_id=query_id,
+                query_vector=embedded_query,
+                similarity_threshold=0.0,
+                limit=chunks_limit,
+            )
+        except ValueError as e:
+            logger.error(f"Error retrieving chunks for query {query_id}: {e!s}")
 
-            if (
-                not chunks_result
-            ):  # ??????? if nothing is found is it a error or just no results? avoid answer something out of the rag
-                await self._handle_no_results(message_id)
-                return {
-                    "msg": "There is no relevant information available.",
-                    "chunks": [],
-                }
-
-            answer = await self._generate_answer(message_id, query, chunks_result)
-
-            return answer
+        try:
+            msg_result = await self._generate_answer(query=query, chunks=chunks)
         except Exception as e:
-            await self.repository.update_message_status(message_id, "failed")
+            logger.error(f"Error generating answer for query {query_id}: {e!s}")
             raise e
+
+        response = SearchResponse(
+            tenant_id=tenant_id,
+            query_id=str(query_id),
+            query=query,
+            status="success",
+            result=msg_result["msg"],
+            list_chunks=[{"chunk_id": chunk.id, "text": chunk.chunk} for chunk in chunks],
+        )
+        return response

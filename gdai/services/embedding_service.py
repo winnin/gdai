@@ -12,7 +12,7 @@ from gdai.repositories.base_repository import BaseRepository
 class EmbeddingDocumentService:
     """Service for processing documents through an embedding pipeline."""
 
-    def __init__(self, embedding_model: EmbeddingModel, repository: BaseRepository, batch_size: int = 64):
+    def __init__(self, embedding_model: EmbeddingModel, repository: BaseRepository, batch_size: int = 96):
         """Initialize with embedding model, repository, and chunking parameters."""
         self.embedding_model: EmbeddingModel = embedding_model
         self.repository = repository
@@ -36,9 +36,7 @@ class EmbeddingDocumentService:
             embeddings = await self.embedding_model.generate_texts_embeddings(texts)
             for chunk, embedding in zip(batch, embeddings, strict=False):
                 chunk.embedding = embedding
-
-        # update the embedding for each chunk
-        await self.repository.update_chunks(chunks)
+            await self.repository.update_chunks(chunks)  # update the embedding for each chunk
 
         # change status of document and chunks
         document.status = DocumentStatusEnum.processed
