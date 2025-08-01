@@ -18,6 +18,23 @@ class PGVectorRepository(BaseRepository):
     def __init__(self):
         super().__init__()
 
+    async def get_all_documents(self, tenant_id: str) -> list[Document]:
+        """Get all documents for a specific tenant.
+        Args:
+            tenant_id: The ID of the tenant
+        Returns:
+            list[Document]: The list of documents for the tenant
+        """
+        async with SessionLocal() as session:
+            try:
+                query = select(DocumentModel).where(DocumentModel.tenant_id == tenant_id)
+                result = await session.execute(query)
+                documents_model = result.scalars().all()
+                documents = [DocumentMapper.to_schema(doc) for doc in documents_model]
+                return documents
+            except Exception as e:
+                raise ValueError(f"Failed to retrieve documents: {e!s}")
+
     async def get_document(self, tenant_id: str, document_id: str) -> Document:
         """Get a document by tenant ID and document ID.
         Args:

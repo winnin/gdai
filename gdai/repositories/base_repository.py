@@ -14,6 +14,18 @@ class BaseRepository(ABC):
         pass
 
     @abstractmethod
+    async def get_all_documents(self, tenant_id: str) -> list[Document]:
+        """Get all documents for a specific tenant.
+
+        Args:
+            tenant_id: The ID of the tenant
+
+        Returns:
+            list[Document]: A list of Document models
+        """
+        pass
+
+    @abstractmethod
     async def get_document(self, tenant_id: str, document_id: str) -> Document:
         """Get a document by tenant ID and document ID.
 

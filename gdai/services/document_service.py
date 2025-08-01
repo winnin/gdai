@@ -89,3 +89,53 @@ class ExtractDocumentService:
         if file_size > Config.extractor.MAX_FILE_SIZE_MB * 1024 * 1024:  # configured limit in MB
             logger.error(f"Document file {document_path} exceeds maximum allowed size")
             raise ValueError(f"Document file {document_path} exceeds maximum allowed size")
+
+
+class DocumentInformationService:
+    """Service for managing document information."""
+
+    def __init__(self, repository: BaseRepository):
+        """Initialize the DocumentInformationService with a repository.
+
+        Args:
+            repository (BaseRepository): The repository to use for document operations.
+        """
+        self.repository = repository
+
+    async def get_all_documents(self, tenant_id: str) -> list[Document]:
+        """Get all documents for a specific tenant.
+
+        Args:
+            tenant_id (str): The tenant ID.
+
+        Returns:
+            list[Document]: The list of documents for the tenant.
+        """
+
+        if not tenant_id:
+            raise ValueError("Tenant ID is required")
+
+        documents = await self.repository.get_all_documents(tenant_id)
+        return documents
+
+    async def get_document_by_id(self, tenant_id: str, document_id: str) -> Document:
+        """Get a document by its ID for a specific tenant.
+
+        Args:
+            tenant_id (str): The tenant ID.
+            document_id (str): The document ID.
+
+        Returns:
+            Document: The document object.
+
+        Raises:
+            ValueError: If the tenant ID or document ID is not provided.
+        """
+
+        if not tenant_id:
+            raise ValueError("Tenant ID is required")
+        if not document_id:
+            raise ValueError("Document ID is required")
+
+        document = await self.repository.get_document(tenant_id, document_id)
+        return document

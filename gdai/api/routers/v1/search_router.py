@@ -12,7 +12,7 @@ from .types import SearchRequest
 router = APIRouter(prefix="/search", tags=["search"])
 
 
-@router.post("/")  # , response_model=SearchResponse
+@router.post("/")
 async def search_query_endpoint(request: SearchRequest, search_service=Depends(get_search_service)):
     """Process a search query and return results."""
     try:
@@ -26,14 +26,8 @@ async def search_query_endpoint(request: SearchRequest, search_service=Depends(g
             query=request.query_text,
             chunks_limit=request.chunks_limit,
         )
-        print(query_result)
         return query_result
-        # return SearchResponse(
-        #     message=query_result["msg"],
-        #     list_chunks=query_result["chunks"],
-        #     query_id=request.query_id,
-        #     status="success",
-        # )
+
     except HTTPException:
         raise
     except Exception as e:

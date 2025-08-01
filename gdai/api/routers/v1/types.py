@@ -1,3 +1,5 @@
+import datetime
+
 from pydantic import BaseModel, Field
 
 
@@ -29,8 +31,6 @@ class DocumentStatusResponse(BaseModel):
     name: str
     status: str
     tenant_id: str
-    number_of_chunks: int = Field(default=0)
-    number_of_embedded_chunks: int = Field(default=0)
     chunk_strategy: str = Field()
-    created_at: str
-    updated_at: str
+    created_at: datetime.datetime
+    updated_at: datetime.datetime

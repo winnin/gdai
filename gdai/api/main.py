@@ -17,7 +17,7 @@ app = FastAPI(
 
 # Include the search and document routers
 # app.include_router(search_router)
-app.include_router(document_router)
+app.include_router(document_router, prefix="/v1", tags=["document"])
 app.include_router(search_router, prefix="/v1", tags=["search"])
 
 

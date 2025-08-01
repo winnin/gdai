@@ -7,6 +7,7 @@ import shutil
 
 from fastapi import (
     APIRouter,
+    Depends,
     File,
     Form,
     HTTPException,
@@ -14,7 +15,8 @@ from fastapi import (
     status,
 )
 
-from gdai.api.routers.v1.types import DocumentUploadResponse
+from gdai.api.deps import get_document_service
+from gdai.api.routers.v1.types import DocumentStatusResponse, DocumentUploadResponse
 from gdai.background_tasks.extract_document_background_task import document_extractor
 from gdai.config.logger import logger
 from gdai.config.settings import ExtractorConfig
@@ -67,44 +69,58 @@ async def upload_document(
         )
 
 
-# @router.get("/{tenant_id}", response_model=DocumentUploadResponse)
-# async def get_documents(tenant_id: str):
-#     """Get all documents for a specific tenant."""
-#     try:
-#         logger.info(f"Retrieving documents for tenant {tenant_id}")
-#         return DocumentUploadResponse(
-#             message=f"Documents for tenant {tenant_id}",
-#             document_name="",
-#             tenant_id=tenant_id,
-#             status="success",
-#         )
-#     except Exception as e:
-#         logger.error(f"Error retrieving documents: {e!s}")
-#         raise HTTPException(
-#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-#             detail=f"Error retrieving documents: {e!s}",
-#         )
+@router.get("/{tenant_id}", response_model=list[DocumentStatusResponse])
+async def get_documents(tenant_id: str, document_service=Depends(get_document_service)):
+    """Get all documents for a specific tenant."""
+    if not tenant_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="tenant_id is required")
+
+    try:
+        logger.info(f"Retrieving documents for tenant {tenant_id}")
+        documents = await document_service.get_all_documents(tenant_id=tenant_id)
+
+        documents_response = [
+            DocumentStatusResponse(
+                id=str(doc.id),
+                name=doc.name,
+                tenant_id=tenant_id,
+                status=doc.status.value,
+                chunk_strategy="sentence",  # Placeholder for actual chunk strategy
+                created_at=doc.created_at.strftime("%Y-%m-%dT%H:%M:%S"),
+                updated_at=doc.updated_at.strftime("%Y-%m-%dT%H:%M:%S"),
+            )
+            for doc in documents
+        ]
+        logger.info(f"Retrieved {len(documents_response)} documents for tenant {tenant_id}")
+        return documents_response
+    except Exception as e:
+        logger.error(f"Error retrieving documents: {e!s}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving documents: {e!s}",
+        )
 
 
-# @router.get("status/{tenant_id}/{document_id}", response_model=DocumentUploadResponse)
-# async def get_document_status(
-#     tenant_id: str,
-#     document_id: str,
-# ):
-#     """Get the status of a document upload."""
-#     try:
-#         # This is a placeholder for actual status retrieval logic
-#         # In a real application, you would query the database or task queue
-#         logger.info(f"Retrieving status for document {document_id} in tenant {tenant_id}")
-#         return DocumentUploadResponse(
-#             message=f"Status for document {document_id} in tenant {tenant_id}",
-#             document_name=document_id,
-#             tenant_id=tenant_id,
-#             status="pending",  # Placeholder status
-#         )
-#     except Exception as e:
-#         logger.error(f"Error retrieving document status: {e!s}")
-#         raise HTTPException(
-#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-#             detail=f"Error retrieving document status: {e!s}",
-#         )
+@router.get("status/{tenant_id}/{document_id}", response_model=DocumentStatusResponse)
+async def get_document_status(tenant_id: str, document_id: str, document_service=Depends(get_document_service)):
+    """Get the status of a document upload."""
+    try:
+        logger.info(f"Retrieving status for document {document_id} in tenant {tenant_id}")
+        doc = await document_service.get_document_by_id(tenant_id=tenant_id, document_id=document_id)
+
+        response = DocumentStatusResponse(
+            id=str(doc.id),
+            name=doc.name,
+            tenant_id=tenant_id,
+            status=doc.status.value,
+            chunk_strategy="sentence",  # Placeholder for actual chunk strategy
+            created_at=doc.created_at.strftime("%Y-%m-%dT%H:%M:%S"),
+            updated_at=doc.updated_at.strftime("%Y-%m-%dT%H:%M:%S"),
+        )
+        return response
+    except Exception as e:
+        logger.error(f"Error retrieving document status: {e!s}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving document status: {e!s}",
+        )

@@ -26,6 +26,7 @@ class SearchService:
         - If no chunks are relevant, respond with "There is no relevant information available."
         - Keep the answer clear and concise, but ensure it fully addresses the query.
         - Do not add explanations, introductions, or notes—just the direct answer.
+        - Answer always in the language of the query.
 
         Input:
         Query: {query}
@@ -103,14 +104,14 @@ class SearchService:
 
         # embedding query
         embedded_query = (await self.embedding_model.generate_texts_embeddings([query]))[0]
-        print(document_ids_to_search)
+        logger.info(document_ids_to_search)
         chunks = []
         try:
             chunks = await self.repository.search_chunks_by_similarity(
                 tenant_id=tenant_id,
                 query_id=query_id,
                 query_vector=embedded_query,
-                similarity_threshold=0.0,
+                similarity_threshold=0.1,
                 limit=chunks_limit,
             )
         except ValueError as e:
