@@ -17,13 +17,23 @@ class SearchRequest(BaseModel):
     document_ids: list[str] = Field(default_factory=list)
 
 
+class SearchChunkResponse(BaseModel):
+    id: str
+    tenant_id: str
+    chunk: str
+    page: str
+    similarity: float
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+
+
 class SearchResponse(BaseModel):
     tenant_id: str
     query_id: str
     query: str
     status: str = Field(default="success")
     result: str = Field(default="")
-    list_chunks: list[dict] = Field(default_factory=list)
+    list_chunks: list[SearchChunkResponse] = Field(default_factory=list)
 
 
 class DocumentStatusResponse(BaseModel):

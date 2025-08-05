@@ -3,9 +3,13 @@ import enum
 
 class DocumentStatusEnum(str, enum.Enum):
     uploaded = "uploaded"
-    processing = "processing"
+    extracting = "extracting"
+    extracted = "extracted"
+    embedding = "embedding"
+    embedded = "embedded"
     processed = "processed"
-    failed = "failed"
+    extraction_failed = "extraction_failed"
+    embedding_failed = "embedding_failed"
 
 
 class DocumentTypeEnum(str, enum.Enum):
@@ -15,7 +19,7 @@ class DocumentTypeEnum(str, enum.Enum):
 
 
 class ChunkTypeEnum(str, enum.Enum):
-    paragraph = "paragraph"
+    text = "text"
     size = "size"
     image = "image"
     table = "table"

@@ -13,6 +13,7 @@ class DocumentTextChunkerBySentence(BaseChunker):
             tokenizer_or_token_counter="character",
             min_sentences_per_chunk=min_sentences_per_chunks,  # Minimum sentences in each chunk
         )
+        super().__init__(strategy="sentence")
 
     def _clean_text(self, text: str) -> str:
         """Clean the text by removing leading and trailing whitespace."""

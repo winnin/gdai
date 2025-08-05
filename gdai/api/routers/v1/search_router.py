@@ -26,6 +26,7 @@ async def search_query_endpoint(request: SearchRequest, search_service=Depends(g
             query=request.query_text,
             chunks_limit=request.chunks_limit,
         )
+
         return query_result
 
     except HTTPException:

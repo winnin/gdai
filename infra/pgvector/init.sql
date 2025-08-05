@@ -9,9 +9,13 @@ CREATE EXTENSION IF NOT EXISTS vector;
 DROP TYPE IF EXISTS documentstatusenum CASCADE;
 CREATE TYPE documentstatusenum AS ENUM (
     'uploaded',
-    'processing',
+    'extracting',
+    'extracted',
+    'embedding',
+    'embedded',
     'processed',
-    'failed'
+    'extraction_failed',
+    'embedding_failed'
 );
 
 -- Document Type Enum
@@ -25,7 +29,7 @@ CREATE TYPE documenttypeenum AS ENUM (
 -- Chunk Type Enum
 DROP TYPE IF EXISTS chunktypeenum CASCADE;
 CREATE TYPE chunktypeenum AS ENUM (
-    'paragraph',
+    'text',
     'size',
     'image',
     'table'
@@ -58,6 +62,7 @@ CREATE TABLE document (
     tenant_id VARCHAR(64) NOT NULL,
     name VARCHAR NOT NULL,
     status documentstatusenum NOT NULL,
+    chunk_strategy VARCHAR(64),
     type documenttypeenum NOT NULL,
     created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
     updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL

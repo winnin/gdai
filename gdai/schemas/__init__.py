@@ -1,1 +1,1 @@
-from .schemas import Chunk, Document, Query, RawDocument  # noqa: F401
+from .schemas import Chunk, Document, Query, QueryResult, RawDocument, ResultChunk  # noqa: F401

@@ -28,7 +28,7 @@ class TestPgVectorRepository:
                 {
                     "id": uuid.uuid4(),
                     "tenant_id": "test-tenant",
-                    "type": ChunkTypeEnum.paragraph,
+                    "type": ChunkTypeEnum.text,
                     "chunk": "This is the first chunk of the document.",
                     "page_number": 1,
                     "created_at": datetime.now(),
@@ -37,7 +37,7 @@ class TestPgVectorRepository:
                 {
                     "id": uuid.uuid4(),
                     "tenant_id": "test-tenant",
-                    "type": ChunkTypeEnum.paragraph,
+                    "type": ChunkTypeEnum.text,
                     "chunk": "This is the second chunk of the document.",
                     "page_number": 2,
                     "created_at": datetime.now(),

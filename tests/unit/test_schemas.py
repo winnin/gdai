@@ -83,7 +83,7 @@ class TestChunkSchema:
             "id": uuid.uuid4(),
             "tenant_id": "tenant-1",
             "document_id": uuid.uuid4(),
-            "type": ChunkTypeEnum.paragraph,
+            "type": ChunkTypeEnum.text,
             "chunk": "Content of the chunk.",
             "page_number": 1,
             "embedding": [0.1, 0.2, 0.3],
@@ -95,7 +95,7 @@ class TestChunkSchema:
         assert chunk.id == data["id"]
         assert chunk.tenant_id == data["tenant_id"]
         assert chunk.document_id == data["document_id"]
-        assert chunk.type == ChunkTypeEnum.paragraph
+        assert chunk.type == ChunkTypeEnum.text
         assert chunk.chunk == "Content of the chunk."
         assert chunk.page_number == 1
         assert chunk.embedding == [0.1, 0.2, 0.3]
@@ -171,7 +171,7 @@ class TestResultChunkSchema:
     def valid_result_chunk_data():
         return {
             "chunk": "This is a chunk of text from a document.",
-            "type": ChunkTypeEnum.paragraph,
+            "type": ChunkTypeEnum.text,
             "page_number": 5,
             "similarity_score": 0.92,
         }
@@ -181,7 +181,7 @@ class TestResultChunkSchema:
         data = self.valid_result_chunk_data()
         result_chunk = ResultChunk(**data)
         assert result_chunk.chunk == data["chunk"]
-        assert result_chunk.type == ChunkTypeEnum.paragraph
+        assert result_chunk.type == ChunkTypeEnum.text
         assert result_chunk.page_number == 5
         assert result_chunk.similarity_score == 0.92
         assert isinstance(result_chunk.created_at, datetime.datetime)
@@ -191,11 +191,11 @@ class TestResultChunkSchema:
         """Test creating a ResultChunk instance with default values."""
         result_chunk = ResultChunk(
             chunk="Default chunk",
-            type=ChunkTypeEnum.paragraph,
+            type=ChunkTypeEnum.text,
             page_number=1,
         )
         assert result_chunk.chunk == "Default chunk"
-        assert result_chunk.type == ChunkTypeEnum.paragraph
+        assert result_chunk.type == ChunkTypeEnum.text
         assert result_chunk.page_number == 1
         assert result_chunk.similarity_score == 0.0  # Default value
         assert isinstance(result_chunk.created_at, datetime.datetime)

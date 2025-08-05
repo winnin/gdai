@@ -1,7 +1,7 @@
 """Mapper for converting between Query schemas and QueryModel ORM models."""
 
 from gdai.repositories.models import QueryChunkLinkModel, QueryModel
-from gdai.schemas.schemas import Query, ResultChunk
+from gdai.schemas.schemas import Query
 
 
 class QueryMapper:
@@ -41,19 +41,6 @@ class QueryMapper:
             Query: The equivalent schema object
         """
         # Convert query_chunks to result_chunks for the schema
-        result_chunks = []
-        if model.query_chunks:
-            for link in model.query_chunks:
-                chunk = link.chunk
-                result_chunk = ResultChunk(
-                    chunk=chunk.chunk,
-                    type=chunk.type,
-                    page_number=chunk.page_number,
-                    similarity_score=link.similarity_score,
-                    created_at=link.created_at,
-                    updated_at=link.updated_at,
-                )
-                result_chunks.append(result_chunk)
 
         return Query(
             id=model.id,
@@ -64,7 +51,7 @@ class QueryMapper:
             similarity=model.similarity,
             created_at=model.created_at,
             updated_at=model.updated_at,
-            result_chunks=result_chunks,
+            result_chunks=[],
         )
 
     @staticmethod

@@ -1,13 +1,13 @@
 # The SearchService class has been moved to src/api/services/search_service.py
 from __future__ import annotations
 
-from gdai.api.routers.v1.types import SearchResponse
-from gdai.commons.enums import SimilarityTypeEnum
+from gdai.commons.enums import QueryStatusEnum, SimilarityTypeEnum
 from gdai.config.logger import logger
 from gdai.embeddings import EmbeddingModel
 from gdai.llms import LLMModel
 from gdai.repositories import BaseRepository
 from gdai.schemas import Chunk
+from gdai.schemas.schemas import QueryResult, ResultChunk
 
 
 class SearchService:
@@ -88,7 +88,7 @@ class SearchService:
 
         return {"msg": answer_text}
 
-    async def answer_query(self, tenant_id: str, query: str, document_ids_to_search=[], chunks_limit: int = 3) -> dict:
+    async def answer_query(self, tenant_id: str, query: str, document_ids_to_search=[], chunks_limit: int = 10) -> dict:
         """Answer a query by searching for relevant documents and generating a response.
 
         Args:
@@ -111,24 +111,34 @@ class SearchService:
                 tenant_id=tenant_id,
                 query_id=query_id,
                 query_vector=embedded_query,
-                similarity_threshold=0.1,
+                similarity_threshold=0.00,
                 limit=chunks_limit,
             )
         except ValueError as e:
             logger.error(f"Error retrieving chunks for query {query_id}: {e!s}")
 
         try:
-            msg_result = await self._generate_answer(query=query, chunks=chunks)
+            msg_result = (await self._generate_answer(query=query, chunks=chunks))["msg"]
+
+            query_res = await self.repository.get_query(tenant_id=tenant_id, query_id=str(query_id))
+            query_res.result = msg_result
+            query_res.status = QueryStatusEnum.completed
+            await self.repository.update_query(tenant_id=tenant_id, query=query_res)
+
         except Exception as e:
+            # update query with failed status
             logger.error(f"Error generating answer for query {query_id}: {e!s}")
             raise e
 
-        response = SearchResponse(
-            tenant_id=tenant_id,
-            query_id=str(query_id),
+        print("<<<<<<<<<<<<<<<<<<<<<<<<<<,,,,,,,,,,")
+        print(chunks)
+
+        response = QueryResult(
             query=query,
-            status="success",
-            result=msg_result["msg"],
-            list_chunks=[{"chunk_id": chunk.id, "text": chunk.chunk} for chunk in chunks],
+            result=msg_result,
+            status=query_res.status,
+            result_chunks=[
+                ResultChunk(chunk=chunk.chunk, type=chunk.type, page_number=chunk.page_number) for chunk in chunks
+            ],
         )
         return response

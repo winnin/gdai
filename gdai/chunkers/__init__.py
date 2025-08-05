@@ -9,5 +9,6 @@ class ChunkerFactory:
         """Get a chunker instance based on the type."""
         if chunker_type == "sentence":
             return SentenceChunker()
+        # Add more chunker types as needed
         else:
             raise ValueError(f"Unknown chunker type: {chunker_type}")

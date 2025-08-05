@@ -1,9 +1,18 @@
+from abc import abstractmethod
+
+
 class BaseChunker:
     """Base class for chunkers."""
 
-    def __init__(self, **args):
+    def __init__(self, strategy: str):
         """Initialize the chunker with any necessary parameters."""
+        self.strategy = strategy
 
+    @abstractmethod
     def chunk(self, text: str) -> list[str]:
         """Chunk the input text into smaller parts."""
-        return [text[i : i + self.chunk_size] for i in range(0, len(text), self.chunk_size)]
+        pass
+
+    def __str__(self) -> str:
+        """Return a string representation of the chunker."""
+        return self.strategy

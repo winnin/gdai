@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 
+from gdai.commons.enums import SimilarityTypeEnum
 from gdai.schemas import Chunk, Document
+from gdai.schemas.schemas import Query
 
 
 class BaseRepository(ABC):
@@ -38,15 +40,14 @@ class BaseRepository(ABC):
         pass
 
     @abstractmethod
-    async def get_document_chunks(self, tenant_id: str, document_id: str) -> list[Document]:
-        """Get all chunks for a specific document.
+    async def insert_document(self, document: Document) -> Document:
+        """Insert a new document into the database.
 
         Args:
-            tenant_id: The ID of the tenant
-            document_id: The ID of the document
+            document: The Document model to insert
 
         Returns:
-            list[Document]: The list of document chunks
+            Document: The inserted document with updated IDs
         """
         pass
 
@@ -63,6 +64,33 @@ class BaseRepository(ABC):
         pass
 
     @abstractmethod
+    async def insert_chunks(self, tenant_id: str, document_id: str, chunks: list[Chunk]) -> list[Chunk]:
+        """Insert chunks for a specific document.
+
+        Args:
+            tenant_id: The ID of the tenant
+            document_id: The ID of the document
+            chunks: A list of Chunk models to insert
+
+        Returns:
+            list[Chunk]: The inserted chunks with updated IDs
+        """
+        pass
+
+    @abstractmethod
+    async def get_chunks(self, tenant_id: str, document_id: str) -> list[Document]:
+        """Get all chunks for a specific document.
+
+        Args:
+            tenant_id: The ID of the tenant
+            document_id: The ID of the document
+
+        Returns:
+            list[Document]: The list of document chunks
+        """
+        pass
+
+    @abstractmethod
     async def update_chunks(self, chunks: list[Document]) -> list[Chunk]:
         """Update chunks in the database.
 
@@ -71,18 +99,6 @@ class BaseRepository(ABC):
 
         Returns:
             list[Chunk]: The updated chunks
-        """
-        pass
-
-    @abstractmethod
-    async def insert_document_and_chunks(self, document: Document) -> Document:
-        """Insert a document and its associated chunks into the database.
-
-        Args:
-            document: The Document model to insert
-
-        Returns:
-            Document: The inserted document with updated IDs
         """
         pass
 
@@ -104,5 +120,45 @@ class BaseRepository(ABC):
 
         Args:
             tenant_id: The ID of the tenant whose content should be removed
+        """
+        pass
+
+    @abstractmethod
+    async def insert_query(self, tenant_id: str, query: str, similarity: SimilarityTypeEnum) -> str:
+        """Insert a query into the database.
+
+        Args:
+            tenant_id: The ID of the tenant
+            query: The query string to insert
+
+        Returns:
+            str: The ID of the inserted query
+        """
+        pass
+
+    @abstractmethod
+    async def search_chunks_by_similarity(
+        self, tenant_id: str, query_vector: list[float], similarity: SimilarityTypeEnum, limit: int = 10
+    ) -> list[Chunk]:
+        """Search for chunks based on similarity to a query.
+
+        Args:
+            tenant_id: The ID of the tenant
+            query: The query string to search for
+            similarity: The type of similarity to use for the search
+            limit: The maximum number of results to return
+
+        Returns:
+            list[Chunk]: A list of chunks that match the query
+        """
+        pass
+
+    @abstractmethod
+    async def update_query(self, query_id: str, query: Query) -> None:
+        """Update an existing query in the database.
+
+        Args:
+            query_id: The ID of the query to update
+            query: The new query string
         """
         pass
