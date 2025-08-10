@@ -150,6 +150,7 @@ class ExtractorConfig(ConfigComponent):
     MAX_RETRIES = int(os.getenv("DOCUMENT_EXTRACTOR_MAX_RETRIES", "3"))
     RETRY_DELAY = int(os.getenv("DOCUMENT_EXTRACTOR_RETRY_DELAY", "5"))
     QUEUE = os.getenv("DOCUMENT_EXTRACTOR_QUEUE")
+    BATCH_SIZE = int(os.getenv("DOCUMENT_EXTRACT_BATCH_SIZE", "10"))
 
     @classmethod
     def validate(cls) -> bool:

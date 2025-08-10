@@ -7,7 +7,6 @@ from gdai.commons.enums import DocumentStatusEnum, DocumentTypeEnum
 from gdai.config.logger import logger
 from gdai.config.settings import Config
 from gdai.extractors.base_extractor import DocumentExtractor
-from gdai.extractors.exceptions import FileNotFoundException
 from gdai.mappers.chunk_mapper import RawChunkerMapper
 from gdai.repositories.base_repository import BaseRepository
 from gdai.schemas import Document
@@ -27,7 +26,29 @@ class ExtractDocumentService:
         self.document_extractor = document_extractor
         self.chunker = chunker
 
-    def __validate_input(self, tenant_id: str, document_path: str) -> None:
+    def __validate_input(self, tenant_id: str, document_id: str) -> None:
+        """Validate the document file.
+
+        Args:
+            document_id (str): The document ID.
+
+        Raises:
+            FileNotFoundException: If the document file does not exist.
+            PermissionError: If the document file is not readable.
+            ValueError: If the document file is empty or exceeds maximum size.
+        """
+
+        # Check if tenant_id is provided
+        if not tenant_id:
+            logger.error("Tenant ID is required")
+            raise ValueError("Tenant ID is required")
+
+        # Check if document_id is provided
+        if not document_id:
+            logger.error("Document ID is required")
+            raise ValueError("Document ID is required")
+
+    def __validate_document_self(self, document_path: str) -> None:
         """Validate the document file.
 
         Args:
@@ -38,21 +59,17 @@ class ExtractDocumentService:
             PermissionError: If the document file is not readable.
             ValueError: If the document file is empty or exceeds maximum size.
         """
-
-        # Check if the file exists
         if not os.path.exists(document_path):
-            logger.error(f"Document file {document_path} does not exist")
-            raise FileNotFoundException()
+            logger.error(f"Document file does not exist: {document_path}")
+            raise FileNotFoundError(f"Document file does not exist: {document_path}")
 
-        # Check if tenant_id is provided
-        if not tenant_id:
-            logger.error("Tenant ID is required")
-            raise ValueError("Tenant ID is required")
-
-        # Check if the file is readable
         if not os.access(document_path, os.R_OK):
-            logger.error(f"Document file {document_path} is not readable")
-            raise PermissionError(f"Document file {document_path} is not readable")
+            logger.error(f"Document file is not readable: {document_path}")
+            raise PermissionError(f"Document file is not readable: {document_path}")
+
+        if os.path.getsize(document_path) == 0:
+            logger.error(f"Document file is empty: {document_path}")
+            raise ValueError(f"Document file is empty: {document_path}")
 
         # Check file size
         file_size = os.path.getsize(document_path)
@@ -88,7 +105,7 @@ class ExtractDocumentService:
             chunk_strategy=chunker_strategy,
         )
 
-        doc = self.repository.insert_document(doc)
+        doc = self.repository.insert_document(tenant_id, doc)
         return doc
 
     def __generate_document_chunks(self, tenant_id: str, document_id: str, document_path: str) -> list[str]:
@@ -110,12 +127,12 @@ class ExtractDocumentService:
             chunk.document_id = document_id
         return chunks
 
-    async def extract_data_from_document(self, tenant_id: str, document_path: str) -> Document:
+    async def extract_data_from_document(self, tenant_id: str, document_id: str) -> None:
         """Extract text from a document.
 
         Args:
             tenant_id (str): The tenant ID.
-            document_path (str): The path to the document file.
+            document_id (str): The document ID.
 
         Returns:
             Document: The extracted document object.
@@ -123,27 +140,30 @@ class ExtractDocumentService:
         Raises:
             FileNotFoundException: If the document file does not exist.
         """
-        # Validate the input
-        self.__validate_input(tenant_id, document_path)
 
-        # Register the document to be processed
-        doc = await self.__register_document_to_be_processed_on_db(tenant_id, document_path)
+        # Validate the input
+        self.__validate_input(tenant_id, document_id)
+
+        # get document data
+        doc = await self.repository.get_document(tenant_id, document_id)
+
+        # validate if document can be processed
+        document_path = os.path.join(Config.extractor.FOLDER_RAW_DOC_PATH, doc.tenant_id, doc.name)
+        self.__validate_document_self(document_path)
 
         try:
             doc.status = DocumentStatusEnum.extracting
-            doc = await self.repository.update_document(doc)
+            doc = await self.repository.update_document(tenant_id, doc)
 
             chunks = self.__generate_document_chunks(tenant_id, str(doc.id), document_path)
             chunks = await self.repository.insert_chunks(tenant_id, str(doc.id), chunks)
 
             doc.status = DocumentStatusEnum.extracted
-            doc = await self.repository.update_document(doc)
+            doc = await self.repository.update_document(tenant_id, doc)
 
-            doc.chunks = chunks  # add chunks to the document object
-
-            return doc
         except Exception as e:
             doc.status = DocumentStatusEnum.extraction_failed
+            await self.repository.update_document(tenant_id, doc)
             logger.error(f"Error extracting data from document: {e}")
             raise e
 

@@ -41,7 +41,7 @@ class DocumentMapper:
             Document: The equivalent schema object
         """
 
-        return Document(
+        doc = Document(
             id=model.id,
             tenant_id=model.tenant_id,
             name=model.name,
@@ -52,3 +52,5 @@ class DocumentMapper:
             updated_at=model.updated_at,
             chunks=[],
         )
+
+        return doc

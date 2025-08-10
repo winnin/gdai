@@ -22,6 +22,20 @@ class PGVectorRepository(BaseRepository):
     def __init__(self):
         super().__init__()
 
+    async def get_documents_to_extract(self, limit: int = 5) -> list[Document]:
+        """Get all documents that are pending extraction."""
+        async with SessionLocal() as session:
+            try:
+                query = select(DocumentModel).where(DocumentModel.status == "uploaded").order_by(DocumentModel.created_at).limit(limit)
+                result = await session.execute(query)
+                documents_model = result.scalars().all()
+                if not documents_model:
+                    return []
+                documents = [DocumentMapper.to_schema(doc) for doc in documents_model]
+                return documents
+            except Exception as e:
+                raise ValueError(f"Failed to retrieve documents: {e!s}")
+
     async def get_all_documents(self, tenant_id: str) -> list[Document]:
         """Get all documents for a specific tenant.
         Args:
@@ -50,9 +64,7 @@ class PGVectorRepository(BaseRepository):
 
         async with SessionLocal() as session:
             try:
-                query = select(DocumentModel).where(
-                    DocumentModel.tenant_id == tenant_id, DocumentModel.id == uuid.UUID(document_id)
-                )
+                query = select(DocumentModel).where(DocumentModel.tenant_id == tenant_id, DocumentModel.id == uuid.UUID(document_id))
                 result = await session.execute(query)
                 document_model = result.scalars().first()
                 if not document_model:
@@ -63,7 +75,7 @@ class PGVectorRepository(BaseRepository):
             document = DocumentMapper.to_schema(document_model)
             return document
 
-    async def insert_document(self, document: Document) -> Document:
+    async def insert_document(self, tenant_id: str, document: Document) -> Document:
         """Insert a document into the database.
 
         Args:
@@ -78,7 +90,7 @@ class PGVectorRepository(BaseRepository):
                     insert(DocumentModel)
                     .values(
                         name=document.name,
-                        tenant_id=document.tenant_id,
+                        tenant_id=tenant_id,
                         status=document.status,
                         type=document.type,
                         chunk_strategy=document.chunk_strategy,
@@ -94,7 +106,7 @@ class PGVectorRepository(BaseRepository):
                 await session.rollback()
                 raise ValueError(f"Failed to insert document: {e!s}")
 
-    async def update_document(self, document: Document) -> Document:
+    async def update_document(self, tenant_id: str, document: Document) -> Document:
         """Update a document in the database.
 
         Args:
@@ -108,7 +120,7 @@ class PGVectorRepository(BaseRepository):
                 # Convert the schema document to a database model
                 stmt = (
                     update(DocumentModel)
-                    .where(DocumentModel.tenant_id == document.tenant_id, DocumentModel.id == document.id)
+                    .where(DocumentModel.tenant_id == tenant_id, DocumentModel.id == document.id)
                     .values(
                         name=document.name,
                         status=document.status,
@@ -135,24 +147,25 @@ class PGVectorRepository(BaseRepository):
         Returns:
             Document: The inserted document with updated IDs
         """
+        batch_size = 128
         async with SessionLocal() as session:
             try:
-                # insert chunks data
-                values = [
-                    {
-                        "type": chunk.type,
-                        "chunk": chunk.chunk,
-                        "tenant_id": tenant_id,
-                        "page_number": chunk.page_number,
-                        "embedding": chunk.embedding,
-                        "document_id": uuid.UUID(document_id),
-                    }
-                    for chunk in chunks
-                ]
-
-                stmt = insert(ChunkModel).values(values)
-                await session.execute(stmt)
-                await session.commit()
+                for i in range(0, len(chunks), batch_size):
+                    # insert chunks data
+                    values = [
+                        {
+                            "type": chunk.type,
+                            "chunk": chunk.chunk,
+                            "tenant_id": tenant_id,
+                            "page_number": chunk.page_number,
+                            "embedding": chunk.embedding,
+                            "document_id": uuid.UUID(document_id),
+                        }
+                        for chunk in chunks[i : i + batch_size]
+                    ]
+                    stmt = insert(ChunkModel).values(values)
+                    await session.execute(stmt)
+                    await session.commit()
                 chunks = await self.get_chunks(tenant_id=tenant_id, document_id=document_id)
                 return chunks
 
@@ -170,9 +183,7 @@ class PGVectorRepository(BaseRepository):
         """
         async with SessionLocal() as session:
             try:
-                query = select(ChunkModel).where(
-                    ChunkModel.tenant_id == tenant_id, ChunkModel.document_id == document_id
-                )
+                query = select(ChunkModel).where(ChunkModel.tenant_id == tenant_id, ChunkModel.document_id == document_id)
                 result = await session.execute(query)
                 chunks_model = result.scalars().all()
                 if not chunks_model:
@@ -182,7 +193,7 @@ class PGVectorRepository(BaseRepository):
             except Exception as e:
                 raise ValueError(f"Failed to retrieve chunks: {e!s}")
 
-    async def update_chunks(self, chunks: list[Document]) -> list[Chunk]:
+    async def update_chunks(self, tenant_id: str, chunks: list[Document]) -> list[Chunk]:
         """Update chunks in the database.
         Args:
             chunks: A list of Document models to update
@@ -195,6 +206,7 @@ class PGVectorRepository(BaseRepository):
                     stmt = (
                         update(ChunkModel)
                         .where(ChunkModel.id == chunk.id)
+                        .where(ChunkModel.tenant_id == tenant_id)
                         .values(
                             chunk=chunk.chunk,
                             embedding=chunk.embedding,
@@ -205,13 +217,13 @@ class PGVectorRepository(BaseRepository):
                     )
                     await session.execute(stmt)
                 await session.commit()
-                chunks = await self.get_chunks(tenant_id=chunk.tenant_id, document_id=chunk.document_id)
+                chunks = await self.get_chunks(tenant_id=tenant_id, document_id=chunk.document_id)
                 return chunks
             except Exception as e:
                 await session.rollback()
                 raise ValueError(f"Failed to update chunks: {e!s}")
 
-    async def delete_document_and_chunks(self, document_id: str) -> bool:
+    async def delete_document_and_chunks(self, tenant_id: str, document_id: str) -> bool:
         """Delete a document and its associated chunks from the database.
 
         Args:
@@ -222,8 +234,8 @@ class PGVectorRepository(BaseRepository):
         """
         async with SessionLocal() as session:
             try:
-                await session.execute(delete(ChunkModel).where(ChunkModel.document_id == document_id))
-                await session.execute(delete(DocumentModel).where(DocumentModel.id == document_id))
+                await session.execute(delete(ChunkModel).where(ChunkModel.tenant_id == tenant_id).where(ChunkModel.document_id == document_id))
+                await session.execute(delete(DocumentModel).where(DocumentModel.tenant_id == tenant_id).where(DocumentModel.id == document_id))
                 await session.commit()
                 return True
             except Exception as e:
@@ -261,11 +273,7 @@ class PGVectorRepository(BaseRepository):
         """
         async with SessionLocal() as session:
             try:
-                stmt = (
-                    insert(QueryModel)
-                    .values(tenant_id=tenant_id, query=query, status=QueryStatusEnum.pending, similarity=similarity)
-                    .returning(QueryModel.id)
-                )
+                stmt = insert(QueryModel).values(tenant_id=tenant_id, query=query, status=QueryStatusEnum.pending, similarity=similarity).returning(QueryModel.id)
                 result = await session.execute(stmt)
                 await session.commit()
                 query_id = result.scalar_one()
@@ -274,9 +282,7 @@ class PGVectorRepository(BaseRepository):
                 await session.rollback()
                 raise ValueError(f"Failed to insert query: {e!s}")
 
-    async def search_chunks_by_similarity(
-        self, tenant_id: str, query_id: str, query_vector: list[float], similarity_threshold: float, limit: int = 10
-    ) -> list[ResultChunk]:
+    async def search_chunks_by_similarity(self, tenant_id: str, query_id: str, query_vector: list[float], similarity_threshold: float, limit: int = 10) -> list[ResultChunk]:
         """Search for chunks similar (by cosine) to a given query using vector similarity.
 
         Args:
@@ -313,12 +319,7 @@ class PGVectorRepository(BaseRepository):
                 if not chunks_model:
                     raise ValueError(f"No chunks found for tenant {tenant_id} with the given similarity threshold.")
 
-                stmt = insert(QueryChunkLinkModel).values(
-                    [
-                        {"query_id": query_id, "chunk_id": chunk.id, "similarity_score": similarity}
-                        for chunk, similarity in chunks_model
-                    ]
-                )
+                stmt = insert(QueryChunkLinkModel).values([{"query_id": query_id, "chunk_id": chunk.id, "similarity_score": similarity} for chunk, similarity in chunks_model])
 
                 await session.execute(stmt)
                 await session.commit()
@@ -367,11 +368,7 @@ class PGVectorRepository(BaseRepository):
         """
         async with SessionLocal() as session:
             try:
-                stmt = (
-                    select(QueryModel)
-                    .where(QueryModel.tenant_id == tenant_id)
-                    .where(QueryModel.id == uuid.UUID(query_id))
-                )
+                stmt = select(QueryModel).where(QueryModel.tenant_id == tenant_id).where(QueryModel.id == uuid.UUID(query_id))
                 result = await session.execute(stmt)
                 query_model = result.scalars().first()
                 if not query_model:

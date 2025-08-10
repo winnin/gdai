@@ -40,7 +40,7 @@ class BaseRepository(ABC):
         pass
 
     @abstractmethod
-    async def insert_document(self, document: Document) -> Document:
+    async def insert_document(self, tenant_id: str, document: Document) -> Document:
         """Insert a new document into the database.
 
         Args:
@@ -52,7 +52,7 @@ class BaseRepository(ABC):
         pass
 
     @abstractmethod
-    async def update_document(self, document: Document) -> Document:
+    async def update_document(self, tenant_id: str, document: Document) -> Document:
         """Update a document in the database.
 
         Args:
@@ -91,7 +91,7 @@ class BaseRepository(ABC):
         pass
 
     @abstractmethod
-    async def update_chunks(self, chunks: list[Document]) -> list[Chunk]:
+    async def update_chunks(self, tenant_id: str, chunks: list[Document]) -> list[Chunk]:
         """Update chunks in the database.
 
         Args:
@@ -103,7 +103,7 @@ class BaseRepository(ABC):
         pass
 
     @abstractmethod
-    async def delete_document_and_chunks(self, document_id: str) -> bool:
+    async def delete_document_and_chunks(self, tenant_id: str, document_id: str) -> bool:
         """Delete a document and its associated chunks from the database.
 
         Args:
@@ -137,9 +137,7 @@ class BaseRepository(ABC):
         pass
 
     @abstractmethod
-    async def search_chunks_by_similarity(
-        self, tenant_id: str, query_vector: list[float], similarity: SimilarityTypeEnum, limit: int = 10
-    ) -> list[Chunk]:
+    async def search_chunks_by_similarity(self, tenant_id: str, query_vector: list[float], similarity: SimilarityTypeEnum, limit: int = 10) -> list[Chunk]:
         """Search for chunks based on similarity to a query.
 
         Args:
@@ -160,5 +158,18 @@ class BaseRepository(ABC):
         Args:
             query_id: The ID of the query to update
             query: The new query string
+        """
+        pass
+
+    @abstractmethod
+    async def get_query(self, tenant_id: str, query_id: str) -> Query:
+        """Retrieve a query by its ID.
+
+        Args:
+            tenant_id: The ID of the tenant
+            query_id: The ID of the query to retrieve
+
+        Returns:
+            Query: The retrieved query
         """
         pass

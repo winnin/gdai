@@ -9,6 +9,25 @@ from dotenv import load_dotenv
 
 load_dotenv(override=True)
 
+
+class ColorFormatter(logging.Formatter):
+    COLORS = {
+        "DEBUG": "\033[36m",  # Cyan
+        "INFO": "\033[32m",  # Green
+        "WARNING": "\033[33m",  # Yellow
+        "ERROR": "\033[31m",  # Red
+        "CRITICAL": "\033[41m",  # Red background
+    }
+    RESET = "\033[0m"
+    GDAI_COLOR = "\033[33m"  # Yellow for 'gdai'
+
+    def format(self, record):
+        # Color by level
+        level_color = self.COLORS.get(record.levelname, "")
+        msg = super().format(record)
+        return f"{level_color}{msg}{self.RESET}"
+
+
 # Disable existing handlers from the root logger
 logging.getLogger().handlers = []
 
@@ -34,6 +53,7 @@ GDAI_LOG_FILE_ENABLED = os.getenv("GDAI_LOG_FILE_ENABLED", "false").lower() == "
 gdai_logger = logging.getLogger("GDAI")
 gdai_logger.setLevel(GDAI_LOG_LEVEL)
 
+
 # Remove any existing handlers
 for handler in gdai_logger.handlers[:]:
     gdai_logger.removeHandler(handler)
@@ -50,7 +70,7 @@ class CustomFormatter(logging.Formatter):
 
 
 # Create formatter with configurable format
-formatter = CustomFormatter(GDAI_LOG_FORMAT, "%Y-%m-%d %H:%M:%S,%f")
+formatter = ColorFormatter(GDAI_LOG_FORMAT, "%Y-%m-%d %H:%M:%S")
 
 # Add console handler
 console_handler = logging.StreamHandler(sys.stdout)

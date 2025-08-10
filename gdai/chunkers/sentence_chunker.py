@@ -12,6 +12,7 @@ class DocumentTextChunkerBySentence(BaseChunker):
         self.chunker = SentenceChunker(
             tokenizer_or_token_counter="character",
             min_sentences_per_chunk=min_sentences_per_chunks,  # Minimum sentences in each chunk
+            chunk_size=1000,
         )
         super().__init__(strategy="sentence")
 
