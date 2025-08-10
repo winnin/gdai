@@ -1,6 +1,5 @@
-import asyncio
-
 import cohere
+import numpy as np
 
 from gdai.embeddings.base_embedding import EmbeddingModel
 
@@ -39,6 +38,20 @@ class CohereEmbeddingModel(EmbeddingModel):
         embedding_model.cohere = cohere.AsyncClient(api_key=embedding_model.api_key)
         return embedding_model
 
+    def normalize_embedding(self, embedding: list[float]) -> list[float]:
+        """Normalize the embedding vector to unit length.
+
+        Args:
+            embedding (list[float]): The embedding vector to normalize.
+
+        Returns:
+            list[float]: The normalized embedding vector.
+        """
+        norm = np.linalg.norm(embedding)
+        if norm == 0:
+            return embedding
+        return (np.array(embedding) / norm).tolist()
+
     async def generate_texts_embeddings(self, texts: list[str]) -> list[list[float]]:
         """Generate embeddings for multiple texts using the Cohere API.
 
@@ -51,6 +64,7 @@ class CohereEmbeddingModel(EmbeddingModel):
         Raises:
             Exception: If the API call fails.
         """
+
         if not texts:
             raise ValueError("The list of texts cannot be empty.")
 
@@ -67,7 +81,6 @@ class CohereEmbeddingModel(EmbeddingModel):
                 input_type=self.SEARCH_DOCUMENT_TYPE,
                 embedding_types=["float"],
             )
-            await asyncio.sleep(3)  # Small delay between batches
-            return res.embeddings.float_
+            return [self.normalize_embedding(embedding) for embedding in res.embeddings.float_]
         except Exception as e:
             raise Exception(f"Failed to generate embeddings for texts: {e}") from e

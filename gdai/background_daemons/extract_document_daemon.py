@@ -1,13 +1,12 @@
 import asyncio
 
 from gdai.chunkers import ChunkerFactory
+from gdai.commons.enums import DocumentTypeEnum
 from gdai.config.logger import logger
 from gdai.config.settings import Config
 from gdai.extractors import ExtractorFactory
 from gdai.repositories import RepositoryFactory
 from gdai.services.document_service import ExtractDocumentService
-
-# TODO: add multi processing
 
 
 class ExtractDocumentDaemon:
@@ -25,6 +24,11 @@ class ExtractDocumentDaemon:
             try:
                 logger.info("Starting a new batch document extraction ")
                 documents = await self.repository.get_documents_to_extract(limit=self.batch_size)
+
+                if len(documents) == 0 or documents is None:
+                    await asyncio.sleep(5)  # waiting 5 seconds before the next batch
+                    continue
+
                 for document in documents:
                     logger.info(f"Begin extraction for document id:{document.id} - name:{document.name}")
                     tenant_id = document.tenant_id
@@ -35,7 +39,12 @@ class ExtractDocumentDaemon:
                     await extract_service.extract_data_from_document(tenant_id, str(document.id))
                     logger.info(f"Finishing extraction for document id:{document.id} - name:{document.name}")
                 logger.info("Batch document extraction completed successfully")
-                await asyncio.sleep(5)  # waiting 5 seconds before the next batch
+
             except Exception as e:
-                logger.error(f"Failed to extract documents: {e!s}")
+                logger.error(f"Failed to extract documents: {[doc.id for doc in documents]} {e!s}")
+                for document in documents:
+                    document.status = DocumentTypeEnum.extraction_failed
+                    await self.repository.update_document(document.tenant_id, document)
+                    await self.repository.delete_chunks(document.tenant_id, str(document.id))
+
                 raise

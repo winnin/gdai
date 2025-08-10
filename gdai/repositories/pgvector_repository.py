@@ -75,6 +75,20 @@ class PGVectorRepository(BaseRepository):
             document = DocumentMapper.to_schema(document_model)
             return document
 
+    async def get_documents_to_embed(self) -> Document:
+        """Get a document that is pending embedding."""
+        async with SessionLocal() as session:
+            try:
+                query = select(DocumentModel).where(DocumentModel.status == "extracted").order_by(DocumentModel.created_at).limit(1)
+                result = await session.execute(query)
+                document_model = result.scalars().first()
+                if not document_model:
+                    return None
+                document = DocumentMapper.to_schema(document_model)
+                return document
+            except Exception as e:
+                raise ValueError(f"Failed to retrieve document for embedding: {e!s}")
+
     async def insert_document(self, tenant_id: str, document: Document) -> Document:
         """Insert a document into the database.
 
@@ -222,6 +236,24 @@ class PGVectorRepository(BaseRepository):
             except Exception as e:
                 await session.rollback()
                 raise ValueError(f"Failed to update chunks: {e!s}")
+
+    async def delete_chunks(self, tenant_id: str, document_id: str) -> bool:
+        """Delete all chunks for a specific document.
+        Args:
+            tenant_id: The ID of the tenant
+            document_id: The ID of the document
+        Returns:
+            bool: True if the operation was successful, False otherwise
+        """
+        async with SessionLocal() as session:
+            try:
+                stmt = delete(ChunkModel).where(ChunkModel.tenant_id == tenant_id, ChunkModel.document_id == document_id)
+                await session.execute(stmt)
+                await session.commit()
+                return True
+            except Exception as e:
+                await session.rollback()
+                raise ValueError(f"Failed to delete chunks: {e!s}")
 
     async def delete_document_and_chunks(self, tenant_id: str, document_id: str) -> bool:
         """Delete a document and its associated chunks from the database.

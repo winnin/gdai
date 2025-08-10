@@ -6,7 +6,6 @@ class DocumentStatusEnum(str, enum.Enum):
     extracting = "extracting"
     extracted = "extracted"
     embedding = "embedding"
-    embedded = "embedded"
     processed = "processed"
     extraction_failed = "extraction_failed"
     embedding_failed = "embedding_failed"

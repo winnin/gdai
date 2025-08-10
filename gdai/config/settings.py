@@ -75,34 +75,6 @@ class DatabaseConfig(ConfigComponent):
         return True
 
 
-class BrokerConfig(ConfigComponent):
-    """Message broker configuration."""
-
-    # RabbitMQ settings
-    RABBIT_MQ_HOST = os.getenv("RABBIT_MQ_HOST")
-    RABBIT_MQ_PORT = int(os.getenv("RABBIT_MQ_PORT", "5672"))
-    RABBIT_MQ_USER = os.getenv("RABBIT_MQ_USER")
-    RABBIT_MQ_PASSWORD = os.getenv("RABBIT_MQ_PASSWORD")
-
-    @classmethod
-    def validate(cls) -> bool:
-        """Validates the message broker configuration."""
-        if not cls.RABBIT_MQ_HOST:
-            logger.error("RABBIT_MQ_HOST is not set")
-            return False
-        if cls.RABBIT_MQ_PORT < 0:
-            logger.error("RABBIT_MQ_PORT is invalid")
-            return False
-        if not cls.RABBIT_MQ_USER:
-            logger.error("RABBIT_MQ_USER is not set")
-            return False
-        if not cls.RABBIT_MQ_PASSWORD:
-            logger.error("RABBIT_MQ_PASSWORD is not set")
-            return False
-
-        return True
-
-
 class AIModelsConfig(ConfigComponent):
     """AI models configuration."""
 
@@ -146,10 +118,8 @@ class ExtractorConfig(ConfigComponent):
 
     FOLDER_RAW_DOC_PATH = os.getenv("DOCUMENT_EXTRACTOR_FOLDER_SOURCE_PATH")
     MAX_FILE_SIZE_MB = int(os.getenv("DOCUMENT_EXTRACTOR_MAX_FILE_SIZE_MB", "100"))
-    EXTRACTOR = os.getenv("DOCUMENT_EXTRACTOR", "docling")
     MAX_RETRIES = int(os.getenv("DOCUMENT_EXTRACTOR_MAX_RETRIES", "3"))
     RETRY_DELAY = int(os.getenv("DOCUMENT_EXTRACTOR_RETRY_DELAY", "5"))
-    QUEUE = os.getenv("DOCUMENT_EXTRACTOR_QUEUE")
     BATCH_SIZE = int(os.getenv("DOCUMENT_EXTRACT_BATCH_SIZE", "10"))
 
     @classmethod
@@ -180,10 +150,6 @@ class ExtractorConfig(ConfigComponent):
             logger.error("DOCUMENT_EXTRACTOR_RETRY_DELAY must be a non-negative value")
             return False
 
-        if cls.QUEUE is None:
-            logger.error("DOCUMENT_EXTRACTOR_QUEUE is not set")
-            return False
-
         return True
 
 
@@ -195,7 +161,7 @@ class EmbeddingConfig(ConfigComponent):
     MAX_RETRIES = int(os.getenv("EMBEDDING_MAX_RETRIES") or 0)
     RETRY_DELAY = int(os.getenv("EMBEDDING_RETRY_DELAY") or 0)
     MAX_MEMORY_USAGE_PERCENT = int(os.getenv("EMBEDDING_MAX_MEMORY_USAGE_PERCENT") or 100)
-    QUEUE = os.getenv("EMBEDDING_QUEUE")
+    BATCH_SIZE = int(os.getenv("EMBEDDING_BATCH_SIZE") or 64)
 
     @classmethod
     def validate(cls) -> bool:
@@ -213,9 +179,6 @@ class EmbeddingConfig(ConfigComponent):
             return False
         if cls.RETRY_DELAY < 0:
             logger.error("EMBEDDING_RETRY_DELAY must be a non-negative value")
-            return False
-        if cls.QUEUE is None:
-            logger.error("EMBEDDING_QUEUE is not set")
             return False
 
         return True
@@ -249,7 +212,7 @@ class Config:
 
     # Configuration components
     db = DatabaseConfig
-    broker = BrokerConfig
+
     ai = AIModelsConfig
     extractor = ExtractorConfig
     embedding = EmbeddingConfig
@@ -258,7 +221,6 @@ class Config:
     # Add this dictionary to map component names to their configuration classes
     _components = {
         "db": DatabaseConfig,
-        "broker": BrokerConfig,
         "ai": AIModelsConfig,
         "extractor": ExtractorConfig,
         "embedding": EmbeddingConfig,

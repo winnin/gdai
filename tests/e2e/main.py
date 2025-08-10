@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from gdai.background_tasks.embedding_background_task import embedding_document
+from gdai.background_daemons.embedding_background_task import embedding_document
 
 if __name__ == "__main__":
     pass

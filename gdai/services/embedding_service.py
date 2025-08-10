@@ -2,48 +2,33 @@
 
 from __future__ import annotations
 
-import uuid
+import asyncio
 
-from gdai.commons.enums import DocumentStatusEnum
+from gdai.config.logger import logger
 from gdai.embeddings.base_embedding import EmbeddingModel
 from gdai.repositories.base_repository import BaseRepository
+from gdai.schemas import Chunk
 
 
-class EmbeddingDocumentService:
-    """Service for processing documents through an embedding pipeline."""
+class EmbeddingBatchService:
+    """Service for processing batches of chunks through an embedding pipeline."""
 
-    def __init__(self, embedding_model: EmbeddingModel, repository: BaseRepository, batch_size: int = 64):
+    def __init__(self, embedding_model: EmbeddingModel, repository: BaseRepository):
         """Initialize with embedding model, repository, and chunking parameters."""
         self.embedding_model: EmbeddingModel = embedding_model
         self.repository = repository
-        self.batch_size = batch_size
 
-    async def process_document(self, tenant_id: str, document_id: uuid.UUID) -> None:
-        """Process document: load, chunk, embed, and store in repository."""
+    async def embed_chunks(self, tenant_id: str, chunks: list[Chunk]) -> None:
+        """Process chunks: load, embed, and store in repository."""
 
         try:
-            document_id_str = str(document_id)
-            # change document status
-            document = await self.repository.get_document(tenant_id, document_id_str)
-            document.status = DocumentStatusEnum.embedding
-            await self.repository.update_document(tenant_id, document)
+            texts = [chunk.chunk[:1024] for chunk in chunks]  # TODO: add chunk limit size to config
+            embeddings = await self.embedding_model.generate_texts_embeddings(texts)
 
-            # get chunks
-            chunks = await self.repository.get_chunks(tenant_id, document_id_str)
-
-            # for each chunk send a embedding request (check implementation in embeddings)
-            for i in range(0, len(chunks), self.batch_size):
-                batch = chunks[i : i + self.batch_size]
-                texts = [chunk.chunk[:1024] for chunk in batch]  # PUT LIMIT ON TEXT LENGTH ON .ENV
-                embeddings = await self.embedding_model.generate_texts_embeddings(texts)
-                for chunk, embedding in zip(batch, embeddings, strict=False):
-                    chunk.embedding = embedding
-                await self.repository.update_chunks(tenant_id, chunks)  # update the embedding for each chunk
-
-            # change status of document and chunks
-            document.status = DocumentStatusEnum.processed
-            await self.repository.update_document(tenant_id, document)
+            for chunk, embedding in zip(chunks, embeddings, strict=False):
+                chunk.embedding = embedding
+            await self.repository.update_chunks(tenant_id, chunks)  # update the embedding for each chunk
+            await asyncio.sleep(3)  # rate limit for cohere
         except Exception as e:
-            document.status = DocumentStatusEnum.embedding_failed
-            await self.repository.update_document(tenant_id, document)
-            raise e
+            logger.error(f"Failed to embed chunks: {e!s}")
+            await asyncio.sleep(60)  # rate limit for cohere
