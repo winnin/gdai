@@ -19,7 +19,7 @@ class LLMModel(ABC):
         self.model_name = model_name
 
     @abstractmethod
-    async def call_llm_stream(self, prompt: str) -> str:
+    async def call_llm(self, prompt: str) -> str:
         """Generate text based on a given prompt.
 
         Args:

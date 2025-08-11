@@ -3,6 +3,7 @@ from __future__ import annotations
 import pymupdf
 
 from gdai.commons.enums import DocumentTypeEnum
+from gdai.config import logger
 from gdai.extractors.base_extractor import DocumentExtractor
 from gdai.schemas import RawDocument
 
@@ -40,7 +41,7 @@ class PDFExtractor(DocumentExtractor):
             return raw_document
 
         except Exception as e:
-            print(f"Error extracting data from {document_path}: {e!s}")
+            logger.error(f"Error extracting data from {document_path}: {e!s}")
             raise
 
     def _extract_raw_text(self, pdf_document) -> list[tuple[int, str]]:

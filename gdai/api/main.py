@@ -27,7 +27,7 @@ async def lifespan(_: FastAPI):
             await task1
             await task2
         except asyncio.CancelledError:
-            print("Daemon foi cancelado com sucesso.")
+            print("Daemons cancelled")
 
 
 # Create FastAPI app

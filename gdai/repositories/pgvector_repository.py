@@ -393,13 +393,7 @@ class PGVectorRepository(BaseRepository):
                     .limit(limit)
                 )
                 result = await session.execute(stmt)
-                print("RESULT", result)
-                print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
                 chunks_model = result.all()
-                print("CARALHAS" * 30)
-                print(result)
-                print(chunks_model)
-                print("CARALHAS" * 30)
                 # create the link between query and chunks
                 if not chunks_model:
                     raise ValueError(f"No chunks found for tenant {tenant_id} with the given similarity threshold.")

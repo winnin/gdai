@@ -46,7 +46,7 @@ class OpenAIModel(LLMModel):
         model = OpenAIModel(model_name, api_key, temperature, max_tokens)
         return model
 
-    async def call_llm_stream(self, prompt):
+    async def call_llm(self, prompt):
         """Answer a question using the LLM model with a given query and context.
 
         Args:
@@ -57,8 +57,5 @@ class OpenAIModel(LLMModel):
             str: The generated answer from the LLM model.
         """
         messages = [HumanMessage(content=prompt)]
-
-        # Usa o método .stream() para receber partes do texto incrementalmente
-        for chunk in self.llm.stream(messages):
-            # Cada chunk é uma mensagem parcial (como delta no ChatCompletion)
-            yield chunk.content
+        response = await self.llm.ainvoke(messages)
+        return response.content

@@ -48,21 +48,6 @@ class SearchService:
         self.embedding_model = embedding_model
         self.repository = repository
 
-    async def _process_llm_stream(self, prompt: str) -> str:
-        """Process the streaming response from the LLM and store tokens.
-
-        Args:
-            message_id (str): The ID of the message.
-            prompt (str): The prompt to send to the LLM.
-
-        Returns:
-            str: The full answer text from the LLM.
-        """
-        full_response = ""
-        async for chunk in self.llm_model.call_llm_stream(prompt):
-            full_response += chunk
-        return full_response
-
     async def _generate_answer(self, query: str, chunks: list[Chunk]) -> str:
         """Generate an answer using the LLM based on the query and relevant chunks.
 
@@ -81,7 +66,7 @@ class SearchService:
         prompt = self.__PROMPT_TEMPLATE_TO_SOLVE_QUERY.format(query=query, chunks=chunks_text)
 
         # Get streaming response from LLM and store tokens
-        answer_text = await self._process_llm_stream(prompt)
+        answer_text = await self.llm_model.call_llm(prompt)
 
         if answer_text is None or "There is no relevant information" in answer_text:
             return {"msg": "There is no relevant information available."}
@@ -119,19 +104,16 @@ class SearchService:
 
         try:
             msg_result = (await self._generate_answer(query=query, chunks=chunks))["msg"]
-
             query_res = await self.repository.get_query(tenant_id=tenant_id, query_id=str(query_id))
             query_res.result = msg_result
             query_res.status = QueryStatusEnum.completed
             await self.repository.update_query(tenant_id=tenant_id, query=query_res)
-
         except Exception as e:
-            # update query with failed status
             logger.error(f"Error generating answer for query {query_id}: {e!s}")
+            query_res = await self.repository.get_query(tenant_id=tenant_id, query_id=str(query_id))
+            query_res.status = QueryStatusEnum.failed
+            await self.repository.update_query(tenant_id=tenant_id, query=query_res)
             raise e
-
-        print("<<<<<<<<<<<<<<<<<<<<<<<<<<,,,,,,,,,,")
-        print(chunks)
 
         response = QueryResult(
             query=query,
