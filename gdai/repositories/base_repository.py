@@ -137,7 +137,9 @@ class BaseRepository(ABC):
         pass
 
     @abstractmethod
-    async def search_chunks_by_similarity(self, tenant_id: str, query_vector: list[float], similarity: SimilarityTypeEnum, limit: int = 10) -> list[Chunk]:
+    async def search_chunks_by_similarity(
+        self, tenant_id: str, query_vector: list[float], similarity: SimilarityTypeEnum, limit: int = 10
+    ) -> list[Chunk]:
         """Search for chunks based on similarity to a query.
 
         Args:
