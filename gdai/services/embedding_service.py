@@ -19,6 +19,7 @@ class EmbeddingDocumentChunksService:
         self.embedding_model = embedding_model
         self.repository = repository
         self.batch_size = Config.embedding.BATCH_SIZE
+        self.embedding_chunk_size = Config.embedding.CHUNK_SIZE
 
     async def embed_document_chunks(self, tenant_id: str, document_id: str) -> None:
         """Embed chunks of a specific document."""
@@ -36,7 +37,7 @@ class EmbeddingDocumentChunksService:
 
             for i in range(0, len(chunks), self.batch_size + 1):
                 chunk_batch = chunks[i : i + self.batch_size]
-                texts = [chunk.chunk[:1024] for chunk in chunk_batch]  # TODO: add chunk limit size to config
+                texts = [chunk.chunk[: self.embedding_chunk_size] for chunk in chunk_batch]
                 embeddings = await self.embedding_model.generate_texts_embeddings(texts)
                 for chunk, embedding in zip(chunk_batch, embeddings, strict=False):
                     chunk.embedding = embedding

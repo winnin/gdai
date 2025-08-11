@@ -119,7 +119,6 @@ class ExtractorConfig(ConfigComponent):
     FOLDER_RAW_DOC_PATH = os.getenv("DOCUMENT_EXTRACTOR_FOLDER_SOURCE_PATH")
     MAX_FILE_SIZE_MB = int(os.getenv("DOCUMENT_EXTRACTOR_MAX_FILE_SIZE_MB", "100"))
     MAX_RETRIES = int(os.getenv("DOCUMENT_EXTRACTOR_MAX_RETRIES", "3"))
-    RETRY_DELAY = int(os.getenv("DOCUMENT_EXTRACTOR_RETRY_DELAY", "5"))
     BATCH_SIZE = int(os.getenv("DOCUMENT_EXTRACT_BATCH_SIZE", "10"))
 
     @classmethod
@@ -146,9 +145,6 @@ class ExtractorConfig(ConfigComponent):
         if cls.MAX_RETRIES < 0:
             logger.error("DOCUMENT_EXTRACTOR_MAX_RETRIES must be a non-negative value")
             return False
-        if cls.RETRY_DELAY < 0:
-            logger.error("DOCUMENT_EXTRACTOR_RETRY_DELAY must be a non-negative value")
-            return False
 
         return True
 
@@ -159,8 +155,6 @@ class EmbeddingConfig(ConfigComponent):
     CHUNK_SIZE = int(os.getenv("EMBEDDING_CHUNK_SIZE") or 0)
     CHUNK_OVERLAP = int(os.getenv("EMBEDDING_CHUNK_OVERLAP") or 0)
     MAX_RETRIES = int(os.getenv("EMBEDDING_MAX_RETRIES") or 0)
-    RETRY_DELAY = int(os.getenv("EMBEDDING_RETRY_DELAY") or 0)
-    MAX_MEMORY_USAGE_PERCENT = int(os.getenv("EMBEDDING_MAX_MEMORY_USAGE_PERCENT") or 100)
     BATCH_SIZE = int(os.getenv("EMBEDDING_BATCH_SIZE") or 64)
 
     @classmethod
@@ -171,14 +165,8 @@ class EmbeddingConfig(ConfigComponent):
         if cls.CHUNK_OVERLAP < 0:
             logger.error("EMBEDDING_CHUNK_OVERLAP must be a non-negative value")
             return False
-        if cls.MAX_MEMORY_USAGE_PERCENT <= 0 or cls.MAX_MEMORY_USAGE_PERCENT > 100:
-            logger.error("EMBEDDING_MAX_MEMORY_USAGE_PERCENT must be between 1 and 100")
-            return False
         if cls.MAX_RETRIES < 0:
             logger.error("EMBEDDING_MAX_RETRIES must be a non-negative value")
-            return False
-        if cls.RETRY_DELAY < 0:
-            logger.error("EMBEDDING_RETRY_DELAY must be a non-negative value")
             return False
 
         return True
