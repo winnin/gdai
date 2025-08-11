@@ -407,7 +407,6 @@ class PGVectorRepository(BaseRepository):
 
                 await session.execute(stmt)
                 await session.commit()
-
                 chunks_result = [ResultChunkMapper.to_schema(model, similarity) for model, similarity in chunks_model]
 
                 return chunks_result

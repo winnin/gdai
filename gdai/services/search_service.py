@@ -89,7 +89,7 @@ class SearchService:
 
         # embedding query
         embedded_query = (await self.embedding_model.generate_texts_embeddings([query]))[0]
-        logger.info(document_ids_to_search)
+        logger.info(document_ids_to_search)  # implement filter by document ids if is not empty
         chunks = []
         try:
             chunks = await self.repository.search_chunks_by_similarity(
@@ -120,7 +120,15 @@ class SearchService:
             result=msg_result,
             status=query_res.status,
             result_chunks=[
-                ResultChunk(chunk=chunk.chunk, type=chunk.type, page_number=chunk.page_number) for chunk in chunks
+                ResultChunk(
+                    chunk=chunk.chunk,
+                    type=chunk.type,
+                    page_number=chunk.page_number,
+                    document_id=chunk.document_id,
+                    similarity_score=chunk.similarity_score,
+                )
+                for chunk in chunks
             ],
         )
+
         return response

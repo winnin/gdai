@@ -52,6 +52,7 @@ class RawDocument(BaseModel):
 class ResultChunk(BaseModel):
     chunk: str
     type: ChunkTypeEnum
+    document_id: str
     page_number: int
     similarity_score: float = 0.0
 

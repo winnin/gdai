@@ -17,6 +17,7 @@ class ResultChunkMapper:
         """
         result = ResultChunk(
             chunk=chunk_model.chunk,
+            document_id=str(chunk_model.document_id),
             type=chunk_model.type,
             similarity_score=similarity,
             page_number=chunk_model.page_number,
