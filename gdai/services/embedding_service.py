@@ -26,13 +26,13 @@ class EmbeddingDocumentChunksService:
         try:
             chunks = await self.repository.get_chunks(tenant_id, document_id)
             chunks = [chunk for chunk in chunks if chunk.embedding is None]  # to embed only chunks without embedding
-
             if not chunks:
+                logger.error("passei aqui 11")
                 logger.info(f"No chunks to embed for document id: {document_id}")
                 document = await self.repository.get_document(tenant_id, document_id)
                 document.status = DocumentStatusEnum.processed
                 logger.info(f"Finishing embedding for document id:{document.id} - name:{document.name}")
-                await self.repository.update_document(tenant_id, document_id)
+                await self.repository.update_document(tenant_id, document)
                 return
 
             for i in range(0, len(chunks), self.batch_size + 1):
@@ -51,8 +51,6 @@ class EmbeddingDocumentChunksService:
                 document.status = DocumentStatusEnum.embedding_failed
             else:
                 document.status = DocumentStatusEnum.extracted  # back to extracted to retry embedding
-
             await self.repository.update_document(tenant_id, document)
-
             logger.error(f"Failed to embed document chunks from {document_id} {e!s}")
             await asyncio.sleep(60)  # avoid problems with rate limit
