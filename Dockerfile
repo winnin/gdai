@@ -22,4 +22,4 @@ COPY . .
 EXPOSE 8000
 
 # Comando para rodar a aplicação
-CMD ["uv", "run",  "fastapi", "run",  "./src/api/app.py", "--host", "0.0.0.0", "--port", "8000", "--workers", "4", "--proxy-headers"]
+CMD ["uv", "run",  "fastapi", "run",  "./gdai/api/main.py", "--host", "0.0.0.0", "--port", "8000", "--workers", "4", "--proxy-headers"]
