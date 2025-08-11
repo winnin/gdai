@@ -2,7 +2,7 @@
 
 This roadmap outlines the planned features and improvements for GDAI. The timeline and priorities may change based on community feedback and project needs.
 
-## August 2025
+## September 2025
 
 - [ ] OpenAI Embeddings
 - [ ] Image Extractor (OCR)
@@ -12,7 +12,7 @@ This roadmap outlines the planned features and improvements for GDAI. The timeli
 - [ ] Different chunking strategies
 - [ ] Support to REDIS as a broker
 
-## September 2025
+## October 2025
 
 - [ ] PPT Extractor
 - [ ] Turso as a repository option
