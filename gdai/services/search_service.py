@@ -89,18 +89,30 @@ class SearchService:
 
         # embedding query
         embedded_query = (await self.embedding_model.generate_texts_embeddings([query]))[0]
-        logger.info(document_ids_to_search)  # implement filter by document ids if is not empty
         chunks = []
-        try:
-            chunks = await self.repository.search_chunks_by_similarity(
-                tenant_id=tenant_id,
-                query_id=query_id,
-                query_vector=embedded_query,
-                similarity_threshold=0.00,
-                limit=chunks_limit,
-            )
-        except ValueError as e:
-            logger.error(f"Error retrieving chunks for query {query_id}: {e!s}")
+        if len(document_ids_to_search) == 0:
+            try:
+                chunks = await self.repository.search_chunks_by_similarity(
+                    tenant_id=tenant_id,
+                    query_id=query_id,
+                    query_vector=embedded_query,
+                    similarity_threshold=0.00,
+                    limit=chunks_limit,
+                )
+            except ValueError as e:
+                logger.error(f"Error retrieving chunks for query {query_id}: {e!s}")
+        else:
+            try:
+                chunks = await self.repository.search_chunks_by_similarity_and_document_ids(
+                    tenant_id=tenant_id,
+                    query_id=query_id,
+                    query_vector=embedded_query,
+                    document_ids=document_ids_to_search,
+                    similarity_threshold=0.00,
+                    limit=chunks_limit,
+                )
+            except ValueError as e:
+                logger.error(f"Error retrieving chunks for query {query_id}: {e!s}")
 
         try:
             msg_result = (await self._generate_answer(query=query, chunks=chunks))["msg"]

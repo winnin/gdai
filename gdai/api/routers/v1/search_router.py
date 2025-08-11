@@ -25,6 +25,7 @@ async def search_query_endpoint(request: SearchRequest, search_service=Depends(g
             tenant_id=request.tenant_id,
             query=request.query_text,
             chunks_limit=request.chunks_limit,
+            document_ids_to_search=request.document_ids or [],
         )
 
         return query_result
