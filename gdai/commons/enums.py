@@ -17,6 +17,11 @@ class DocumentTypeEnum(str, enum.Enum):
     txt = "txt"
 
 
+class ChunkStrategyTypeEnum(str, enum.Enum):
+    sentence = "sentence"
+    paragraph = "paragraph"
+
+
 class ChunkTypeEnum(str, enum.Enum):
     text = "text"
     size = "size"

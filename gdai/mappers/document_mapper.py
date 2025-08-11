@@ -24,6 +24,8 @@ class DocumentMapper:
             status=document.status,
             type=document.type,
             chunk_strategy=document.chunk_strategy,
+            retry_extraction=document.retry_extraction,
+            retry_embedding=document.retry_embedding,
             created_at=document.created_at,
             updated_at=document.updated_at,
         )
@@ -48,6 +50,8 @@ class DocumentMapper:
             status=model.status,
             type=model.type,
             chunk_strategy=model.chunk_strategy,
+            retry_extraction=model.retry_extraction,
+            retry_embedding=model.retry_embedding,
             created_at=model.created_at,
             updated_at=model.updated_at,
             chunks=[],

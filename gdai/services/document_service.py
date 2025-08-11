@@ -12,6 +12,55 @@ from gdai.repositories.base_repository import BaseRepository
 from gdai.schemas import Document
 
 
+class RegisterDocumentService:
+    """Service for registering documents to be processed."""
+
+    def __init__(self, repository: BaseRepository):
+        """Initialize the RegisterDocumentService with a repository.
+
+        Args:
+            repository (BaseRepository): The repository to use for document operations.
+        """
+        self.repository = repository
+
+    async def register_document(self, tenant_id: str, document_name: str, chunk_strategy: str) -> Document:
+        """Register a document to be processed.
+
+        Args:
+            tenant_id (str): The tenant ID.
+            document_name (str): The name of the document file.
+
+        Returns:
+            Document: The registered document object.
+        """
+
+        if not tenant_id:
+            logger.error("Tenant ID is required")
+            raise ValueError("Tenant ID is required")
+
+        if not document_name:
+            logger.error("Document name is required")
+            raise ValueError("Document name is required")
+
+        if not chunk_strategy:
+            logger.error("Chunk strategy is required")
+            raise ValueError("Chunk strategy is required")
+
+        document_type = document_name.split(".")[-1].lower()
+
+        document = Document(
+            name=document_name,
+            tenant_id=tenant_id,
+            status=DocumentStatusEnum.uploaded,
+            type=DocumentTypeEnum[document_type],
+            chunk_strategy=chunk_strategy,
+        )
+
+        document = await self.repository.insert_document(tenant_id, document)
+
+        return document
+
+
 class ExtractDocumentService:
     """Service for extracting text from documents."""
 
@@ -162,13 +211,19 @@ class ExtractDocumentService:
             doc = await self.repository.update_document(tenant_id, doc)
 
         except Exception as e:
-            doc.status = DocumentStatusEnum.extraction_failed
+            doc.retry_extraction += 1
+            if doc.retry_extraction >= Config.extractor.MAX_RETRIES:
+                # change status to extraction failed
+                doc.status = DocumentStatusEnum.extraction_failed
+            else:
+                # if number of retries is less than configure, change status to uploaded again to be try to extract
+                doc.status = DocumentStatusEnum.uploaded
             await self.repository.update_document(tenant_id, doc)
             logger.error(f"Error extracting data from document: {e}")
             raise e
 
 
-class DocumentInformationService:
+class SearchDocumentService:
     """Service for managing document information."""
 
     def __init__(self, repository: BaseRepository):

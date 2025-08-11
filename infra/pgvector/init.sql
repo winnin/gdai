@@ -64,6 +64,8 @@ CREATE TABLE document (
     status documentstatusenum NOT NULL,
     chunk_strategy VARCHAR(64),
     type documenttypeenum NOT NULL,
+    retry_extraction INTEGER DEFAULT 0 CHECK (retry_extraction >= 0),
+    retry_embedding INTEGER DEFAULT 0 CHECK (retry_embedding >= 0),
     created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
     updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL
 );

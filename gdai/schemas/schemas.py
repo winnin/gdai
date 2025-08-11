@@ -19,6 +19,8 @@ class Document(BaseSchema):
     type: DocumentTypeEnum = DocumentTypeEnum.pdf
     chunk_strategy: str
     chunks: list["Chunk"] | None = []
+    retry_extraction: int = 0
+    retry_embedding: int = 0
 
 
 class Chunk(BaseSchema):

@@ -83,6 +83,7 @@ class DocumentModel(Base, BaseModel):
     status = Column(Enum(DocumentStatusEnum), default=DocumentStatusEnum.uploaded)
     type = Column(Enum(DocumentTypeEnum), default=DocumentTypeEnum.pdf)
     chunk_strategy = Column(Text, nullable=True)
-
+    retry_extraction = Column(Integer, default=0)
+    retry_embedding = Column(Integer, default=0)
     # Relationships
     chunks = relationship("ChunkModel", back_populates="document", cascade="all, delete-orphan", collection_class=list)

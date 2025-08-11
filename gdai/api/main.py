@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI
 
+from gdai.api.routers.v1.document_router import router as document_router
 from gdai.api.routers.v1.search_router import router as search_router
 from gdai.background_daemons.embedding_document_daemon import EmbeddingDocumentDaemon
 from gdai.background_daemons.extract_document_daemon import ExtractDocumentDaemon
@@ -17,7 +18,6 @@ logging.getLogger("sqlalchemy.engine").setLevel(logging.ERROR)
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    # Inicialização (antes do yield)
     task1 = asyncio.create_task(ExtractDocumentDaemon().run())
     task2 = asyncio.create_task(EmbeddingDocumentDaemon().run())
 
@@ -44,7 +44,7 @@ app = FastAPI(
 
 # Include the search and document routers
 # app.include_router(search_router)
-# app.include_router(document_router, prefix="/v1", tags=["document"])
+app.include_router(document_router, prefix="/v1", tags=["document"])
 app.include_router(search_router, prefix="/v1", tags=["search"])
 
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import delete, desc, insert, select, update
+from sqlalchemy import delete, desc, insert, or_, select, update
 
 from gdai.commons.enums import QueryStatusEnum, SimilarityTypeEnum
 from gdai.config.sqlalchemy import SessionLocal
@@ -26,7 +26,12 @@ class PGVectorRepository(BaseRepository):
         """Get all documents that are pending extraction."""
         async with SessionLocal() as session:
             try:
-                query = select(DocumentModel).where(DocumentModel.status == "uploaded").order_by(DocumentModel.created_at).limit(limit)
+                query = (
+                    select(DocumentModel)
+                    .where(DocumentModel.status == "uploaded")
+                    .order_by(DocumentModel.created_at)
+                    .limit(limit)
+                )
                 result = await session.execute(query)
                 documents_model = result.scalars().all()
                 if not documents_model:
@@ -64,7 +69,9 @@ class PGVectorRepository(BaseRepository):
 
         async with SessionLocal() as session:
             try:
-                query = select(DocumentModel).where(DocumentModel.tenant_id == tenant_id, DocumentModel.id == uuid.UUID(document_id))
+                query = select(DocumentModel).where(
+                    DocumentModel.tenant_id == tenant_id, DocumentModel.id == uuid.UUID(document_id)
+                )
                 result = await session.execute(query)
                 document_model = result.scalars().first()
                 if not document_model:
@@ -75,11 +82,16 @@ class PGVectorRepository(BaseRepository):
             document = DocumentMapper.to_schema(document_model)
             return document
 
-    async def get_documents_to_embed(self) -> Document:
+    async def get_document_to_embed(self) -> Document:
         """Get a document that is pending embedding."""
         async with SessionLocal() as session:
             try:
-                query = select(DocumentModel).where(DocumentModel.status == "extracted").order_by(DocumentModel.created_at).limit(1)
+                query = (
+                    select(DocumentModel)
+                    .where(or_(DocumentModel.status == "extracted", DocumentModel.status == "embedding"))
+                    .order_by(DocumentModel.created_at)
+                    .limit(1)
+                )
                 result = await session.execute(query)
                 document_model = result.scalars().first()
                 if not document_model:
@@ -139,6 +151,8 @@ class PGVectorRepository(BaseRepository):
                         name=document.name,
                         status=document.status,
                         type=document.type,
+                        retry_extraction=document.retry_extraction,
+                        retry_embedding=document.retry_embedding,
                         chunk_strategy=document.chunk_strategy,
                         updated_at=document.updated_at,
                     )
@@ -197,7 +211,9 @@ class PGVectorRepository(BaseRepository):
         """
         async with SessionLocal() as session:
             try:
-                query = select(ChunkModel).where(ChunkModel.tenant_id == tenant_id, ChunkModel.document_id == document_id)
+                query = select(ChunkModel).where(
+                    ChunkModel.tenant_id == tenant_id, ChunkModel.document_id == document_id
+                )
                 result = await session.execute(query)
                 chunks_model = result.scalars().all()
                 if not chunks_model:
@@ -247,7 +263,9 @@ class PGVectorRepository(BaseRepository):
         """
         async with SessionLocal() as session:
             try:
-                stmt = delete(ChunkModel).where(ChunkModel.tenant_id == tenant_id, ChunkModel.document_id == document_id)
+                stmt = delete(ChunkModel).where(
+                    ChunkModel.tenant_id == tenant_id, ChunkModel.document_id == document_id
+                )
                 await session.execute(stmt)
                 await session.commit()
                 return True
@@ -266,8 +284,16 @@ class PGVectorRepository(BaseRepository):
         """
         async with SessionLocal() as session:
             try:
-                await session.execute(delete(ChunkModel).where(ChunkModel.tenant_id == tenant_id).where(ChunkModel.document_id == document_id))
-                await session.execute(delete(DocumentModel).where(DocumentModel.tenant_id == tenant_id).where(DocumentModel.id == document_id))
+                await session.execute(
+                    delete(ChunkModel)
+                    .where(ChunkModel.tenant_id == tenant_id)
+                    .where(ChunkModel.document_id == document_id)
+                )
+                await session.execute(
+                    delete(DocumentModel)
+                    .where(DocumentModel.tenant_id == tenant_id)
+                    .where(DocumentModel.id == document_id)
+                )
                 await session.commit()
                 return True
             except Exception as e:
@@ -305,7 +331,11 @@ class PGVectorRepository(BaseRepository):
         """
         async with SessionLocal() as session:
             try:
-                stmt = insert(QueryModel).values(tenant_id=tenant_id, query=query, status=QueryStatusEnum.pending, similarity=similarity).returning(QueryModel.id)
+                stmt = (
+                    insert(QueryModel)
+                    .values(tenant_id=tenant_id, query=query, status=QueryStatusEnum.pending, similarity=similarity)
+                    .returning(QueryModel.id)
+                )
                 result = await session.execute(stmt)
                 await session.commit()
                 query_id = result.scalar_one()
@@ -314,7 +344,9 @@ class PGVectorRepository(BaseRepository):
                 await session.rollback()
                 raise ValueError(f"Failed to insert query: {e!s}")
 
-    async def search_chunks_by_similarity(self, tenant_id: str, query_id: str, query_vector: list[float], similarity_threshold: float, limit: int = 10) -> list[ResultChunk]:
+    async def search_chunks_by_similarity(
+        self, tenant_id: str, query_id: str, query_vector: list[float], similarity_threshold: float, limit: int = 10
+    ) -> list[ResultChunk]:
         """Search for chunks similar (by cosine) to a given query using vector similarity.
 
         Args:
@@ -351,7 +383,12 @@ class PGVectorRepository(BaseRepository):
                 if not chunks_model:
                     raise ValueError(f"No chunks found for tenant {tenant_id} with the given similarity threshold.")
 
-                stmt = insert(QueryChunkLinkModel).values([{"query_id": query_id, "chunk_id": chunk.id, "similarity_score": similarity} for chunk, similarity in chunks_model])
+                stmt = insert(QueryChunkLinkModel).values(
+                    [
+                        {"query_id": query_id, "chunk_id": chunk.id, "similarity_score": similarity}
+                        for chunk, similarity in chunks_model
+                    ]
+                )
 
                 await session.execute(stmt)
                 await session.commit()
@@ -400,7 +437,11 @@ class PGVectorRepository(BaseRepository):
         """
         async with SessionLocal() as session:
             try:
-                stmt = select(QueryModel).where(QueryModel.tenant_id == tenant_id).where(QueryModel.id == uuid.UUID(query_id))
+                stmt = (
+                    select(QueryModel)
+                    .where(QueryModel.tenant_id == tenant_id)
+                    .where(QueryModel.id == uuid.UUID(query_id))
+                )
                 result = await session.execute(stmt)
                 query_model = result.scalars().first()
                 if not query_model:

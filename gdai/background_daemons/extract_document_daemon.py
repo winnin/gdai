@@ -1,7 +1,6 @@
 import asyncio
 
 from gdai.chunkers import ChunkerFactory
-from gdai.commons.enums import DocumentTypeEnum
 from gdai.config.logger import logger
 from gdai.config.settings import Config
 from gdai.extractors import ExtractorFactory
@@ -41,10 +40,5 @@ class ExtractDocumentDaemon:
                 logger.info("Batch document extraction completed successfully")
 
             except Exception as e:
-                logger.error(f"Failed to extract documents: {[doc.id for doc in documents]} {e!s}")
-                for document in documents:
-                    document.status = DocumentTypeEnum.extraction_failed
-                    await self.repository.update_document(document.tenant_id, document)
-                    await self.repository.delete_chunks(document.tenant_id, str(document.id))
-
+                logger.error(f"Failed to extract documents: {e!s}")
                 raise
