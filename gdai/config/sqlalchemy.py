@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-from gdai.config.settings import Config
+from gdai.config.config import Config
 
 user = Config.db.PGVECTOR_USER
 password = Config.db.PGVECTOR_PASSWORD
@@ -14,6 +14,6 @@ max_size = Config.db.PGVECTOR_MAX_POOL_CONNECTIONS
 
 DATABASE_URL = f"postgresql+asyncpg://{user}:{password}@{host}:{port}/{database}"
 
-engine = create_async_engine(DATABASE_URL, echo=True, pool_size=min_size, max_overflow=max_size - min_size)
+engine = create_async_engine(DATABASE_URL, echo=False, pool_size=min_size, max_overflow=max_size - min_size)
 SessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 Base = declarative_base()

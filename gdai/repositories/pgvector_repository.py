@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import delete, desc, insert, or_, select, update
+from sqlalchemy import delete, desc, func, insert, or_, select, update
 
 from gdai.commons.enums import QueryStatusEnum, SimilarityTypeEnum
 from gdai.config.sqlalchemy import SessionLocal
@@ -222,6 +222,27 @@ class PGVectorRepository(BaseRepository):
                 return chunks
             except Exception as e:
                 raise ValueError(f"Failed to retrieve chunks: {e!s}")
+
+    async def get_number_of_chunks(self, tenant_id: str, document_id: str) -> int:
+        """Get the number of chunks for a specific document.
+        Args:
+            tenant_id: The ID of the tenant
+            document_id: The ID of the document
+        Returns:
+            int: The number of chunks for the document
+        """
+        async with SessionLocal() as session:
+            try:
+                stmt = (
+                    select(func.count())
+                    .select_from(ChunkModel)
+                    .where(ChunkModel.tenant_id == tenant_id, ChunkModel.document_id == document_id)
+                )
+                result = await session.execute(stmt)
+                count = result.scalar_one() or 0
+                return count or 0
+            except Exception as e:
+                raise ValueError(f"Failed to retrieve number of chunks: {e!s}")
 
     async def update_chunks(self, tenant_id: str, chunks: list[Document]) -> list[Chunk]:
         """Update chunks in the database.

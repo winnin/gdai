@@ -15,11 +15,11 @@ from fastapi import (
     status,
 )
 
-from gdai.api.deps import get_document_insert_service
-from gdai.api.routers.v1.types import DocumentUploadResponse
+from gdai.api.deps import get_document_insert_service, get_search_document_service
+from gdai.api.routers.v1.types import DocumentStatusResponse, DocumentUploadResponse
 from gdai.commons.enums import ChunkStrategyTypeEnum
+from gdai.config.config import ExtractorConfig
 from gdai.config.logger import logger
-from gdai.config.settings import ExtractorConfig
 
 router = APIRouter(prefix="/document", tags=["document"])
 
@@ -79,58 +79,65 @@ async def upload_document(
         )
 
 
-# @router.get("/{tenant_id}", response_model=list[DocumentStatusResponse])
-# async def get_documents(tenant_id: str, document_service=Depends(get_search_document_service)):
-#     """Get all documents for a specific tenant."""
-#     if not tenant_id:
-#         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="tenant_id is required")
+@router.get("/{tenant_id}", response_model=list[DocumentStatusResponse])
+async def get_documents(tenant_id: str, document_service=Depends(get_search_document_service)):
+    """Get all documents for a specific tenant."""
+    if not tenant_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="tenant_id is required")
 
-#     try:
-#         logger.info(f"Retrieving documents for tenant {tenant_id}")
-#         documents = await document_service.get_all_documents(tenant_id=tenant_id)
+    try:
+        logger.info(f"Retrieving documents for tenant {tenant_id}")
+        documents = await document_service.get_all_documents(tenant_id=tenant_id)
 
-#         documents_response = [
-#             DocumentStatusResponse(
-#                 id=str(doc.id),
-#                 name=doc.name,
-#                 tenant_id=tenant_id,
-#                 status=doc.status.value,
-#                 chunk_strategy="sentence",  # Placeholder for actual chunk strategy
-#                 created_at=doc.created_at.strftime("%Y-%m-%dT%H:%M:%S"),
-#                 updated_at=doc.updated_at.strftime("%Y-%m-%dT%H:%M:%S"),
-#             )
-#             for doc in documents
-#         ]
-#         logger.info(f"Retrieved {len(documents_response)} documents for tenant {tenant_id}")
-#         return documents_response
-#     except Exception as e:
-#         logger.error(f"Error retrieving documents: {e!s}")
-#         raise HTTPException(
-#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-#             detail=f"Error retrieving documents: {e!s}",
-#         )
+        documents_response = []
+        for doc in documents:
+            doc_res = DocumentStatusResponse(
+                id=str(doc.id),
+                name=doc.name,
+                tenant_id=tenant_id,
+                status=doc.status.value,
+                chunk_strategy=doc.chunk_strategy,
+                created_at=doc.created_at.strftime("%Y-%m-%dT%H:%M:%S"),
+                updated_at=doc.updated_at.strftime("%Y-%m-%dT%H:%M:%S"),
+            )
+
+            num_chunks = await document_service.get_num_chunks_by_document(tenant_id=tenant_id, document_id=str(doc.id))
+            doc_res.number_of_chunks = num_chunks
+            documents_response += [doc_res]
+
+        logger.info(f"Retrieved {len(documents_response)} documents for tenant {tenant_id}")
+        return documents_response
+    except Exception as e:
+        logger.error(f"Error retrieving documents: {e!s}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving documents: {e!s}",
+        )
 
 
-# @router.get("status/{tenant_id}/{document_id}", response_model=DocumentStatusResponse)
-# async def get_document_status(tenant_id: str, document_id: str, document_service=Depends(get_search_document_service))
-#     """Get the status of a document upload."""
-#     try:
-#         logger.info(f"Retrieving status for document {document_id} in tenant {tenant_id}")
-#         doc = await document_service.get_document_by_id(tenant_id=tenant_id, document_id=document_id)
+@router.get("status/{tenant_id}/{document_id}", response_model=DocumentStatusResponse)
+async def get_document_status(tenant_id: str, document_id: str, document_service=Depends(get_search_document_service)):
+    """Get the status of a document upload."""
+    try:
+        logger.info(f"Retrieving status for document {document_id} in tenant {tenant_id}")
+        doc = await document_service.get_document_by_id(tenant_id=tenant_id, document_id=document_id)
 
-#         response = DocumentStatusResponse(
-#             id=str(doc.id),
-#             name=doc.name,
-#             tenant_id=tenant_id,
-#             status=doc.status.value,
-#             chunk_strategy="sentence",  # Placeholder for actual chunk strategy
-#             created_at=doc.created_at.strftime("%Y-%m-%dT%H:%M:%S"),
-#             updated_at=doc.updated_at.strftime("%Y-%m-%dT%H:%M:%S"),
-#         )
-#         return response
-#     except Exception as e:
-#         logger.error(f"Error retrieving document status: {e!s}")
-#         raise HTTPException(
-#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-#             detail=f"Error retrieving document status: {e!s}",
-#         )
+        response = DocumentStatusResponse(
+            id=str(doc.id),
+            name=doc.name,
+            tenant_id=tenant_id,
+            status=doc.status.value,
+            chunk_strategy=doc.chunk_strategy,
+            created_at=doc.created_at.strftime("%Y-%m-%dT%H:%M:%S"),
+            updated_at=doc.updated_at.strftime("%Y-%m-%dT%H:%M:%S"),
+        )
+        num_chunks = await document_service.get_num_chunks_by_document(tenant_id=tenant_id, document_id=document_id)
+        response.number_of_chunks = num_chunks
+
+        return response
+    except Exception as e:
+        logger.error(f"Error retrieving document status: {e!s}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving document status: {e!s}",
+        )

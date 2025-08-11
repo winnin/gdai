@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 from contextlib import asynccontextmanager
 
 import uvicorn
@@ -11,9 +10,6 @@ from gdai.api.routers.v1.document_router import router as document_router
 from gdai.api.routers.v1.search_router import router as search_router
 from gdai.background_daemons.embedding_document_daemon import EmbeddingDocumentDaemon
 from gdai.background_daemons.extract_document_daemon import ExtractDocumentDaemon
-
-logging.getLogger("sqlalchemy").setLevel(logging.ERROR)
-logging.getLogger("sqlalchemy.engine").setLevel(logging.ERROR)
 
 
 @asynccontextmanager

@@ -1,4 +1,4 @@
-from gdai.config.settings import Config
+from gdai.config.config import Config
 
 from .base_repository import BaseRepository  # noqa: F401
 

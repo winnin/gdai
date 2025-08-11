@@ -4,8 +4,8 @@ import os
 
 from gdai.chunkers.base_chunker import BaseChunker
 from gdai.commons.enums import DocumentStatusEnum, DocumentTypeEnum
+from gdai.config.config import Config
 from gdai.config.logger import logger
-from gdai.config.settings import Config
 from gdai.extractors.base_extractor import DocumentExtractor
 from gdai.mappers.chunk_mapper import RawChunkerMapper
 from gdai.repositories.base_repository import BaseRepository
@@ -271,3 +271,25 @@ class SearchDocumentService:
 
         document = await self.repository.get_document(tenant_id, document_id)
         return document
+
+    async def get_num_chunks_by_document(self, tenant_id: str, document_id: str) -> list[str]:
+        """Get chunks of a document by its ID for a specific tenant.
+
+        Args:
+            tenant_id (str): The tenant ID.
+            document_id (str): The document ID.
+
+        Returns:
+            list[str]: The list of chunks for the document.
+
+        Raises:
+            ValueError: If the tenant ID or document ID is not provided.
+        """
+
+        if not tenant_id:
+            raise ValueError("Tenant ID is required")
+        if not document_id:
+            raise ValueError("Document ID is required")
+
+        num_chunks = await self.repository.get_number_of_chunks(tenant_id, document_id)
+        return num_chunks

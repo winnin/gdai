@@ -1,8 +1,8 @@
 import asyncio
 
 from gdai.chunkers import ChunkerFactory
+from gdai.config.config import Config
 from gdai.config.logger import logger
-from gdai.config.settings import Config
 from gdai.extractors import ExtractorFactory
 from gdai.repositories import RepositoryFactory
 from gdai.services.document_service import ExtractDocumentService

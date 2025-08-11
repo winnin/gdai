@@ -44,5 +44,6 @@ class DocumentStatusResponse(BaseModel):
     status: str
     tenant_id: str
     chunk_strategy: str = Field()
+    number_of_chunks: int = Field(default=0)
     created_at: datetime.datetime
     updated_at: datetime.datetime

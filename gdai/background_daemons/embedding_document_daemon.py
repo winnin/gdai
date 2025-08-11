@@ -1,8 +1,8 @@
 import asyncio
 
 from gdai.commons.enums import DocumentStatusEnum
+from gdai.config.config import Config
 from gdai.config.logger import logger
-from gdai.config.settings import Config
 from gdai.embeddings import EmbeddingFactory
 from gdai.repositories import RepositoryFactory
 from gdai.services.embedding_service import EmbeddingDocumentChunksService

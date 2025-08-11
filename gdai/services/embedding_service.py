@@ -5,8 +5,8 @@ from __future__ import annotations
 import asyncio
 
 from gdai.commons.enums import DocumentStatusEnum
+from gdai.config.config import Config
 from gdai.config.logger import logger
-from gdai.config.settings import Config
 from gdai.embeddings.base_embedding import EmbeddingModel
 from gdai.repositories.base_repository import BaseRepository
 
