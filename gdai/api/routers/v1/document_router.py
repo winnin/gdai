@@ -17,9 +17,9 @@ from fastapi import (
 
 from gdai.api.deps import get_document_insert_service, get_search_document_service
 from gdai.api.routers.v1.types import DocumentStatusResponse, DocumentUploadResponse
+from gdai.commons.config import ExtractorConfig
 from gdai.commons.enums import ChunkStrategyTypeEnum
-from gdai.config.config import ExtractorConfig
-from gdai.config.logger import logger
+from gdai.commons.logger import logger
 
 router = APIRouter(prefix="/document", tags=["document"])
 

@@ -7,7 +7,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
 from gdai.commons.enums import ChunkTypeEnum, DocumentStatusEnum, DocumentTypeEnum, QueryStatusEnum, SimilarityTypeEnum
-from gdai.config.sqlalchemy import Base
+from gdai.repositories.sqlalchemy import Base
 
 
 class BaseModel:

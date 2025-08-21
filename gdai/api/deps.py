@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from fastapi import HTTPException, status
 
-from gdai.config.logger import logger
+from gdai.commons.logger import logger
 from gdai.embeddings import EmbeddingFactory
 from gdai.llms import LLMFactory
 from gdai.repositories import RepositoryFactory

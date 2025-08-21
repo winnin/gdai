@@ -26,6 +26,7 @@ dependencies = [
     "sqlalchemy>=2.0.41",
     "streamlit>=1.44.0",
     "taskipy>=1.14.1",
+    "temporalio>=1.15.0",
     "types-aiofiles>=24.1.0.20250606",
 ]
 

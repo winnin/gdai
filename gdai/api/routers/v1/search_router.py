@@ -5,7 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from gdai.api.deps import get_search_service
-from gdai.config.logger import logger
+from gdai.commons.logger import logger
 
 from .types import SearchRequest
 

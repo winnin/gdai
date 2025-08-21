@@ -7,12 +7,12 @@ import uuid
 from sqlalchemy import delete, desc, func, insert, or_, select, update
 
 from gdai.commons.enums import QueryStatusEnum, SimilarityTypeEnum
-from gdai.config.sqlalchemy import SessionLocal
 from gdai.mappers import ChunkMapper, DocumentMapper
 from gdai.mappers.query_mapper import QueryMapper
 from gdai.mappers.result_chunk_mapper import ResultChunkMapper
 from gdai.repositories.base_repository import BaseRepository
 from gdai.repositories.models import ChunkModel, DocumentModel, QueryChunkLinkModel, QueryModel
+from gdai.repositories.sqlalchemy import SessionLocal
 from gdai.schemas import Chunk, Document, Query, ResultChunk
 
 
