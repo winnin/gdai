@@ -75,39 +75,28 @@ class DatabaseConfig(ConfigComponent):
         return True
 
 
-class AIModelsConfig(ConfigComponent):
+class LLMConfig(ConfigComponent):
     """AI models configuration."""
 
-    # Embedding model settings
-    EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "cohere/embed-v4.0")
-    EMBEDDING_MODEL_API_KEY = os.getenv("EMBEDDING_API_KEY")
-
-    # LLM model settings
-    LLM_MODEL = os.getenv("SEARCH_LLM_MODEL", "openai/gpt-4o")
-    LLM_MODEL_API_KEY = os.getenv("SEARCH_LLM_API_KEY")
-    LLM_MAX_TOKENS = int(os.getenv("SEARCH_LLM_MAX_TOKENS", "1000"))
-    LLM_TEMPERATURE = float(os.getenv("SEARCH_LLM_TEMPERATURE", "0.7"))
+    LLM_MODEL = os.getenv("LLM_MODEL", "openai/gpt-4o")
+    LLM_MODEL_API_KEY = os.getenv("LLM_API_KEY")
+    LLM_MAX_TOKENS = int(os.getenv("LLM_MAX_TOKENS", "1000"))
+    LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "0.7"))
 
     @classmethod
     def validate(cls) -> bool:
         """Validates the AI models configuration."""
-        if not cls.EMBEDDING_MODEL:
-            logger.error("EMBEDDING_MODEL is not set")
-            return False
-        if not cls.EMBEDDING_MODEL_API_KEY:
-            logger.error("EMBEDDING_API_KEY is not set")
-            return False
         if not cls.LLM_MODEL:
-            logger.error("SEARCH_LLM_MODEL is not set")
+            logger.error("LLM_MODEL is not set")
             return False
         if not cls.LLM_MODEL_API_KEY:
-            logger.error("SEARCH_LLM_API_KEY is not set")
+            logger.error("LLM_API_KEY is not set")
             return False
         if cls.LLM_MAX_TOKENS <= 0:
-            logger.error("SEARCH_LLM_MAX_TOKENS must be positive")
+            logger.error("LLM_MAX_TOKENS must be positive")
             return False
         if not (0 <= cls.LLM_TEMPERATURE <= 1.0):
-            logger.error("SEARCH_LLM_TEMPERATURE must be between 0.0 and 1.0")
+            logger.error("LLM_TEMPERATURE must be between 0.0 and 1.0")
             return False
 
         return True
@@ -116,16 +105,16 @@ class AIModelsConfig(ConfigComponent):
 class ExtractorConfig(ConfigComponent):
     """Document extractor configuration."""
 
-    FOLDER_RAW_DOC_PATH = os.getenv("DOCUMENT_EXTRACTOR_FOLDER_SOURCE_PATH")
-    MAX_FILE_SIZE_MB = int(os.getenv("DOCUMENT_EXTRACTOR_MAX_FILE_SIZE_MB", "100"))
-    MAX_RETRIES = int(os.getenv("DOCUMENT_EXTRACTOR_MAX_RETRIES", "3"))
-    BATCH_SIZE = int(os.getenv("DOCUMENT_EXTRACT_BATCH_SIZE", "10"))
+    FOLDER_RAW_DOC_PATH = os.getenv("EXTRACTOR_FOLDER_SOURCE_PATH")
+    MAX_FILE_SIZE_MB = int(os.getenv("EXTRACTOR_MAX_FILE_SIZE_MB", "100"))
+    MAX_RETRIES = int(os.getenv("EXTRACTOR_MAX_RETRIES", "3"))
+    SUPPORTED_EXTENSIONS = os.getenv("EXTRACTOR_EXTENSIONS").split(",")
 
     @classmethod
     def validate(cls) -> bool:
         """Validates the document extractor configuration."""
         if not cls.FOLDER_RAW_DOC_PATH:
-            logger.error("DOCUMENT_EXTRACTOR_FOLDER_RAW_DOC_PATH is not set")
+            logger.error("EXTRACTOR_FOLDER_RAW_DOC_PATH is not set")
             return False
 
         raw_path = Path(cls.FOLDER_RAW_DOC_PATH)
@@ -143,7 +132,7 @@ class ExtractorConfig(ConfigComponent):
             logger.error("MAX_FILE_SIZE_MB must be a positive value")
             return False
         if cls.MAX_RETRIES < 0:
-            logger.error("DOCUMENT_EXTRACTOR_MAX_RETRIES must be a non-negative value")
+            logger.error("EXTRACTOR_MAX_RETRIES must be a non-negative value")
             return False
 
         return True
@@ -172,25 +161,6 @@ class EmbeddingConfig(ConfigComponent):
         return True
 
 
-class SearchConfig(ConfigComponent):
-    """Search service configuration."""
-
-    LLM_MAX_TOKENS = int(os.getenv("SEARCH_LLM_MAX_TOKENS") or 0)
-    LLM_TEMPERATURE = float(os.getenv("SEARCH_LLM_TEMPERATURE") or 0.0)
-
-    @classmethod
-    def validate(cls) -> bool:
-        """Validates the search configuration."""
-        if cls.LLM_MAX_TOKENS < 0:
-            logger.error("SEARCH_MAX_RETRIES must be a non-negative value")
-            return False
-        if cls.LLM_TEMPERATURE < 0:
-            logger.error("SEARCH_RETRY_DELAY must be a non-negative value")
-            return False
-
-        return True
-
-
 class Config:
     """Main configuration class that groups all components.
 
@@ -200,19 +170,16 @@ class Config:
 
     # Configuration components
     db = DatabaseConfig
-
-    ai = AIModelsConfig
+    llm = LLMConfig
     extractor = ExtractorConfig
     embedding = EmbeddingConfig
-    search = SearchConfig
 
     # Add this dictionary to map component names to their configuration classes
     _components = {
         "db": DatabaseConfig,
-        "ai": AIModelsConfig,
+        "llm": LLMConfig,
         "extractor": ExtractorConfig,
         "embedding": EmbeddingConfig,
-        "search": SearchConfig,
     }
 
     @classmethod

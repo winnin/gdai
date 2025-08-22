@@ -11,17 +11,6 @@ class DocumentStatusEnum(str, enum.Enum):
     embedding_failed = "embedding_failed"
 
 
-class DocumentTypeEnum(str, enum.Enum):
-    pdf = "pdf"
-    docx = "docx"
-    txt = "txt"
-
-
-class ChunkStrategyTypeEnum(str, enum.Enum):
-    sentence = "sentence"
-    paragraph = "paragraph"
-
-
 class ChunkTypeEnum(str, enum.Enum):
     text = "text"
     size = "size"
@@ -33,8 +22,3 @@ class QueryStatusEnum(str, enum.Enum):
     pending = "pending"
     completed = "completed"
     failed = "failed"
-
-
-class SimilarityTypeEnum(str, enum.Enum):
-    cosine = "cosine"
-    euclidean = "euclidean"

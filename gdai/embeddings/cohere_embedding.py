@@ -1,0 +1,86 @@
+import cohere
+import numpy as np
+
+from gdai.embeddings.base_embedding import EmbeddingModel
+
+
+class CohereEmbeddingModel(EmbeddingModel):
+    """A specific implementation of the EmbeddingModel that uses the Cohere API.
+
+    Attributes:
+        model (str): The name of the Cohere embedding model.
+        api_key (str): The API key for the Cohere service.
+        cohere (cohere.Client): The Cohere client instance.
+        SEARCH_DOCUMENT_TYPE (str): The input type for the embedding model.
+    """
+
+    def __init__(self):
+        """Initialize the Cohere embedding model."""
+        self.model = "embed-v4.0"
+        model_name = f"cohere/{self.model}"
+        super().__init__(model_name)
+        self.cohere = None
+        self.SEARCH_DOCUMENT_TYPE = "search_query"
+        self.api_key: str = ""
+
+    @staticmethod
+    async def create(api_key: str):
+        """Create a CohereEmbeddingModel instance with the provided API key.
+
+        Args:
+            api_key (str): The API key for Cohere.
+
+        Returns:
+            CohereEmbeddingModel: The created embedding model instance.
+        """
+        embedding_model = CohereEmbeddingModel()
+        embedding_model.api_key = api_key or ""
+        embedding_model.cohere = cohere.AsyncClient(api_key=embedding_model.api_key)
+        return embedding_model
+
+    def normalize_embedding(self, embedding: list[float]) -> list[float]:
+        """Normalize the embedding vector to unit length.
+
+        Args:
+            embedding (list[float]): The embedding vector to normalize.
+
+        Returns:
+            list[float]: The normalized embedding vector.
+        """
+        norm = np.linalg.norm(embedding)
+        if norm == 0:
+            return embedding
+        return (np.array(embedding) / norm).tolist()
+
+    async def generate_texts_embeddings(self, texts: list[str]) -> list[list[float]]:
+        """Generate embeddings for multiple texts using the Cohere API.
+
+        Args:
+            texts (list[str]): A list of input texts. The maximum number of texts is 96
+
+        Returns:
+            list[list[float]]: A list of embedding vectors for the input texts.
+
+        Raises:
+            Exception: If the API call fails.
+        """
+
+        if not texts:
+            raise ValueError("The list of texts cannot be empty.")
+
+        if any(not text.strip() for text in texts):
+            raise ValueError("The texts cannot be empty strings.")
+
+        if len(texts) > 96:
+            raise ValueError("The maximum number of texts is 96.")
+
+        try:
+            res = await self.cohere.embed(
+                texts=texts,
+                model=self.model,
+                input_type=self.SEARCH_DOCUMENT_TYPE,
+                embedding_types=["float"],
+            )
+            return [self.normalize_embedding(embedding) for embedding in res.embeddings.float_]
+        except Exception as e:
+            raise Exception(f"Failed to generate embeddings for texts: {e}") from e

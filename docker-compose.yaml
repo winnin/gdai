@@ -1,4 +1,24 @@
 services:
+  minio:
+    container_name: minio
+    image: quay.io/minio/minio:latest
+    ports:
+      - "9000:9000" # MinIO S3 API port
+      - "9001:9001" # MinIO Console/UI port
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio_data:/data # Persist data to a local directory
+    command: server /data --console-address ":9001"
+
+  temporal:
+    image: temporalio/temporal:latest
+    command: ["server", "start-dev", "--ip", "0.0.0.0"]
+    ports:
+      - "7233:7233" # Main Temporal service port
+      - "8233:8233" # Temporal UI
+
   pgvector:
     image: ankane/pgvector:latest
     hostname: pgvector
@@ -17,6 +37,7 @@ services:
 
 volumes:
   pgvector_data:
+  minio_data:
 
 networks:
   app_network:
