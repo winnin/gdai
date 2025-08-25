@@ -7,9 +7,14 @@ from gdai.commons.logger import logger
 from gdai.temporal.schemas import RawDocument
 
 
-class ValidateDocumentActivity:
+class DocumentValidatorActivity:
     @activity.defn
-    async def validate(self, document_path: str) -> RawDocument:
+    async def validate(self, tenant_id: str, document_path: str) -> RawDocument:
+        # validate tenant_id
+        if not tenant_id or not isinstance(tenant_id, str):
+            logger.error("Invalid tenant_id provided")
+            raise ValueError("Invalid tenant_id provided")
+
         # check if document exists
         if not os.path.exists(document_path):
             logger.error(f"Document file does not exist: {document_path}")

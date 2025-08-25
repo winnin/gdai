@@ -5,9 +5,9 @@ from gdai.commons.logger import logger
 from gdai.temporal.schemas import RawDocument
 
 
-class ExtractDocument:
+class DocumentExtractorActivity:
     @activity.defn
-    async def extract_document_text_activity(self, tenant_id: str, document_path: str) -> RawDocument:
+    async def extract(self, tenant_id: str, document_path: str) -> RawDocument:
         # get document extension
         document_extension = document_path.split(".")[-1].lower()
 
