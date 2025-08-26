@@ -9,11 +9,16 @@ from gdai.temporal.schemas import RawDocument
 
 class DocumentValidatorActivity:
     @activity.defn
-    async def validate(self, tenant_id: str, document_path: str) -> RawDocument:
+    async def validate(self, tenant_id: str, chunk_strategy: str, document_path: str) -> RawDocument:
         # validate tenant_id
         if not tenant_id or not isinstance(tenant_id, str):
             logger.error("Invalid tenant_id provided")
             raise ValueError("Invalid tenant_id provided")
+
+        # validate chunk strategy
+        if chunk_strategy not in Config.chunker.SUPPORTED_STRATEGIES:
+            logger.error(f"Unsupported chunk strategy: {chunk_strategy}")
+            raise ValueError(f"Unsupported chunk strategy: {chunk_strategy}")
 
         # check if document exists
         if not os.path.exists(document_path):

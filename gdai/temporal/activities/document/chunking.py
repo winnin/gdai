@@ -1,8 +1,15 @@
-# class DocumentChunkerActivity:
-#     @activity.defn
-#     async def chunk(self, raw_document: RawDocument) -> list[DocumentChunk]:
+from temporalio import activity
 
-#         # verify chunk strategy
+from gdai.chunkers import ChunkerFactory
+from gdai.temporal.schemas import DocumentChunk, RawDocument
 
 
-#         chunker = ChunkerFactory.get_chunker(chunker_type=document.chunk_strategy)
+class DocumentChunkerActivity:
+    @activity.defn
+    async def chunk(self, chunk_strategy, raw_document: RawDocument) -> list[DocumentChunk]:
+        # verify chunk strategy
+
+        _ = ChunkerFactory.get_chunker(chunker_type=chunk_strategy)
+
+        only_text_by_page = [item[1] for item in raw_document.texts]
+        raw_document.texts = self.chunker.chunk(only_text_by_page)
