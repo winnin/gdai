@@ -1,23 +1,37 @@
-from __future__ import annotations
+import asyncio
+import traceback
+import uuid
 
-from gdai.background_daemons.embedding_background_task import embedding_document
+from temporalio.client import Client, WorkflowFailureError
+
+from gdai.temporal.extract_document.schema import DocumentExtracInput
+from gdai.temporal.extract_document.workflow import DocumentExtractionWorkflow
+
+
+async def main() -> None:
+    # Create client connected to server at the given address
+    client: Client = await Client.connect("localhost:7233")
+
+    input = DocumentExtracInput(
+        document_path="/home/fabricio/Desktop/data/senhor_dos_aneis.pdf",
+        chunk_strategy="sentence",
+        tenant_id="tenant_123",
+    )
+
+    try:
+        result = await client.execute_workflow(
+            DocumentExtractionWorkflow.run,
+            input,
+            id=f"test_extract_document_{uuid.uuid4()}",
+            task_queue="process-document-queue",
+        )
+
+        print(f"Result: {result}")
+
+    except WorkflowFailureError as e:
+        print("Got expected exception: ", traceback.format_exc())
+        raise e
+
 
 if __name__ == "__main__":
-    pass
-    # Example usage
-    document_data = {
-        "document_path": "/home/fabricio/projects/g-dai/DOC_FOLDER/bucefalo/senhor_dos_aneis.pdf",
-        "tenant_id": "bucefalo",
-    }
-    # document_data = {"document_name": "senhor_dos_aneis.pdf", "tenant_id": "tenant_321"}
-    # document_data = {"document_name": "document.pdf", "tenant_id": "tenant_321"}
-    # document_extractor(document_data)
-    # document_extractor.send(document_data)
-    # embedding_document(
-    #    {
-    #        "tenant_id": "jogorpg",
-    #        "document_id": "883a6902-5b81-4c6a-9b41-23a6cb23c054",
-    #    }
-    # )
-    # embedding_document({"document_name": "arte_guerra.pdf.json"})
-    embedding_document({"tenant_id": "bucefalo", "document_id": "d0890b4f-e3df-48b6-8a11-07da7056b20a"})
+    asyncio.run(main())

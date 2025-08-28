@@ -2,10 +2,8 @@ from __future__ import annotations
 
 import pymupdf
 
-from gdai.commons.enums import DocumentTypeEnum
 from gdai.commons.logger import logger
 from gdai.extractors.base_extractor import DocumentExtractor
-from gdai.schemas import RawDocument
 
 
 class PDFExtractor(DocumentExtractor):
@@ -14,7 +12,7 @@ class PDFExtractor(DocumentExtractor):
     def __init__(self):
         super().__init__()
 
-    def extract_document_data(self, tenant_id: str, document_path: str) -> RawDocument:
+    def extract_document_data(self, document_path: str) -> dict:
         """Extract text, tables, and images from a PDF document."""
         try:
             # Open the PDF document
@@ -27,18 +25,9 @@ class PDFExtractor(DocumentExtractor):
 
             # Close the document
             pdf_document.close()
-            # Create a RawDocument instance with the extracted data
-            raw_document = RawDocument(
-                name=document_path.split("/")[-1],
-                path=document_path,
-                tenant_id=tenant_id,
-                type=DocumentTypeEnum.pdf,
-                texts=texts,
-                tables=tables,
-                images=images,
-            )
+            result = {"texts": texts, "tables": tables, "images": images}
 
-            return raw_document
+            return result
 
         except Exception as e:
             logger.error(f"Error extracting data from {document_path}: {e!s}")

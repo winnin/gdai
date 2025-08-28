@@ -1,8 +1,6 @@
 from abc import ABC, abstractmethod
 
-from gdai.commons.enums import SimilarityTypeEnum
-from gdai.schemas import Chunk, Document
-from gdai.schemas.schemas import Query
+from .models import ChunkModel, DocumentModel, QueryModel
 
 
 class BaseRepository(ABC):
@@ -16,162 +14,175 @@ class BaseRepository(ABC):
         pass
 
     @abstractmethod
-    async def get_all_documents(self, tenant_id: str) -> list[Document]:
-        """Get all documents for a specific tenant.
+    async def get_all_documents(self, tenant_id: str) -> list[DocumentModel]:
+        """Retrieve all documents for a specific tenant.
 
         Args:
-            tenant_id: The ID of the tenant
+            tenant_id: The ID of the tenant whose documents to retrieve.
 
         Returns:
-            list[Document]: A list of Document models
+            list[DocumentModel]: List of document models belonging to the tenant.
+
+        Raises:
+            ValueError: If there's an error retrieving the documents.
         """
         pass
 
     @abstractmethod
-    async def get_document(self, tenant_id: str, document_id: str) -> Document:
-        """Get a document by tenant ID and document ID.
+    async def get_document(self, tenant_id: str, document_id: str) -> DocumentModel:
+        """Retrieve a specific document by ID for a tenant.
 
         Args:
-            tenant_id: The ID of the tenant
-            document_id: The ID of the document
+            tenant_id: The ID of the tenant.
+            document_id: The ID of the document to retrieve.
+
         Returns:
-            Document: The retrieved document
+            DocumentModel: The requested document.
+
+        Raises:
+            ValueError: If the document is not found or there's an error retrieving it.
         """
         pass
 
     @abstractmethod
-    async def insert_document(self, tenant_id: str, document: Document) -> Document:
+    async def insert_document(self, document: DocumentModel) -> None:
         """Insert a new document into the database.
 
         Args:
-            document: The Document model to insert
+            document: The document model to insert.
 
-        Returns:
-            Document: The inserted document with updated IDs
+        Raises:
+            ValueError: If there's an error inserting the document.
         """
         pass
 
     @abstractmethod
-    async def update_document(self, tenant_id: str, document: Document) -> Document:
-        """Update a document in the database.
+    async def delete_document(self, tenant_id: str, document_id: str) -> None:
+        """Delete a specific document by ID for a tenant.
 
         Args:
-            document: The Document model to update
+            tenant_id: The ID of the tenant.
+            document_id: The ID of the document to delete.
 
-        Returns:
-            Document: The updated document
+        Raises:
+            ValueError: If there's an error deleting the document.
         """
         pass
 
     @abstractmethod
-    async def insert_chunks(self, tenant_id: str, document_id: str, chunks: list[Chunk]) -> list[Chunk]:
-        """Insert chunks for a specific document.
+    async def insert_chunks(self, chunks: list[ChunkModel]) -> None:
+        """Insert multiple chunks into the database in batches.
 
         Args:
-            tenant_id: The ID of the tenant
-            document_id: The ID of the document
-            chunks: A list of Chunk models to insert
+            chunks: List of chunk models to insert.
 
-        Returns:
-            list[Chunk]: The inserted chunks with updated IDs
+        Raises:
+            ValueError: If there's an error inserting the chunks.
         """
         pass
 
     @abstractmethod
-    async def get_chunks(self, tenant_id: str, document_id: str) -> list[Document]:
-        """Get all chunks for a specific document.
+    async def get_chunks(self, tenant_id: str, document_id: str) -> list[ChunkModel]:
+        """Retrieve all chunks for a specific document of a tenant.
 
         Args:
-            tenant_id: The ID of the tenant
-            document_id: The ID of the document
+            tenant_id: The ID of the tenant.
+            document_id: The ID of the document whose chunks to retrieve.
 
         Returns:
-            list[Document]: The list of document chunks
+            list[ChunkModel]: List of chunk models belonging to the document.
+
+        Raises:
+            ValueError: If no chunks are found or there's an error retrieving them.
         """
         pass
 
     @abstractmethod
-    async def update_chunks(self, tenant_id: str, chunks: list[Document]) -> list[Chunk]:
-        """Update chunks in the database.
+    async def delete_chunks(self, tenant_id: str, document_id: str) -> None:
+        """Delete all chunks for a specific document of a tenant.
 
         Args:
-            chunks: A list of Document models to update
+            tenant_id: The ID of the tenant.
+            document_id: The ID of the document whose chunks to delete.
 
-        Returns:
-            list[Chunk]: The updated chunks
+        Raises:
+            ValueError: If there's an error deleting the chunks.
         """
         pass
 
     @abstractmethod
-    async def delete_document_and_chunks(self, tenant_id: str, document_id: str) -> bool:
-        """Delete a document and its associated chunks from the database.
+    async def insert_query(self, query: QueryModel) -> None:
+        """Insert a new query into the database.
 
         Args:
-            document_id: The ID of the document to delete
+            query: The query model to insert.
 
-        Returns:
-            bool: True if deletion was successful, False otherwise
-        """
-        pass
-
-    @abstractmethod
-    async def delete_tenant_content(self, tenant_id: str) -> bool:
-        """Remove all content for a specific tenant.
-
-        Args:
-            tenant_id: The ID of the tenant whose content should be removed
-        """
-        pass
-
-    @abstractmethod
-    async def insert_query(self, tenant_id: str, query: str, similarity: SimilarityTypeEnum) -> str:
-        """Insert a query into the database.
-
-        Args:
-            tenant_id: The ID of the tenant
-            query: The query string to insert
-
-        Returns:
-            str: The ID of the inserted query
+        Raises:
+            ValueError: If there's an error inserting the query.
         """
         pass
 
     @abstractmethod
     async def search_chunks_by_similarity(
-        self, tenant_id: str, query_vector: list[float], similarity: SimilarityTypeEnum, limit: int = 10
-    ) -> list[Chunk]:
-        """Search for chunks based on similarity to a query.
+        self, tenant_id: str, query_id: str, query_vector: list[float], similarity_threshold: float, limit: int = 10
+    ) -> list[tuple[ChunkModel, float]]:
+        """Search for chunks by vector similarity across all documents for a tenant.
 
         Args:
-            tenant_id: The ID of the tenant
-            query: The query string to search for
-            similarity: The type of similarity to use for the search
-            limit: The maximum number of results to return
+            tenant_id: The ID of the tenant to search within.
+            query_id: The ID of the query being performed.
+            query_vector: The embedding vector to compare against chunks.
+            similarity_threshold: The minimum similarity score (0-1) for returned results.
+            limit: The maximum number of results to return.
 
         Returns:
-            list[Chunk]: A list of chunks that match the query
+            list[tuple[ChunkModel, float]]: List of tuples containing chunks and their similarity scores.
+
+        Raises:
+            ValueError: If no chunks meet the similarity threshold or there's an error.
         """
         pass
 
     @abstractmethod
-    async def update_query(self, query_id: str, query: Query) -> None:
-        """Update an existing query in the database.
+    async def search_chunks_by_similarity_and_document_ids(
+        self,
+        tenant_id: str,
+        query_id: str,
+        query_vector: list[float],
+        document_ids: list[str],
+        similarity_threshold: float,
+        limit: int = 10,
+    ) -> list[tuple[ChunkModel, float]]:
+        """Search for chunks by vector similarity within specific documents.
 
         Args:
-            query_id: The ID of the query to update
-            query: The new query string
+            tenant_id: The ID of the tenant to search within.
+            query_id: The ID of the query being performed.
+            query_vector: The embedding vector to compare against chunks.
+            document_ids: List of document IDs to restrict the search to.
+            similarity_threshold: The minimum similarity score (0-1) for returned results.
+            limit: The maximum number of results to return.
+
+        Returns:
+            list[tuple[ChunkModel, float]]: List of tuples containing chunks and their similarity scores.
+
+        Raises:
+            ValueError: If no chunks meet the criteria or there's an error.
         """
         pass
 
     @abstractmethod
-    async def get_query(self, tenant_id: str, query_id: str) -> Query:
-        """Retrieve a query by its ID.
+    async def get_query(self, tenant_id: str, query_id: str) -> QueryModel:
+        """Retrieve a specific query by ID for a tenant.
 
         Args:
-            tenant_id: The ID of the tenant
-            query_id: The ID of the query to retrieve
+            tenant_id: The ID of the tenant.
+            query_id: The ID of the query to retrieve.
 
         Returns:
-            Query: The retrieved query
+            QueryModel: The requested query.
+
+        Raises:
+            ValueError: If the query is not found or there's an error retrieving it.
         """
         pass

@@ -30,7 +30,6 @@ services:
       - POSTGRES_USER=testuser
       - POSTGRES_PASSWORD=testpwd
     volumes:
-      - ./infra/pgvector/init.sql:/docker-entrypoint-initdb.d/init.sql
       - pgvector_data:/var/lib/postgresql/data
     networks:
       - app_network

@@ -29,6 +29,7 @@ dependencies = [
     "taskipy>=1.14.1",
     "temporalio>=1.15.0",
     "types-aiofiles>=24.1.0.20250606",
+    "unidecode>=1.4.0",
 ]
 
 
@@ -37,7 +38,7 @@ test = ["pytest>=8.4.0", "pytest-cov>=6.2.1", "pre-commit>=4.2.0", "pytest-async
 
 
 [tool.ruff]
-line-length = 120
+line-length = 180
 target-version = "py310"
 
 [tool.ruff.lint]
@@ -62,6 +63,10 @@ asyncio_default_fixture_loop_scope = "function"
 
 
 [tool.taskipy.tasks]
+
 configure-dev = { cmd = "uv sync --all-groups & pre-commit install & pre-commit install --hook-type pre-push", help = "Configure the environment" }
+reset-db = { cmd = "python -m gdai.repositories.db_setup reset", help = "Reset the database (DANGER: This will delete all data!)" }
+setup-db = { cmd = "python -m gdai.repositories.db_setup setup", help = "Setup the database (create tables)" }
+
 run = { cmd = "uv run python -m gdai.api.main", help = "Run the FastAPI application" }
 tests = { cmd = "pytest", help = "Run all unit tests" }

@@ -105,28 +105,27 @@ class LLMConfig(ConfigComponent):
 class ExtractorConfig(ConfigComponent):
     """Document extractor configuration."""
 
-    FOLDER_RAW_DOC_PATH = os.getenv("EXTRACTOR_FOLDER_SOURCE_PATH")
+    TMP_FOLDER = os.getenv("EXTRACTOR_TMP_FOLDER")
     MAX_FILE_SIZE_MB = int(os.getenv("EXTRACTOR_MAX_FILE_SIZE_MB", "100"))
     MAX_RETRIES = int(os.getenv("EXTRACTOR_MAX_RETRIES", "3"))
-    SUPPORTED_EXTENSIONS = os.getenv("EXTRACTOR_EXTENSIONS").split(",")
 
     @classmethod
     def validate(cls) -> bool:
         """Validates the document extractor configuration."""
-        if not cls.FOLDER_RAW_DOC_PATH:
-            logger.error("EXTRACTOR_FOLDER_RAW_DOC_PATH is not set")
+        if not cls.TMP_FOLDER:
+            logger.error("EXTRACTOR_TMP_FOLDER is not set")
             return False
 
-        raw_path = Path(cls.FOLDER_RAW_DOC_PATH)
+        raw_path = Path(cls.TMP_FOLDER)
         if not raw_path.exists():
-            logger.warning(f"Raw documents directory does not exist: {cls.FOLDER_RAW_DOC_PATH}")
-            # Try to create the directory
+            logger.warning(f"Raw documents directory does not exist: {cls.TMP_FOLDER}")
+            # create the directory
             try:
                 raw_path.mkdir(parents=True, exist_ok=True)
-                logger.info(f"Directory created: {cls.FOLDER_RAW_DOC_PATH}")
+                logger.info(f"Directory created: {cls.TMP_FOLDER}")
             except Exception as e:
                 logger.error(f"Could not create directory: {e}")
-                return False
+                raise e
 
         if cls.MAX_FILE_SIZE_MB <= 0:
             logger.error("MAX_FILE_SIZE_MB must be a positive value")
