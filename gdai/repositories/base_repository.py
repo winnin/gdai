@@ -98,6 +98,21 @@ class BaseRepository(ABC):
         pass
 
     @abstractmethod
+    async def get_chunks_without_embedding(self, limit: int) -> list[ChunkModel]:
+        """Retrieve chunks that do not have embeddings yet.
+
+        Args:
+            limit: The maximum number of chunks to retrieve.
+
+        Returns:
+            list[ChunkModel]: List of chunk models without embeddings.
+
+        Raises:
+            ValueError: If no chunks are found or there's an error retrieving them.
+        """
+        pass
+
+    @abstractmethod
     async def delete_chunks(self, tenant_id: str, document_id: str) -> None:
         """Delete all chunks for a specific document of a tenant.
 
@@ -107,6 +122,18 @@ class BaseRepository(ABC):
 
         Raises:
             ValueError: If there's an error deleting the chunks.
+        """
+        pass
+
+    @abstractmethod
+    def update_chunks(self, chunks: list[ChunkModel]) -> None:
+        """Update multiple chunks in the database.
+
+        Args:
+            chunks: List of chunk models to update.
+
+        Raises:
+            ValueError: If there's an error updating the chunks.
         """
         pass
 

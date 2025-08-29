@@ -22,7 +22,7 @@ async def main() -> None:
         result = await client.execute_workflow(
             DocumentExtractionWorkflow.run,
             input,
-            id=f"test_extract_document_{uuid.uuid4()}",
+            id=f"test_embedding_document_{uuid.uuid4()}",
             task_queue="process-document-queue",
         )
 

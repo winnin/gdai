@@ -7,8 +7,8 @@ from .base_embedding import EmbeddingModel  # noqa: F401
 class EmbeddingFactory:
     @staticmethod
     async def get_embedding():
-        model_name = Config.ai.EMBEDDING_MODEL
-        api_key = Config.ai.EMBEDDING_MODEL_API_KEY or ""
+        model_name = Config.embedding.EMBEDDING_MODEL
+        api_key = Config.embedding.EMBEDDING_MODEL_API_KEY or ""
         if model_name == "cohere/embed-v4.0":
             return await CohereEmbeddingModel.create(api_key)
         else:

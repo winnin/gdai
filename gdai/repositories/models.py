@@ -6,6 +6,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
+from gdai.commons.config import Config
 from gdai.commons.enums import ChunkTypeEnum, DocumentStatusEnum, DocumentTypeEnum, QueryStatusEnum
 from gdai.repositories.sqlalchemy import Base
 
@@ -47,7 +48,7 @@ class ChunkModel(Base, BaseModelMixin):
     type = Column(Enum(ChunkTypeEnum), nullable=False)
     chunk = Column(Text, default="")
     page_number = Column(Integer)
-    embedding = Column(Vector(1536))
+    embedding = Column(Vector(Config.embedding.DIMENSION))
 
     # Relationships
     document_id = Column(UUID(as_uuid=True), ForeignKey("document.id"))

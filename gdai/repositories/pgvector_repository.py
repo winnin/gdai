@@ -143,6 +143,27 @@ class PGVectorRepository(BaseRepository):
             except Exception as e:
                 raise ValueError(f"Failed to retrieve chunks: {e!s}")
 
+    async def get_chunks_without_embedding(self, batch_size: int) -> list[ChunkModel]:
+        """Retrieve chunks that do not have embeddings yet.
+
+        Args:
+            batch_size: The maximum number of chunks to retrieve.
+
+        Returns:
+            list[ChunkModel]: List of chunk models without embeddings.
+
+        Raises:
+            ValueError: If there's an error retrieving the chunks.
+        """
+        async with SessionLocal() as session:
+            try:
+                query = select(ChunkModel).where(ChunkModel.embedding.is_(None)).limit(batch_size)
+                result = await session.execute(query)
+                chunks_model = result.scalars().all()
+                return chunks_model
+            except Exception as e:
+                raise ValueError(f"Failed to retrieve chunks without embeddings: {e!s}") from e
+
     async def delete_chunks(self, tenant_id: str, document_id: str) -> None:
         """Delete all chunks for a specific document of a tenant.
 
@@ -161,6 +182,25 @@ class PGVectorRepository(BaseRepository):
             except Exception as e:
                 await session.rollback()
                 raise ValueError(f"Failed to delete chunks: {e!s}")
+
+    async def update_chunks(self, chunks: list[ChunkModel]) -> None:
+        """Update multiple chunks in the database in batches.
+
+        Args:
+            chunks: List of chunk models to update.
+
+        Raises:
+            ValueError: If there's an error updating the chunks.
+        """
+        batch_size = 128
+        async with SessionLocal() as session:
+            try:
+                for i in range(0, len(chunks), batch_size):
+                    session.add_all(chunks[i : i + batch_size])
+                    await session.commit()
+            except Exception as e:
+                await session.rollback()
+                raise ValueError(f"Failed to update chunks: {e!s}")
 
     async def insert_query(self, query: QueryModel) -> None:
         """Insert a new query into the database.

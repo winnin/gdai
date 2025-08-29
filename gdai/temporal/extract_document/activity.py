@@ -82,6 +82,7 @@ async def chunk_texts(input: ChunkDocumentInput) -> str:
             page_number=page_number,
         )
         chunks.append(chunk)
+
     chunks_str = json.dumps([chunk.__dict__ for chunk in chunks], indent=2)
     chunk_file_path = extracted_document_path.replace(".json", "_chunks.json")
     with open(chunk_file_path, "w") as f:
@@ -95,7 +96,6 @@ async def store(input: StoreDocumentInput) -> None:
     chunk_strategy = input.chunk_strategy
     document_original_path = input.document_original_path
     document_chunks_path = input.document_chunks_path
-
     repository = RepositoryFactory.get_repository()
 
     # insert document data
@@ -114,10 +114,10 @@ async def store(input: StoreDocumentInput) -> None:
     # insert chunks data
     with open(document_chunks_path) as f:
         # if chunks is empty list, do not insert and add status to document as failed do chunk
-
         document_chunks = json.load(f)
         chunk_models = [
             ChunkModel(
+                tenant_id=tenant_id,
                 type=ChunkTypeEnum[chunk["type"]],
                 chunk=chunk["chunk"],
                 page_number=chunk["page_number"],

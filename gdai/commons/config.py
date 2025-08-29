@@ -140,21 +140,32 @@ class ExtractorConfig(ConfigComponent):
 class EmbeddingConfig(ConfigComponent):
     """Document embedding service configuration."""
 
-    CHUNK_SIZE = int(os.getenv("EMBEDDING_CHUNK_SIZE") or 0)
-    CHUNK_OVERLAP = int(os.getenv("EMBEDDING_CHUNK_OVERLAP") or 0)
+    MAX_TEXT_SIZE = int(os.getenv("EMBEDDING_MAX_TEXT_SIZE") or 0)
     MAX_RETRIES = int(os.getenv("EMBEDDING_MAX_RETRIES") or 0)
     BATCH_SIZE = int(os.getenv("EMBEDDING_BATCH_SIZE") or 64)
+    DIMENSION = int(os.getenv("EMBEDDING_DIMENSION"))
+    EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL")
+    EMBEDDING_MODEL_API_KEY = os.getenv("EMBEDDING_MODEL_API_KEY")
 
     @classmethod
     def validate(cls) -> bool:
-        if cls.CHUNK_SIZE <= 0:
-            logger.error("EMBEDDING_CHUNK_SIZE must be a positive value")
-            return False
-        if cls.CHUNK_OVERLAP < 0:
-            logger.error("EMBEDDING_CHUNK_OVERLAP must be a non-negative value")
+        if cls.MAX_TEXT_SIZE <= 0:
+            logger.error("EMBEDDING_MAX_TEXT_SIZE must be a positive value")
             return False
         if cls.MAX_RETRIES < 0:
             logger.error("EMBEDDING_MAX_RETRIES must be a non-negative value")
+            return False
+        if cls.BATCH_SIZE <= 0:
+            logger.error("EMBEDDING_BATCH_SIZE must be a positive value")
+            return False
+        if cls.DIMENSION <= 0:
+            logger.error("EMBEDDING_DIMENSION must be a positive value")
+            return False
+        if not cls.EMBEDDING_MODEL:
+            logger.error("EMBEDDING_MODEL is not set")
+            return False
+        if not cls.EMBEDDING_MODEL_API_KEY:
+            logger.error("EMBEDDING_MODEL_API_KEY is not set")
             return False
 
         return True
