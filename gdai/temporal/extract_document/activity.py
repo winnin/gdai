@@ -35,7 +35,6 @@ async def validate(input: DocumentExtracInput) -> None:
 
     # check if document max size is not exceeded
     file_size = (await AsyncPath(document_path).stat()).st_size
-    print(file_size, "<<<<<<<<<<<")
 
     # check if document is empty
     if file_size == 0:

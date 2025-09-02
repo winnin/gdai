@@ -19,7 +19,9 @@ class DocumentExtractionWorkflow:
 
         embedded_files = []
         for chunk_file in chunk_files:
-            chunk_with_embedding_file_path = await workflow.execute_child_workflow("ChunkEmbeddingWorkflow", chunk_file, task_queue="embedding-chunks-queue")
+            chunk_with_embedding_file_path = await workflow.execute_child_workflow(
+                "ChunkEmbeddingWorkflow", chunk_file, task_queue="embedding-chunks-queue", id=f"chunk-embedding-{chunk_file}"
+            )
 
             await workflow.execute_activity(
                 "store_embedded_chunks",
