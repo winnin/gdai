@@ -9,10 +9,10 @@ class TextEmbeddingWorkflow:
     @workflow.run
     async def run(self, text_to_embedding: dict[str, str]) -> dict[str, list[float]]:
         retry_policy = RetryPolicy(
-            initial_interval=timedelta(seconds=30),  # Espera 30 segundos antes do primeiro retry
-            maximum_interval=timedelta(seconds=30),  # Mantém o intervalo constante em 30 segundos
-            maximum_attempts=10,  # Limita o número total de tentativas
-            backoff_coefficient=1.0,  # Sem aumento exponencial (1.0 = linear)
+            initial_interval=timedelta(seconds=15),  # wait 30 seconds before the first retry
+            maximum_interval=timedelta(seconds=15),  # keep the interval constant at 30 seconds
+            maximum_attempts=5,  # limit the total number of attempts
+            backoff_coefficient=1.0,  # no exponential increase (1.0 = linear)
         )
         text_embedded = await workflow.execute_activity(
             "embedding_texts",

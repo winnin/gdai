@@ -1,7 +1,10 @@
+import asyncio
 import json
 import os
 import uuid
 
+import aiofiles
+from aiopath import AsyncPath
 from temporalio import activity
 
 from gdai.chunkers import ChunkerFactory
@@ -26,17 +29,13 @@ async def validate(input: DocumentExtracInput) -> None:
         raise ValueError("Invalid tenant_id provided")
 
     # check if document exists
-    if not os.path.exists(document_path):
+    if not await AsyncPath(document_path).exists():
         logger.error(f"Document file does not exist: {document_path}")
         raise FileNotFoundError(f"Document file does not exist: {document_path}")
 
-    # check if document is readable
-    if not os.access(document_path, os.R_OK):
-        logger.error(f"Document file is not readable: {document_path}")
-        raise PermissionError(f"Document file is not readable: {document_path}")
-
     # check if document max size is not exceeded
-    file_size = os.path.getsize(document_path)
+    file_size = (await AsyncPath(document_path).stat()).st_size
+    print(file_size, "<<<<<<<<<<<")
 
     # check if document is empty
     if file_size == 0:
@@ -57,8 +56,8 @@ async def extract(input: DocumentExtracInput) -> str:
     try:
         extracted_document = extractor.extract_document_data(document_path)
         output_file = os.path.join(Config.extractor.TMP_FOLDER, f"{uuid.uuid4()}.json")
-        with open(output_file, "w") as f:
-            json.dump(extracted_document, f)
+        async with aiofiles.open(output_file, "w") as f:
+            await f.write(json.dumps(extracted_document))
         return output_file
     except Exception as e:
         logger.error(f"Error extracting data from document: {e}")
@@ -69,8 +68,8 @@ async def extract(input: DocumentExtracInput) -> str:
 async def chunk_texts(input: ChunkDocumentInput) -> list[str]:
     chunk_strategy = input.chunk_strategy
     extracted_document_path = input.extracted_document_path
-    with open(extracted_document_path) as f:
-        extracted_document = json.load(f)
+    async with aiofiles.open(extracted_document_path) as f:
+        extracted_document = json.loads(await f.read())
     chunker = ChunkerFactory.get_chunker(chunker_type=chunk_strategy)
     only_text_by_page = [item[1] for item in extracted_document["texts"]]
     doc_text_chunks = chunker.chunk(only_text_by_page)
@@ -120,9 +119,9 @@ async def store_embedded_chunks(input: StoreDocumentInput) -> None:
     await repository.insert_document(document_model)
 
     # insert chunks data
-    with open(document_chunks_path) as f:
+    async with aiofiles.open(document_chunks_path) as f:
         # if chunks is empty list, do not insert and add status to document as failed do chunk
-        document_chunks = json.load(f)
+        document_chunks = json.loads(await f.read())
         chunk_models = [
             ChunkModel(
                 id=uuid.UUID(chunk["id"]),
@@ -144,12 +143,16 @@ async def store_embedded_chunks(input: StoreDocumentInput) -> None:
 @activity.defn
 async def remove_temp_files(files_to_remove: TempFiles) -> None:
     files_to_remove = [files_to_remove.extracted_document_file_path] + files_to_remove.chunk_files + files_to_remove.embedded_files
-    for file_path in files_to_remove:
+
+    async def remove_single_file(file_path):
         try:
-            if os.path.exists(file_path):
-                os.remove(file_path)
+            if await AsyncPath(file_path).exists():
+                await AsyncPath(file_path).unlink()
                 logger.info(f"Removed temporary file: {file_path}")
             else:
                 logger.warning(f"Temporary file not found, could not remove: {file_path}")
         except Exception as e:
             logger.error(f"Error removing temporary file {file_path}: {e}")
+
+    # Executa todas as operações de remoção em paralelo
+    await asyncio.gather(*[remove_single_file(file_path) for file_path in files_to_remove])

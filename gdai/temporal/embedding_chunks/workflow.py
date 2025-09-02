@@ -2,7 +2,6 @@ from datetime import timedelta
 
 from temporalio import workflow
 
-from gdai.temporal.embedding_chunks.activity import get_chunks_to_embedding
 from gdai.temporal.embedding_chunks.schema import ChunkStoreEmbeding
 
 with workflow.unsafe.imports_passed_through():
@@ -14,7 +13,7 @@ class ChunkEmbeddingWorkflow:
     @workflow.run
     async def run(self, chunk_file_path: str) -> str:
         batch_id = "caraleos_voadores"
-        chunks = await workflow.execute_activity(get_chunks_to_embedding, chunk_file_path, schedule_to_close_timeout=timedelta(seconds=50))
+        chunks = await workflow.execute_activity("get_chunks_to_embedding", chunk_file_path, schedule_to_close_timeout=timedelta(seconds=50))
         batch_size = int(Config.embedding.BATCH_SIZE / 4)
         batches = [chunks[i : i + batch_size] for i in range(0, len(chunks), batch_size)]
 
