@@ -1,3 +1,4 @@
+import asyncio
 from datetime import timedelta
 
 from temporalio import workflow
@@ -12,19 +13,27 @@ with workflow.unsafe.imports_passed_through():
 class ChunkEmbeddingWorkflow:
     @workflow.run
     async def run(self, chunk_file_path: str) -> str:
-        batch_id = "caraleos_voadores"
+        batch_id = "chunk_embedding_workflow"
         chunks = await workflow.execute_activity("get_chunks_to_embedding", chunk_file_path, schedule_to_close_timeout=timedelta(seconds=50))
         batch_size = int(Config.embedding.BATCH_SIZE / 4)
         batches = [chunks[i : i + batch_size] for i in range(0, len(chunks), batch_size)]
 
+        # Executa todos os child workflows em paralelo
+        tasks = []
         for idx, batch in enumerate(batches):
             input_to_embedding = {chunk["id"]: chunk["chunk"] for chunk in batch}
-            batch_result = await workflow.execute_child_workflow(
-                "TextEmbeddingWorkflow",
-                input_to_embedding,
-                id=f"embedding_chunks_{batch_id}_{idx}",
-                task_queue="embedding-text-queue",
+            tasks.append(
+                workflow.execute_child_workflow(
+                    "TextEmbeddingWorkflow",
+                    input_to_embedding,
+                    id=f"embedding_chunks_{batch_id}_{idx}",
+                    task_queue="embedding-text-queue",
+                )
             )
+        batch_results = await asyncio.gather(*tasks)
+
+        # Atualiza os embeddings nos chunks
+        for batch, batch_result in zip(batches, batch_results):
             for chunk in batch:
                 if chunk["id"] in batch_result:
                     chunk["embedding"] = batch_result[chunk["id"]]

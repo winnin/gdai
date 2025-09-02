@@ -13,7 +13,7 @@ async def main() -> None:
     client: Client = await Client.connect("localhost:7233")
 
     input = DocumentExtracInput(
-        document_path="/home/fabricio/Desktop/data/arte_guerra.pdf",
+        document_path="/home/fabricio/Desktop/data/harry_potter.pdf",
         chunk_strategy="sentence",
         tenant_id="tenant_123",
     )
@@ -22,7 +22,7 @@ async def main() -> None:
         result = await client.execute_workflow(
             DocumentExtractionWorkflow.run,
             input,
-            id=f"test_embedding_document_{uuid.uuid4()}",
+            id=f"test_process_document_{uuid.uuid4()}",
             task_queue="process-document-queue",
         )
 
