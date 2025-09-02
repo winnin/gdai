@@ -12,7 +12,7 @@ from gdai.extractors import ExtractorFactory
 from gdai.repositories import RepositoryFactory
 from gdai.repositories.models import ChunkModel, DocumentModel
 
-from .schema import Chunk, ChunkDocumentInput, DocumentExtracInput, StoreDocumentInput
+from .schema import Chunk, ChunkDocumentInput, DocumentExtracInput, StoreDocumentInput, TempFiles
 
 
 @activity.defn
@@ -66,7 +66,7 @@ async def extract(input: DocumentExtracInput) -> str:
 
 
 @activity.defn
-async def chunk_texts(input: ChunkDocumentInput) -> str:
+async def chunk_texts(input: ChunkDocumentInput) -> list[str]:
     chunk_strategy = input.chunk_strategy
     extracted_document_path = input.extracted_document_path
     with open(extracted_document_path) as f:
@@ -75,27 +75,35 @@ async def chunk_texts(input: ChunkDocumentInput) -> str:
     only_text_by_page = [item[1] for item in extracted_document["texts"]]
     doc_text_chunks = chunker.chunk(only_text_by_page)
     chunks = []
+
     for page_number, text_content in doc_text_chunks:
         chunk = Chunk(
+            id=str(uuid.uuid4()),
             type="text",
             chunk=text_content,
             page_number=page_number,
         )
         chunks.append(chunk)
 
-    chunks_str = json.dumps([chunk.__dict__ for chunk in chunks], indent=2)
-    chunk_file_path = extracted_document_path.replace(".json", "_chunks.json")
-    with open(chunk_file_path, "w") as f:
-        f.write(chunks_str)
-    return chunk_file_path
+    batch_size = Config.embedding.BATCH_SIZE
+    chunks_batch = [chunks[i : i + batch_size] for i in range(0, len(chunks), batch_size)]
+    chunk_files = []
+    for idx, batch in enumerate(chunks_batch):
+        chunks_str = json.dumps([chunk.__dict__ for chunk in batch], indent=2)
+        chunk_file_path = extracted_document_path.replace(".json", f"_chunks_{idx}.json")
+        with open(chunk_file_path, "w") as f:
+            f.write(chunks_str)
+            chunk_files.append(chunk_file_path)
+    return chunk_files
 
 
 @activity.defn
-async def store(input: StoreDocumentInput) -> None:
+async def store_embedded_chunks(input: StoreDocumentInput) -> None:
     tenant_id = input.tenant_id
     chunk_strategy = input.chunk_strategy
     document_original_path = input.document_original_path
     document_chunks_path = input.document_chunks_path
+
     repository = RepositoryFactory.get_repository()
 
     # insert document data
@@ -117,12 +125,31 @@ async def store(input: StoreDocumentInput) -> None:
         document_chunks = json.load(f)
         chunk_models = [
             ChunkModel(
+                id=uuid.UUID(chunk["id"]),
                 tenant_id=tenant_id,
                 type=ChunkTypeEnum[chunk["type"]],
                 chunk=chunk["chunk"],
                 page_number=chunk["page_number"],
                 document_id=document_id,
+                embedding=chunk["embedding"],
             )
             for chunk in document_chunks
         ]
-        await repository.insert_chunks(chunk_models)
+        try:
+            await repository.insert_chunks(chunk_models)
+        except Exception as e:
+            logger.error(f"Error inserting chunks into the database: {e}")
+
+
+@activity.defn
+async def remove_temp_files(files_to_remove: TempFiles) -> None:
+    files_to_remove = [files_to_remove.extracted_document_file_path] + files_to_remove.chunk_files + files_to_remove.embedded_files
+    for file_path in files_to_remove:
+        try:
+            if os.path.exists(file_path):
+                os.remove(file_path)
+                logger.info(f"Removed temporary file: {file_path}")
+            else:
+                logger.warning(f"Temporary file not found, could not remove: {file_path}")
+        except Exception as e:
+            logger.error(f"Error removing temporary file {file_path}: {e}")

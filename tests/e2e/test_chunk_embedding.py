@@ -4,26 +4,17 @@ import uuid
 
 from temporalio.client import Client, WorkflowFailureError
 
-from gdai.temporal.extract_document.schema import DocumentExtracInput
-from gdai.temporal.extract_document.workflow import DocumentExtractionWorkflow
-
 
 async def main() -> None:
     # Create client connected to server at the given address
     client: Client = await Client.connect("localhost:7233")
 
-    input = DocumentExtracInput(
-        document_path="/home/fabricio/Desktop/data/arte_guerra.pdf",
-        chunk_strategy="sentence",
-        tenant_id="tenant_123",
-    )
-
     try:
         result = await client.execute_workflow(
-            DocumentExtractionWorkflow.run,
-            input,
-            id=f"test_embedding_document_{uuid.uuid4()}",
-            task_queue="process-document-queue",
+            "ChunkEmbeddingWorkflow",
+            "/home/fabricio/projects/g-dai/DOC_FOLDER/c2e96e94-3ba4-4213-98cc-cce949fe98c8_chunks_0.json",
+            id=f"test_embedding_chunk_{uuid.uuid4()}",
+            task_queue="embedding-chunks-queue",
         )
 
         print(f"Result: {result}")

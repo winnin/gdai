@@ -6,7 +6,8 @@ from temporalio.worker import Worker
 from .activity import (
     chunk_texts,
     extract,
-    store,
+    remove_temp_files,
+    store_embedded_chunks,
     validate,
 )
 from .workflow import DocumentExtractionWorkflow
@@ -22,7 +23,8 @@ async def main():
             validate,
             extract,
             chunk_texts,
-            store,
+            store_embedded_chunks,
+            remove_temp_files,
         ],
     )
     print("Worker started.")

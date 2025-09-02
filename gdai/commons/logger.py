@@ -11,6 +11,7 @@ load_dotenv(override=True)
 
 logging.getLogger("sqlalchemy").setLevel(logging.ERROR)
 logging.getLogger("sqlalchemy.engine").setLevel(logging.ERROR)
+logging.getLogger("chonkie").setLevel(logging.ERROR)
 
 
 class ColorFormatter(logging.Formatter):
