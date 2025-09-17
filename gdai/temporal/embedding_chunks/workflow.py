@@ -18,7 +18,7 @@ class ChunkEmbeddingWorkflow:
         batch_size = int(Config.embedding.BATCH_SIZE / 4)
         batches = [chunks[i : i + batch_size] for i in range(0, len(chunks), batch_size)]
 
-        # Executa todos os child workflows em paralelo
+        # Execute all child workflows in parallel
         tasks = []
         for idx, batch in enumerate(batches):
             input_to_embedding = {chunk["id"]: chunk["chunk"] for chunk in batch}
@@ -32,7 +32,7 @@ class ChunkEmbeddingWorkflow:
             )
         batch_results = await asyncio.gather(*tasks)
 
-        # Atualiza os embeddings nos chunks
+        # Update embeddings in chunks
         for batch, batch_result in zip(batches, batch_results):
             for chunk in batch:
                 if chunk["id"] in batch_result:
