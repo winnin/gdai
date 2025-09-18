@@ -150,28 +150,7 @@ class BaseRepository(ABC):
         pass
 
     @abstractmethod
-    async def search_chunks_by_similarity(
-        self, tenant_id: str, query_id: str, query_vector: list[float], similarity_threshold: float, limit: int = 10
-    ) -> list[tuple[ChunkModel, float]]:
-        """Search for chunks by vector similarity across all documents for a tenant.
-
-        Args:
-            tenant_id: The ID of the tenant to search within.
-            query_id: The ID of the query being performed.
-            query_vector: The embedding vector to compare against chunks.
-            similarity_threshold: The minimum similarity score (0-1) for returned results.
-            limit: The maximum number of results to return.
-
-        Returns:
-            list[tuple[ChunkModel, float]]: List of tuples containing chunks and their similarity scores.
-
-        Raises:
-            ValueError: If no chunks meet the similarity threshold or there's an error.
-        """
-        pass
-
-    @abstractmethod
-    async def search_chunks_by_similarity_and_document_ids(
+    async def search_chunks_by_similarity_on_document_ids(
         self,
         tenant_id: str,
         query_id: str,

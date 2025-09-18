@@ -141,7 +141,9 @@ async def store_embedded_chunks(input: StoreDocumentInput) -> None:
 
 @activity.defn
 async def remove_temp_files(files_to_remove: TempFiles) -> None:
-    files_to_remove = [files_to_remove.extracted_document_file_path] + files_to_remove.chunk_files + files_to_remove.embedded_files
+    files_to_remove = (
+        [files_to_remove.extracted_document_file_path] + files_to_remove.chunk_files + files_to_remove.embedded_files
+    )
 
     async def remove_single_file(file_path):
         try:

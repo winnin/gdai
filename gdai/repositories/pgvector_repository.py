@@ -56,7 +56,9 @@ class PGVectorRepository(BaseRepository):
         """
         async with SessionLocal() as session:
             try:
-                query = select(DocumentModel).where(DocumentModel.tenant_id == tenant_id, DocumentModel.id == uuid.UUID(document_id))
+                query = select(DocumentModel).where(
+                    DocumentModel.tenant_id == tenant_id, DocumentModel.id == uuid.UUID(document_id)
+                )
                 result = await session.execute(query)
                 document_model = result.scalars().first()
                 if not document_model:
@@ -94,7 +96,11 @@ class PGVectorRepository(BaseRepository):
         """
         async with SessionLocal() as session:
             try:
-                await session.execute(delete(DocumentModel).where(DocumentModel.tenant_id == tenant_id).where(DocumentModel.id == document_id))
+                await session.execute(
+                    delete(DocumentModel)
+                    .where(DocumentModel.tenant_id == tenant_id)
+                    .where(DocumentModel.id == document_id)
+                )
                 await session.commit()
             except Exception as e:
                 await session.rollback()
@@ -134,7 +140,9 @@ class PGVectorRepository(BaseRepository):
         """
         async with SessionLocal() as session:
             try:
-                query = select(ChunkModel).where(ChunkModel.tenant_id == tenant_id, ChunkModel.document_id == document_id)
+                query = select(ChunkModel).where(
+                    ChunkModel.tenant_id == tenant_id, ChunkModel.document_id == document_id
+                )
                 result = await session.execute(query)
                 chunks_model = result.scalars().all()
                 if not chunks_model:
@@ -176,7 +184,9 @@ class PGVectorRepository(BaseRepository):
         """
         async with SessionLocal() as session:
             try:
-                stmt = delete(ChunkModel).where(ChunkModel.tenant_id == tenant_id, ChunkModel.document_id == document_id)
+                stmt = delete(ChunkModel).where(
+                    ChunkModel.tenant_id == tenant_id, ChunkModel.document_id == document_id
+                )
                 await session.execute(stmt)
                 await session.commit()
             except Exception as e:
@@ -219,60 +229,16 @@ class PGVectorRepository(BaseRepository):
                 await session.rollback()
                 raise ValueError(f"Failed to insert query: {e!s}")
 
-    async def search_chunks_by_similarity(
-        self, tenant_id: str, query_id: str, query_vector: list[float], similarity_threshold: float, limit: int = 10
-    ) -> list[tuple[ChunkModel, float]]:
-        """Search for chunks by vector similarity across all documents for a tenant.
-
-        Args:
-            tenant_id: The ID of the tenant to search within.
-            query_id: The ID of the query being performed.
-            query_vector: The embedding vector to compare against chunks.
-            similarity_threshold: The minimum similarity score (0-1) for returned results.
-            limit: The maximum number of results to return.
-
-        Returns:
-            list[tuple[ChunkModel, float]]: List of tuples containing chunks and their similarity scores.
-
-        Raises:
-            ValueError: If no chunks meet the similarity threshold or there's an error.
-        """
-        async with SessionLocal() as session:
-            try:
-                # Calculate distance expression
-                distance_expr = ChunkModel.embedding.cosine_distance(query_vector)
-                # Calculate similarity expression (1 - distance)
-                similarity_expr = (1.0 - distance_expr).label("similarity")
-                stmt = (
-                    select(ChunkModel, similarity_expr)
-                    .where(ChunkModel.tenant_id == tenant_id)
-                    .where(similarity_expr >= similarity_threshold)
-                    .order_by(desc(similarity_expr))
-                    .limit(limit)
-                )
-                result = await session.execute(stmt)
-                result = result.all()
-                # create the link between query and chunks
-                if not result:
-                    raise ValueError(f"No chunks found for tenant {tenant_id} with the given similarity threshold.")
-                stmt = insert(QueryChunkLinkModel).values([{"query_id": query_id, "chunk_id": chunk.id, "similarity_score": similarity} for chunk, similarity in result])
-                await session.execute(stmt)
-                await session.commit()
-                return result
-
-            except Exception as e:
-                raise ValueError(f"Failed to search chunks by similarity: {e!s}")
-
-    async def search_chunks_by_similarity_and_document_ids(
+    async def search_chunks_by_similarity_on_document_ids(
         self,
         tenant_id: str,
         query_id: str,
         query_vector: list[float],
-        document_ids: list[str],
         similarity_threshold: float,
+        document_ids: list[str],
         limit: int = 10,
     ) -> list[tuple[ChunkModel, float]]:
-        """Search for chunks by vector similarity within specific documents.
+        """Search for chunks by vector similarity within specific set of documents if they are defined.
 
         Args:
             tenant_id: The ID of the tenant to search within.
@@ -298,18 +264,27 @@ class PGVectorRepository(BaseRepository):
                 stmt = (
                     select(ChunkModel, similarity_expr)
                     .where(ChunkModel.tenant_id == tenant_id)
-                    .where(ChunkModel.document_id.in_(document_ids))
                     .where(similarity_expr >= similarity_threshold)
                     .order_by(desc(similarity_expr))
                     .limit(limit)
                 )
+                if document_ids:
+                    stmt = stmt.where(ChunkModel.document_id.in_(document_ids))
+
                 result = await session.execute(stmt)
                 result = result.all()
                 # create the link between query and chunks
                 if not result:
-                    raise ValueError(f"No chunks found for tenant:{tenant_id} and documents:{document_ids} with the threshold")
+                    raise ValueError(
+                        f"No chunks found for tenant:{tenant_id} and documents:{document_ids} with the threshold"
+                    )
 
-                stmt = insert(QueryChunkLinkModel).values([{"query_id": query_id, "chunk_id": chunk.id, "similarity_score": similarity} for chunk, similarity in result])
+                stmt = insert(QueryChunkLinkModel).values(
+                    [
+                        {"query_id": query_id, "chunk_id": chunk.id, "similarity_score": similarity}
+                        for chunk, similarity in result
+                    ]
+                )
                 await session.execute(stmt)
                 await session.commit()
                 return result
@@ -331,7 +306,11 @@ class PGVectorRepository(BaseRepository):
         """
         async with SessionLocal() as session:
             try:
-                stmt = select(QueryModel).where(QueryModel.tenant_id == tenant_id).where(QueryModel.id == uuid.UUID(query_id))
+                stmt = (
+                    select(QueryModel)
+                    .where(QueryModel.tenant_id == tenant_id)
+                    .where(QueryModel.id == uuid.UUID(query_id))
+                )
                 result = await session.execute(stmt)
                 query_model = result.scalars().first()
                 if not query_model:

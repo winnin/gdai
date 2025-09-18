@@ -39,7 +39,7 @@ test = ["pytest>=8.4.0", "pytest-cov>=6.2.1", "pre-commit>=4.2.0", "pytest-async
 
 
 [tool.ruff]
-line-length = 180
+line-length = 120
 target-version = "py310"
 
 [tool.ruff.lint]

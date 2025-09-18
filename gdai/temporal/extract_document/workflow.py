@@ -10,17 +10,24 @@ class DocumentExtractionWorkflow:
     @workflow.run
     async def run(self, document_input: DocumentExtracInput) -> str:
         await workflow.execute_activity("validate", document_input, schedule_to_close_timeout=timedelta(seconds=10))
-        extracted_document_path = await workflow.execute_activity("extract", document_input, schedule_to_close_timeout=timedelta(seconds=50))
+        extracted_document_path = await workflow.execute_activity(
+            "extract", document_input, schedule_to_close_timeout=timedelta(seconds=50)
+        )
         chunk_files = await workflow.execute_activity(
             "chunk_texts",
-            ChunkDocumentInput(chunk_strategy=document_input.chunk_strategy, extracted_document_path=extracted_document_path),
+            ChunkDocumentInput(
+                chunk_strategy=document_input.chunk_strategy, extracted_document_path=extracted_document_path
+            ),
             schedule_to_close_timeout=timedelta(seconds=50),
         )
 
         embedded_files = []
         for chunk_file in chunk_files:
             chunk_with_embedding_file_path = await workflow.execute_child_workflow(
-                "ChunkEmbeddingWorkflow", chunk_file, task_queue="embedding-chunks-queue", id=f"chunk-embedding-{chunk_file}"
+                "ChunkEmbeddingWorkflow",
+                chunk_file,
+                task_queue="embedding-chunks-queue",
+                id=f"chunk-embedding-{chunk_file}",
             )
 
             await workflow.execute_activity(
@@ -37,7 +44,11 @@ class DocumentExtractionWorkflow:
 
         await workflow.execute_activity(
             "remove_temp_files",
-            TempFiles(extracted_document_file_path=extracted_document_path, chunk_files=chunk_files, embedded_files=embedded_files),
+            TempFiles(
+                extracted_document_file_path=extracted_document_path,
+                chunk_files=chunk_files,
+                embedded_files=embedded_files,
+            ),
             schedule_to_close_timeout=timedelta(seconds=30),
         )
 

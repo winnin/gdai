@@ -14,7 +14,9 @@ class ChunkEmbeddingWorkflow:
     @workflow.run
     async def run(self, chunk_file_path: str) -> str:
         batch_id = "chunk_embedding_workflow"
-        chunks = await workflow.execute_activity("get_chunks_to_embedding", chunk_file_path, schedule_to_close_timeout=timedelta(seconds=50))
+        chunks = await workflow.execute_activity(
+            "get_chunks_to_embedding", chunk_file_path, schedule_to_close_timeout=timedelta(seconds=50)
+        )
         batch_size = int(Config.embedding.BATCH_SIZE / 4)
         batches = [chunks[i : i + batch_size] for i in range(0, len(chunks), batch_size)]
 

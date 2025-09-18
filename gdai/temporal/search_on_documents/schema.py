@@ -12,7 +12,9 @@ class SearchInput:
 @dataclass
 class Chunk:
     chunk_id: str
+    type: str
     text: str
+    document_id: str
     page_number: int
     query_similarity: float
 
