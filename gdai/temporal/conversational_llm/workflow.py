@@ -2,7 +2,7 @@ from datetime import timedelta
 
 from temporalio import workflow
 
-from gdai.temporal.llm.schema import PromptInput
+from .schema import PromptInput
 
 
 @workflow.defn

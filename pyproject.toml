@@ -66,8 +66,8 @@ asyncio_default_fixture_loop_scope = "function"
 [tool.taskipy.tasks]
 
 configure-dev = { cmd = "uv sync --all-groups & pre-commit install & pre-commit install --hook-type pre-push", help = "Configure the environment" }
-reset-db = { cmd = "python -m gdai.repositories.db_setup reset", help = "Reset the database (DANGER: This will delete all data!)" }
-setup-db = { cmd = "python -m gdai.repositories.db_setup setup", help = "Setup the database (create tables)" }
+reset-db = { cmd = "python -m gdai.scripts.reset_db", help = "Reset the database (DANGER: This will delete all data!)" }
+setup-db = { cmd = "python -m gdai.scripts.setup_db", help = "Setup the database (create tables)" }
 
 run = { cmd = "uv run python -m gdai.api.main", help = "Run the FastAPI application" }
 tests = { cmd = "pytest", help = "Run all unit tests" }

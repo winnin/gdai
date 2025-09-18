@@ -1,7 +1,8 @@
 from temporalio import activity
 
 from gdai.llms import LLMFactory
-from gdai.temporal.llm.schema import PromptInput
+
+from .schema import PromptInput
 
 
 class LLMActivity:
