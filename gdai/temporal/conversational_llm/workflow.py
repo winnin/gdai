@@ -9,5 +9,10 @@ from .schema import PromptInput
 class LLMWorkflow:
     @workflow.run
     async def run(self, prompt_input: PromptInput) -> str:
-        result = await workflow.execute_activity("chat", prompt_input, schedule_to_close_timeout=timedelta(seconds=60))
-        return result
+        try:
+            result = await workflow.execute_activity(
+                "chat", prompt_input, schedule_to_close_timeout=timedelta(seconds=60)
+            )
+            return result
+        except Exception as e:
+            print(e)

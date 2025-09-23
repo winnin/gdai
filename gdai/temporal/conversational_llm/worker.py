@@ -15,7 +15,7 @@ async def main():
         workflows=[LLMWorkflow],
         activities=[LLMActivity().chat],
     )
-    print("Worker started.")
+    print("Worker LLMWorkflow started using queue llm-queue.")
     await worker.run()
 
 

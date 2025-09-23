@@ -27,7 +27,7 @@ async def main():
             remove_temp_files,
         ],
     )
-    print("Worker started.")
+    print("Worker DocumentExtractionWorkflow started using queue process-document-queue.")
     await worker.run()
 
 

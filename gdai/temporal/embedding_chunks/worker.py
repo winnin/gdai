@@ -15,7 +15,7 @@ async def main():
         workflows=[ChunkEmbeddingWorkflow],
         activities=[get_chunks_to_embedding, create_chunkfile_with_embeddings],
     )
-    print("Worker started.")
+    print("Worker ChunkEmbeddingWorkflow started using queue embedding-chunks-queue.")
     await worker.run()
 
 

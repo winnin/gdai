@@ -18,7 +18,8 @@ async def main():
         max_concurrent_workflow_tasks=1,  # limit to 1 workflow at a time
         max_task_queue_activities_per_second=1.6,  # limit to 1.6 activities per second 100/60
     )
-    print("Worker started.")
+    print("Worker TextEmbeddingWorkflow started using queue embedding-text-queue.")
+
     await worker.run()
 
 

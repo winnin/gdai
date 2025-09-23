@@ -3,7 +3,7 @@ import uuid
 
 from temporalio.client import Client
 
-from gdai.temporal.llm.schema import PromptInput
+from gdai.temporal.search_on_documents.schema import PromptInput
 
 
 async def main() -> None:
@@ -12,6 +12,7 @@ async def main() -> None:
         user_prompt="What is the best marketing strategy for a new digital product launch?",
         system_prompt="You are a helpful marketing assistent.",
     )
+
     result = await client.execute_workflow("LLMWorkflow", input, id=f"test_llm_{uuid.uuid4()}", task_queue="llm-queue")
     print(f"Result: {result}")
 

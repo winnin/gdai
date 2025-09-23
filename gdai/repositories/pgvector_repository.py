@@ -232,7 +232,6 @@ class PGVectorRepository(BaseRepository):
     async def search_chunks_by_similarity_on_document_ids(
         self,
         tenant_id: str,
-        query_id: str,
         query_vector: list[float],
         similarity_threshold: float,
         document_ids: list[str],
@@ -254,6 +253,7 @@ class PGVectorRepository(BaseRepository):
         Raises:
             ValueError: If no chunks meet the criteria or there's an error.
         """
+
         async with SessionLocal() as session:
             try:
                 # Calculate distance expression
@@ -273,23 +273,32 @@ class PGVectorRepository(BaseRepository):
 
                 result = await session.execute(stmt)
                 result = result.all()
-                # create the link between query and chunks
-                if not result:
-                    raise ValueError(
-                        f"No chunks found for tenant:{tenant_id} and documents:{document_ids} with the threshold"
-                    )
 
+                if not result:
+                    raise ValueError("No chunks found matching the criteria.")
+                return result
+            except Exception as e:
+                raise ValueError(f"Failed to search chunks by similarity and document IDs: {e!s}")
+
+    async def insert_query_chunk_links(self, tenant_id: str, query_id: str, chunks: dict) -> None:
+        try:
+            async with SessionLocal() as session:
                 stmt = insert(QueryChunkLinkModel).values(
                     [
-                        {"query_id": query_id, "chunk_id": chunk.id, "similarity_score": similarity}
-                        for chunk, similarity in result
+                        {
+                            "id": uuid.uuid4(),
+                            "tenant_id": tenant_id,
+                            "query_id": query_id,
+                            "chunk_id": chunk_id,
+                            "similarity_score": similarity,
+                        }
+                        for chunk_id, similarity in chunks.items()
                     ]
                 )
                 await session.execute(stmt)
                 await session.commit()
-                return result
-            except Exception as e:
-                raise ValueError(f"Failed to search chunks by similarity and document IDs: {e!s}")
+        except Exception as e:
+            raise ValueError(f"Failed to insert query-chunk links: {e!s}")
 
     async def get_query(self, tenant_id: str, query_id: str) -> QueryModel:
         """Retrieve a specific query by ID for a tenant.

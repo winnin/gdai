@@ -76,8 +76,8 @@ class QueryChunkLinkModel(Base, BaseModelMixin):
 
     __tablename__ = "query_chunk_link"
 
-    query_id = Column(UUID(as_uuid=True), ForeignKey("query.id"), primary_key=True)
-    chunk_id = Column(UUID(as_uuid=True), ForeignKey("chunk.id"), primary_key=True)
+    query_id = Column(UUID(as_uuid=True), ForeignKey("query.id"))
+    chunk_id = Column(UUID(as_uuid=True), ForeignKey("chunk.id"))
     similarity_score = Column(Float, default=0.0)
 
     # Relationships
