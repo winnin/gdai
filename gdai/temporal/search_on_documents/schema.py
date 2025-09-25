@@ -19,7 +19,7 @@ class QueryInput:
 
 
 @dataclass
-class SearchQueryParam:
+class ChunkSearchParam:
     tenant_id: str
     limit: int = 100
     similarity_threshold: float = 0.0
@@ -41,6 +41,28 @@ class Chunk:
 class PromptInput:
     query: str
     chunks: list[Chunk] = field(default_factory=list)
+
+
+@dataclass
+class UpdateQueryResultInput:
+    query_id: str
+    tenant_id: str
+    answer: str
+    status: str = "completed"
+    chunks: list[Chunk] | None = None
+
+
+@dataclass
+class FormatAnswerInput:
+    tenant_id: str
+    query_id: str
+    chunk_strategy: str | None = None
+    query: str = ""
+    max_num_chunks: int = 20
+    document_ids: list[str] | None = None
+    llm_answer: str = ""
+    chunks: list[Chunk] | None = None
+    similarity_threshold: float | None = None
 
 
 @dataclass

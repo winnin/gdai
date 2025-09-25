@@ -2,7 +2,15 @@ from datetime import timedelta
 
 from temporalio import workflow
 
-from .schema import PromptInput, QueryInput, SearchInput, SearchQueryParam, SearchResult
+from .schema import (
+    ChunkSearchParam,
+    FormatAnswerInput,
+    PromptInput,
+    QueryInput,
+    SearchInput,
+    SearchResult,
+    UpdateQueryResultInput,
+)
 
 
 @workflow.defn
@@ -29,7 +37,7 @@ class DocumentSearchWorkflow:
             # get chunks
             chunks = await workflow.execute_activity(
                 "get_chunks",
-                SearchQueryParam(
+                ChunkSearchParam(
                     tenant_id=search_input.tenant_id,
                     query_embedding=embedded_query,
                     limit=search_input.max_num_chunks,
@@ -55,22 +63,37 @@ class DocumentSearchWorkflow:
             )
 
             # save query result on database
-            # TODO
+            await workflow.execute_activity(
+                "save_query_result",
+                UpdateQueryResultInput(
+                    query_id=search_input.query_id,
+                    tenant_id=search_input.tenant_id,
+                    answer=llm_answer,
+                    status="completed",
+                    chunks=chunks,
+                ),
+                schedule_to_close_timeout=timedelta(seconds=10),
+            )
 
             # PREPARE RESULT TO SEND
-            return llm_answer
+            result = await workflow.execute_activity(
+                "format_answer",
+                FormatAnswerInput(
+                    tenant_id=search_input.tenant_id,
+                    query_id=search_input.query_id,
+                    chunk_strategy="sentence",  # TODO: make it dynamic from request
+                    query=search_input.query,
+                    max_num_chunks=search_input.max_num_chunks,
+                    document_ids=search_input.document_ids,
+                    llm_answer=llm_answer,
+                    chunks=chunks,
+                    similarity_threshold=search_input.similarity_threshold,
+                ),
+                schedule_to_close_timeout=timedelta(seconds=10),
+            )
+
+            return result
 
         except Exception as e:
             print(e)
             raise e
-
-        # result = SearchResult(
-        #     query_id=search_input.query_id,
-        #     query=search_input.query,
-        #     answer=llm_answer,
-        #     tenant_id=search_input.tenant_id,
-        #     chunks=chunks,
-        # )
-
-        # return result
-        return None

@@ -6,6 +6,8 @@ import uuid
 
 from sqlalchemy import delete, desc, insert, select
 
+from gdai.commons.enums import QueryStatusEnum
+
 from .base_repository import BaseRepository
 from .models import ChunkModel, DocumentModel, QueryChunkLinkModel, QueryModel
 from .sqlalchemy import SessionLocal
@@ -229,6 +231,38 @@ class PGVectorRepository(BaseRepository):
                 await session.rollback()
                 raise ValueError(f"Failed to insert query: {e!s}")
 
+    async def update_query_result(self, query_id: str, tenant_id: str, result: str, status: str) -> None:
+        """Update the result and status of a specific query.
+
+        Args:
+            query_id: The ID of the query to update.
+            tenant_id: The ID of the tenant.
+            result: The result text to set for the query.
+            status: The new status of the query.
+        Raises:
+            ValueError: If there's an error updating the query.
+        """
+
+        async with SessionLocal() as session:
+            try:
+                status = QueryStatusEnum(status)
+                stmt = (
+                    select(QueryModel)
+                    .where(QueryModel.tenant_id == tenant_id)
+                    .where(QueryModel.id == uuid.UUID(query_id))
+                )
+                result_query = await session.execute(stmt)
+                query_model = result_query.scalars().first()
+                if not query_model:
+                    raise ValueError(f"Query with ID {query_id} not found for tenant {tenant_id}.")
+                query_model.result = result
+                query_model.status = status
+                session.add(query_model)
+                await session.commit()
+            except Exception as e:
+                await session.rollback()
+                raise ValueError(f"Failed to update query result: {e!s}") from e
+
     async def search_chunks_by_similarity_on_document_ids(
         self,
         tenant_id: str,
@@ -280,7 +314,7 @@ class PGVectorRepository(BaseRepository):
             except Exception as e:
                 raise ValueError(f"Failed to search chunks by similarity and document IDs: {e!s}")
 
-    async def insert_query_chunk_links(self, tenant_id: str, query_id: str, chunks: dict) -> None:
+    async def insert_query_chunk_links(self, tenant_id: str, query_id: str, chunks_ids_with_similarity: list) -> None:
         try:
             async with SessionLocal() as session:
                 stmt = insert(QueryChunkLinkModel).values(
@@ -292,7 +326,7 @@ class PGVectorRepository(BaseRepository):
                             "chunk_id": chunk_id,
                             "similarity_score": similarity,
                         }
-                        for chunk_id, similarity in chunks.items()
+                        for (chunk_id, similarity) in chunks_ids_with_similarity
                     ]
                 )
                 await session.execute(stmt)

@@ -9,11 +9,10 @@ async def main() -> None:
     client = await Client.connect("localhost:7233")
     input = SearchInput(
         query_id=f"{uuid.uuid4()}",
-        query="Quais personagens aparecem na história?",
-        # query="quem é a Profa. Minerva McGonagall?",
+        query="Quantos personagens aparecem na história?",
         tenant_id="tenant_123",
         similarity_threshold=0.10,
-        max_num_chunks=100,
+        max_num_chunks=10,
         document_ids=None,
     )
     result = await client.execute_workflow(

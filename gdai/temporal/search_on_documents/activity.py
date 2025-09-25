@@ -1,10 +1,18 @@
 from temporalio import activity
 
+from gdai.commons import logger
 from gdai.commons.enums import QueryStatusEnum
 from gdai.repositories import RepositoryFactory
 from gdai.repositories.models import QueryModel
 
-from .schema import Chunk, PromptInput, QueryInput, SearchQueryParam
+from .schema import (
+    Chunk,
+    ChunkSearchParam,
+    FormatAnswerInput,
+    PromptInput,
+    QueryInput,
+    UpdateQueryResultInput,
+)
 
 __PROMPT_TEMPLATE_TO_SOLVE_QUERY = """
     You are an AI assistant that helps users find relevant information in documents.
@@ -43,12 +51,14 @@ async def register_query(query_param: QueryInput) -> None:
                 status=QueryStatusEnum.pending,
             )
         )
+        logger.info(f"Query {query_param.query_id} registered successfully")
     except Exception as e:
-        print(e)
+        logger.error(f"Error registering query {query_param.query_id}: {e}")
+        raise e  # Re-throw to allow proper activity failure handling
 
 
 @activity.defn
-async def get_chunks(search_query_param: SearchQueryParam) -> list[Chunk]:
+async def get_chunks(search_query_param: ChunkSearchParam) -> list[Chunk]:
     # Implementação de busca de chunks
     try:
         result = await __REPOSITORY.search_chunks_by_similarity_on_document_ids(
@@ -71,41 +81,50 @@ async def get_chunks(search_query_param: SearchQueryParam) -> list[Chunk]:
             )
             for chunk, similarity in result
         ]
-
+        logger.info(f"Found {len(chunks)} chunks matching the search criteria")
         return chunks
     except Exception as e:
-        print(e)
+        logger.error(f"Error searching chunks for tenant {search_query_param.tenant_id}: {e}")
+        raise e  # Re-throw to allow proper activity failure handling
 
 
 @activity.defn
-async def save_query_result(
-    query_id: str,
-    tenant_id: str,
-    answer: str,
-    status: QueryStatusEnum = QueryStatusEnum.completed,
-) -> None:
+async def save_query_result(input: UpdateQueryResultInput) -> None:
     try:
+        logger.info(f"Saving query result for query {input.query_id}, tenant {input.tenant_id}")
+        # update query result
         await __REPOSITORY.update_query_result(
-            query_id=query_id,
-            tenant_id=tenant_id,
-            result=answer,
-            status=status,
+            query_id=input.query_id,
+            tenant_id=input.tenant_id,
+            result=input.answer,
+            status=input.status,
         )
 
-        # add relation between query and chunks instead of doing it in search_chunks_by_similarity_on_document_ids
-        # chunk_ids_similarities = {str(chunk.id): similarity for chunk, similarity in result}
-        # await __REPOSITORY.insert_query_chunk_links(
-        #     query_id=search_query_param.query_id,
-        #     tenant_id=search_query_param.tenant_id,
-        #     chunks=chunk_ids_similarities,
-        # )
+        # link query with chunks
+        await __REPOSITORY.insert_query_chunk_links(
+            tenant_id=input.tenant_id,
+            query_id=input.query_id,
+            chunks_ids_with_similarity=[(chunk.chunk_id, chunk.query_similarity) for chunk in input.chunks],
+        )
+        # link query with chunks
+        chunk_count = len(input.chunks) if input.chunks else 0
+        logger.debug(f"Linking query {input.query_id} with {chunk_count} chunks")
 
     except Exception as e:
-        print(e)
+        logger.error(f"Error saving query result for query {input.query_id}: {e}")
+        raise e  # Re-throw to allow proper activity failure handling
 
 
 @activity.defn
 async def generate_prompt_from_template(prompt_input: PromptInput) -> str:
+    logger.debug(f"Generating prompt for query with {len(prompt_input.chunks)} chunks")
     chunks_text = "\n\n".join([chunk.text for chunk in prompt_input.chunks])
     prompt = __PROMPT_TEMPLATE_TO_SOLVE_QUERY.format(query=prompt_input.query, chunks=chunks_text)
+    logger.debug(f"Generated prompt with {len(prompt)} characters")
     return prompt
+
+
+@activity.defn
+async def format_answer(format_answer_input: FormatAnswerInput) -> dict:
+    logger.debug(f"Formatting answer for query {format_answer_input.query_id}, tenant {format_answer_input.tenant_id}")
+    return format_answer_input.__dict__
