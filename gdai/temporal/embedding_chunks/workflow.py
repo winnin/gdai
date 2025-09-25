@@ -13,36 +13,59 @@ with workflow.unsafe.imports_passed_through():
 class ChunkEmbeddingWorkflow:
     @workflow.run
     async def run(self, chunk_file_path: str) -> str:
-        batch_id = "chunk_embedding_workflow"
-        chunks = await workflow.execute_activity(
-            "get_chunks_to_embedding", chunk_file_path, schedule_to_close_timeout=timedelta(seconds=50)
-        )
-        batch_size = int(Config.embedding.BATCH_SIZE / 4)
-        batches = [chunks[i : i + batch_size] for i in range(0, len(chunks), batch_size)]
+        try:
+            workflow.logger.info(f"Starting ChunkEmbeddingWorkflow for file: {chunk_file_path}")
 
-        # Execute all child workflows in parallel
-        tasks = []
-        for idx, batch in enumerate(batches):
-            input_to_embedding = {chunk["id"]: chunk["chunk"] for chunk in batch}
-            tasks.append(
-                workflow.execute_child_workflow(
-                    "TextEmbeddingWorkflow",
-                    input_to_embedding,
-                    id=f"embedding_chunks_{batch_id}_{idx}",
-                    task_queue="embedding-text-queue",
+            batch_id = "chunk_embedding_workflow"
+            chunks = await workflow.execute_activity(
+                "get_chunks_to_embedding", chunk_file_path, schedule_to_close_timeout=timedelta(seconds=50)
+            )
+
+            workflow.logger.info(f"Retrieved {len(chunks)} chunks for embedding")
+
+            batch_size = int(Config.embedding.BATCH_SIZE / 4)
+            batches = [chunks[i : i + batch_size] for i in range(0, len(chunks), batch_size)]
+
+            workflow.logger.info(f"Created {len(batches)} batches with batch size: {batch_size}")
+
+            # Execute all child workflows in parallel
+            tasks = []
+            for idx, batch in enumerate(batches):
+                input_to_embedding = {chunk["id"]: chunk["chunk"] for chunk in batch}
+                workflow.logger.debug(f"Creating embedding task for batch {idx + 1}/{len(batches)}")
+                tasks.append(
+                    workflow.execute_child_workflow(
+                        "TextEmbeddingWorkflow",
+                        input_to_embedding,
+                        id=f"embedding_chunks_{batch_id}_{idx}",
+                        task_queue="embedding-text-queue",
+                    )
                 )
-            )
-        batch_results = await asyncio.gather(*tasks)
 
-        # Update embeddings in chunks
-        for batch, batch_result in zip(batches, batch_results):
-            for chunk in batch:
-                if chunk["id"] in batch_result:
-                    chunk["embedding"] = batch_result[chunk["id"]]
-            output_file = await workflow.execute_activity(
-                "create_chunkfile_with_embeddings",
-                ChunkStoreEmbeding(file_path=chunk_file_path, chunks=batch),
-                schedule_to_close_timeout=timedelta(seconds=50),
-            )
+            workflow.logger.info(f"Executing {len(tasks)} embedding tasks in parallel")
+            batch_results = await asyncio.gather(*tasks)
+            workflow.logger.info("All embedding tasks completed successfully")
 
-        return output_file
+            # Update embeddings in chunks
+            output_file = None
+            for batch_idx, (batch, batch_result) in enumerate(zip(batches, batch_results)):
+                workflow.logger.debug(f"Processing batch {batch_idx + 1}/{len(batches)} results")
+
+                for chunk in batch:
+                    if chunk["id"] in batch_result:
+                        chunk["embedding"] = batch_result[chunk["id"]]
+
+                output_file = await workflow.execute_activity(
+                    "create_chunkfile_with_embeddings",
+                    ChunkStoreEmbeding(file_path=chunk_file_path, chunks=batch),
+                    schedule_to_close_timeout=timedelta(seconds=50),
+                )
+
+                workflow.logger.debug(f"Batch {batch_idx + 1} processed and stored successfully")
+
+            workflow.logger.info(f"ChunkEmbeddingWorkflow completed successfully. Output file: {output_file}")
+            return output_file
+
+        except Exception as e:
+            workflow.logger.error(f"ChunkEmbeddingWorkflow failed for file {chunk_file_path}: {e}")
+            raise
