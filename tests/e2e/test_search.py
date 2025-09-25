@@ -12,7 +12,7 @@ async def main() -> None:
         query="Quantos personagens aparecem na história?",
         tenant_id="tenant_123",
         similarity_threshold=0.10,
-        max_num_chunks=10,
+        max_num_chunks=3,
         document_ids=None,
     )
     result = await client.execute_workflow(

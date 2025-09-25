@@ -1,7 +1,7 @@
 from temporalio import activity
 
-from gdai.commons import logger
 from gdai.commons.enums import QueryStatusEnum
+from gdai.commons.logger import logger
 from gdai.repositories import RepositoryFactory
 from gdai.repositories.models import QueryModel
 
@@ -43,6 +43,10 @@ __REPOSITORY = RepositoryFactory.get_repository()
 @activity.defn
 async def register_query(query_param: QueryInput) -> None:
     try:
+        logger.info(
+            f"Starting query registration for query_id: {query_param.query_id}, tenant: {query_param.tenant_id}"
+        )
+
         await __REPOSITORY.insert_query(
             QueryModel(
                 id=query_param.query_id,
@@ -51,16 +55,25 @@ async def register_query(query_param: QueryInput) -> None:
                 status=QueryStatusEnum.pending,
             )
         )
-        logger.info(f"Query {query_param.query_id} registered successfully")
+
+        logger.info(f"Query {query_param.query_id} registered successfully for tenant {query_param.tenant_id}")
+
     except Exception as e:
-        logger.error(f"Error registering query {query_param.query_id}: {e}")
-        raise e  # Re-throw to allow proper activity failure handling
+        logger.error(f"Error registering query {query_param.query_id} for tenant {query_param.tenant_id}: {e}")
+        raise e
 
 
 @activity.defn
 async def get_chunks(search_query_param: ChunkSearchParam) -> list[Chunk]:
-    # Implementação de busca de chunks
     try:
+        logger.info(
+            f"""Starting chunk search for tenant: {search_query_param.tenant_id}, limit: {search_query_param.limit}, \
+                threshold: {search_query_param.similarity_threshold}"""
+        )
+
+        if search_query_param.document_ids:
+            logger.debug(f"Searching within specific documents: {search_query_param.document_ids}")
+
         result = await __REPOSITORY.search_chunks_by_similarity_on_document_ids(
             tenant_id=search_query_param.tenant_id,
             query_vector=search_query_param.query_embedding,
@@ -69,7 +82,6 @@ async def get_chunks(search_query_param: ChunkSearchParam) -> list[Chunk]:
             limit=search_query_param.limit,
         )
 
-        # return chunks
         chunks = [
             Chunk(
                 chunk_id=str(chunk.id),
@@ -81,17 +93,25 @@ async def get_chunks(search_query_param: ChunkSearchParam) -> list[Chunk]:
             )
             for chunk, similarity in result
         ]
-        logger.info(f"Found {len(chunks)} chunks matching the search criteria")
+
+        logger.info(
+            f"Found {len(chunks)} chunks matching the search criteria for tenant {search_query_param.tenant_id}"
+        )
+        logger.debug(f"Chunk similarities range: {[chunk.query_similarity for chunk in chunks[:5]]}")
+
         return chunks
+
     except Exception as e:
         logger.error(f"Error searching chunks for tenant {search_query_param.tenant_id}: {e}")
-        raise e  # Re-throw to allow proper activity failure handling
+        raise e
 
 
 @activity.defn
 async def save_query_result(input: UpdateQueryResultInput) -> None:
     try:
         logger.info(f"Saving query result for query {input.query_id}, tenant {input.tenant_id}")
+        logger.debug(f"Query result status: {input.status}, answer length: {len(input.answer) if input.answer else 0}")
+
         # update query result
         await __REPOSITORY.update_query_result(
             query_id=input.query_id,
@@ -101,30 +121,60 @@ async def save_query_result(input: UpdateQueryResultInput) -> None:
         )
 
         # link query with chunks
-        await __REPOSITORY.insert_query_chunk_links(
-            tenant_id=input.tenant_id,
-            query_id=input.query_id,
-            chunks_ids_with_similarity=[(chunk.chunk_id, chunk.query_similarity) for chunk in input.chunks],
-        )
-        # link query with chunks
-        chunk_count = len(input.chunks) if input.chunks else 0
-        logger.debug(f"Linking query {input.query_id} with {chunk_count} chunks")
+        if input.chunks:
+            chunk_links = [(chunk.chunk_id, chunk.query_similarity) for chunk in input.chunks]
+            await __REPOSITORY.insert_query_chunk_links(
+                tenant_id=input.tenant_id,
+                query_id=input.query_id,
+                chunks_ids_with_similarity=chunk_links,
+            )
+
+            chunk_count = len(input.chunks)
+            logger.info(f"Linked query {input.query_id} with {chunk_count} chunks")
+        else:
+            logger.warning(f"No chunks to link for query {input.query_id}")
+
+        logger.info(f"Query result saved successfully for query {input.query_id}")
 
     except Exception as e:
         logger.error(f"Error saving query result for query {input.query_id}: {e}")
-        raise e  # Re-throw to allow proper activity failure handling
+        raise e
 
 
 @activity.defn
 async def generate_prompt_from_template(prompt_input: PromptInput) -> str:
-    logger.debug(f"Generating prompt for query with {len(prompt_input.chunks)} chunks")
-    chunks_text = "\n\n".join([chunk.text for chunk in prompt_input.chunks])
-    prompt = __PROMPT_TEMPLATE_TO_SOLVE_QUERY.format(query=prompt_input.query, chunks=chunks_text)
-    logger.debug(f"Generated prompt with {len(prompt)} characters")
-    return prompt
+    try:
+        logger.info(f"Generating prompt with {len(prompt_input.chunks)} chunks")
+        logger.debug(f"Query length: {len(prompt_input.query)}")
+
+        chunks_text = "\n\n".join([chunk.text for chunk in prompt_input.chunks])
+        prompt = __PROMPT_TEMPLATE_TO_SOLVE_QUERY.format(query=prompt_input.query, chunks=chunks_text)
+
+        logger.info(f"Generated prompt with {len(prompt)} characters")
+        logger.debug(f"Total chunks text length: {len(chunks_text)}")
+
+        return prompt
+
+    except Exception as e:
+        logger.error(f"Error generating prompt from template: {e}")
+        raise e
 
 
 @activity.defn
 async def format_answer(format_answer_input: FormatAnswerInput) -> dict:
-    logger.debug(f"Formatting answer for query {format_answer_input.query_id}, tenant {format_answer_input.tenant_id}")
-    return format_answer_input.__dict__
+    try:
+        logger.info(
+            f"Formatting answer for query {format_answer_input.query_id}, tenant {format_answer_input.tenant_id}"
+        )
+        logger.debug(f"Answer length: {len(format_answer_input.llm_answer) if format_answer_input.llm_answer else 0}")
+        logger.debug(f"Number of chunks: {len(format_answer_input.chunks) if format_answer_input.chunks else 0}")
+
+        result = format_answer_input.__dict__
+
+        logger.info(f"Answer formatted successfully for query {format_answer_input.query_id}")
+
+        return result
+
+    except Exception as e:
+        logger.error(f"Error formatting answer for query {format_answer_input.query_id}: {e}")
+        raise e
