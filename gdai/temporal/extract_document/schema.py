@@ -26,8 +26,8 @@ class StoreDocumentInput:
 
 @dataclass
 class Document:
-    name: str = ""
     tenant_id: str = ""
+    name: str = ""
     type: str = ""
     chunk_strategy: str = ""
     chunks: list["Chunk"] | None = field(default_factory=list)

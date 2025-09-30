@@ -7,6 +7,7 @@ import uuid
 from sqlalchemy import delete, desc, insert, select
 
 from gdai.commons.enums import QueryStatusEnum
+from gdai.commons.logger import logger
 
 from .base_repository import BaseRepository
 from .models import ChunkModel, DocumentModel, QueryChunkLinkModel, QueryModel
@@ -309,7 +310,8 @@ class PGVectorRepository(BaseRepository):
                 result = result.all()
 
                 if not result:
-                    raise ValueError("No chunks found matching the criteria.")
+                    logger.warning("No chunks found matching the criteria.")
+                    return []
                 return result
             except Exception as e:
                 raise ValueError(f"Failed to search chunks by similarity and document IDs: {e!s}")

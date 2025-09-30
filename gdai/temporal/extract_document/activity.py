@@ -15,7 +15,7 @@ from gdai.extractors import ExtractorFactory
 from gdai.repositories import RepositoryFactory
 from gdai.repositories.models import ChunkModel, DocumentModel
 
-from .schema import Chunk, ChunkDocumentInput, DocumentExtracInput, StoreDocumentInput, TempFiles
+from .schema import Chunk, ChunkDocumentInput, DocumentExtracInput, StoreDocumentInput
 
 
 @activity.defn
@@ -71,48 +71,66 @@ async def extract(input: DocumentExtracInput) -> str:
 
 
 @activity.defn
-async def chunk_texts(input: ChunkDocumentInput) -> list[str]:
+async def chunk_texts_in_batched_files(input: ChunkDocumentInput) -> list[str]:
     chunk_strategy = input.chunk_strategy
     extracted_document_path = input.extracted_document_path
 
     logger.info(f"Starting text chunking with strategy: {chunk_strategy}")
     logger.debug(f"Processing document: {extracted_document_path}")
 
+    # load extracted document
     async with aiofiles.open(extracted_document_path) as f:
         extracted_document = json.loads(await f.read())
 
+    # chunk texts
     chunker = ChunkerFactory.get_chunker(chunker_type=chunk_strategy)
     only_text_by_page = [item[1] for item in extracted_document["texts"]]
     doc_text_chunks = chunker.chunk(only_text_by_page)
     chunks = []
 
+    # create chunk objects
     for page_number, text_content in doc_text_chunks:
         chunk = Chunk(
             id=str(uuid.uuid4()),
-            type="text",
+            type="text",  # TODO: dynamic based on content
             chunk=text_content,
             page_number=page_number,
         )
         chunks.append(chunk)
 
+    # create batched chunk files
     logger.info(f"Generated {len(chunks)} chunks from document")
+    batch_size = int(Config.embedding.BATCH_SIZE / 4)
+    batches = [chunks[i : i + batch_size] for i in range(0, len(chunks), batch_size)]
 
-    batch_size = Config.embedding.BATCH_SIZE
-    chunks_batch = [chunks[i : i + batch_size] for i in range(0, len(chunks), batch_size)]
-    chunk_files = []
-
-    logger.info(f"Creating {len(chunks_batch)} chunk files with batch size: {batch_size}")
-
-    for idx, batch in enumerate(chunks_batch):
+    generated_files = []
+    for idx, batch in enumerate(batches):
+        logger.info(f"Processing a batch of {len(batch)} chunks")
         chunks_str = json.dumps([chunk.__dict__ for chunk in batch], indent=2)
         chunk_file_path = extracted_document_path.replace(".json", f"_chunks_{idx}.json")
-        with open(chunk_file_path, "w") as f:
-            f.write(chunks_str)
-            chunk_files.append(chunk_file_path)
-        logger.debug(f"Created chunk file {idx + 1}/{len(chunks_batch)}: {chunk_file_path}")
+        generated_files.append(chunk_file_path)
+        async with aiofiles.open(chunk_file_path, "w") as f:
+            await f.write(chunks_str)
 
-    logger.info(f"Text chunking completed. Created {len(chunk_files)} chunk files")
-    return chunk_files
+    logger.info("Text chunking completed. ")
+    return generated_files
+
+
+@activity.defn
+async def get_chunks_content_to_embedding(chunk_file_path: str) -> list[list[dict]]:
+    logger.info(f"Loading chunks from file for embedding: {chunk_file_path}")
+    async with aiofiles.open(chunk_file_path) as f:
+        document_chunks = json.loads(await f.read())
+
+    if not document_chunks:
+        logger.warning(f"No chunks found in file: {chunk_file_path}")
+        return []
+
+    batch_size = int(Config.embedding.BATCH_SIZE)
+    batches = [document_chunks[i : i + batch_size] for i in range(0, len(document_chunks), batch_size)]
+
+    logger.info(f"Divided {len(document_chunks)} chunks into {len(batches)} batches for embedding")
+    return batches
 
 
 @activity.defn
@@ -179,13 +197,8 @@ async def store_embedded_chunks(input: StoreDocumentInput) -> None:
 
 
 @activity.defn
-async def remove_temp_files(files_to_remove: TempFiles) -> None:
+async def remove_temp_files(files_to_remove_list: list[str]) -> None:
     logger.info("Starting cleanup of temporary files")
-
-    files_to_remove_list = (
-        [files_to_remove.extracted_document_file_path] + files_to_remove.chunk_files + files_to_remove.embedded_files
-    )
-
     logger.debug(f"Removing {len(files_to_remove_list)} temporary files")
 
     async def remove_single_file(file_path):

@@ -94,6 +94,10 @@ async def get_chunks(search_query_param: ChunkSearchParam) -> list[Chunk]:
             for chunk, similarity in result
         ]
 
+        if not chunks or len(chunks) == 0:
+            logger.warning(f"No chunks found matching the search criteria for tenant {search_query_param.tenant_id}")
+            return []
+
         logger.info(
             f"Found {len(chunks)} chunks matching the search criteria for tenant {search_query_param.tenant_id}"
         )

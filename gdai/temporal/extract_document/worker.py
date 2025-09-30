@@ -6,8 +6,9 @@ from temporalio.worker import Worker
 from gdai.commons.logger import logger
 
 from .activity import (
-    chunk_texts,
+    chunk_texts_in_batched_files,
     extract,
+    get_chunks_content_to_embedding,
     remove_temp_files,
     store_embedded_chunks,
     validate,
@@ -28,7 +29,8 @@ async def main():
             activities=[
                 validate,
                 extract,
-                chunk_texts,
+                chunk_texts_in_batched_files,
+                get_chunks_content_to_embedding,
                 store_embedded_chunks,
                 remove_temp_files,
             ],
