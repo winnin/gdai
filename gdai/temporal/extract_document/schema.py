@@ -1,7 +1,5 @@
 from dataclasses import dataclass, field
 
-from gdai.commons.enums import ChunkTypeEnum
-
 
 @dataclass
 class DocumentExtracInput:
@@ -12,16 +10,10 @@ class DocumentExtracInput:
 
 @dataclass
 class ChunkDocumentInput:
-    chunk_strategy: str
-    extracted_document_path: str
-
-
-@dataclass
-class StoreDocumentInput:
+    document_id: str
     tenant_id: str
     chunk_strategy: str
-    document_original_path: str
-    document_chunks_path: str
+    extracted_document_path: str
 
 
 @dataclass
@@ -36,14 +28,9 @@ class Document:
 @dataclass
 class Chunk:
     id: str
-    type: ChunkTypeEnum = ChunkTypeEnum.text
+    tenant_id: str
+    document_id: str
+    type: str
     chunk: str = ""
     page_number: int = 0
     embedding: list[float] | None = field(default_factory=list)
-
-
-@dataclass
-class TempFiles:
-    extracted_document_file_path: str
-    chunk_files: list[str] = field(default_factory=list)
-    embedded_files: list[str] = field(default_factory=list)

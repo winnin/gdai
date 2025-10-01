@@ -15,7 +15,7 @@ from gdai.extractors import ExtractorFactory
 from gdai.repositories import RepositoryFactory
 from gdai.repositories.models import ChunkModel, DocumentModel
 
-from .schema import Chunk, ChunkDocumentInput, DocumentExtracInput, StoreDocumentInput
+from .schema import Chunk, ChunkDocumentInput, DocumentExtracInput
 
 
 @activity.defn
@@ -50,19 +50,46 @@ async def validate(input: DocumentExtracInput) -> None:
 
 
 @activity.defn
-async def extract(input: DocumentExtracInput) -> str:
+async def save_document_metadata(input: DocumentExtracInput) -> str:
+    tenant_id = input.tenant_id
+    document_path = input.document_path
+    document_name = document_path.split("/")[-1]
+    document_type = document_name.split(".")[-1].lower()
+    chunk_strategy = input.chunk_strategy
+
+    logger.info(f"Saving document metadata for: {document_path}")
+    logger.debug(f"Tenant: {tenant_id}, Document type: {document_type}, Chunk strategy: {chunk_strategy}")
+
+    repository = RepositoryFactory.get_repository()
+    document_id = uuid.uuid4()
+    document_model = DocumentModel(
+        id=document_id,
+        name=document_name,
+        tenant_id=tenant_id,
+        type=DocumentTypeEnum[document_type],
+        chunk_strategy=chunk_strategy,
+    )
+
+    try:
+        await repository.insert_document(document_model)
+        logger.info(f"Document {document_name} metadata saved with ID: {document_id}")
+        return str(document_id)
+    except Exception as e:
+        logger.error(f"Error saving document metadata to database: {e}")
+        raise e
+
+
+@activity.defn
+async def extract_document_content(input: DocumentExtracInput) -> str:
     document_path = input.document_path
     document_extension = document_path.split(".")[-1].lower()  # get document extension
-
     logger.info(f"Starting document extraction for: {document_path} (type: {document_extension})")
-
     extractor = ExtractorFactory.get_extractor(extractor_type=document_extension)
     try:
         extracted_document = extractor.extract_document_data(document_path)
         output_file = os.path.join(Config.extractor.TMP_FOLDER, f"{uuid.uuid4()}.json")
         async with aiofiles.open(output_file, "w") as f:
             await f.write(json.dumps(extracted_document))
-
         logger.info(f"Document extraction completed. Output saved to: {output_file}")
         return output_file
     except Exception as e:
@@ -71,7 +98,7 @@ async def extract(input: DocumentExtracInput) -> str:
 
 
 @activity.defn
-async def chunk_texts_in_batched_files(input: ChunkDocumentInput) -> list[str]:
+async def chunk_texts_to_batched_files(input: ChunkDocumentInput) -> list[str]:
     chunk_strategy = input.chunk_strategy
     extracted_document_path = input.extracted_document_path
 
@@ -92,6 +119,8 @@ async def chunk_texts_in_batched_files(input: ChunkDocumentInput) -> list[str]:
     for page_number, text_content in doc_text_chunks:
         chunk = Chunk(
             id=str(uuid.uuid4()),
+            tenant_id=input.tenant_id,
+            document_id=input.document_id,
             type="text",  # TODO: dynamic based on content
             chunk=text_content,
             page_number=page_number,
@@ -100,7 +129,7 @@ async def chunk_texts_in_batched_files(input: ChunkDocumentInput) -> list[str]:
 
     # create batched chunk files
     logger.info(f"Generated {len(chunks)} chunks from document")
-    batch_size = int(Config.embedding.BATCH_SIZE / 4)
+    batch_size = int(Config.embedding.BATCH_SIZE)
     batches = [chunks[i : i + batch_size] for i in range(0, len(chunks), batch_size)]
 
     generated_files = []
@@ -117,7 +146,7 @@ async def chunk_texts_in_batched_files(input: ChunkDocumentInput) -> list[str]:
 
 
 @activity.defn
-async def get_chunks_content_to_embedding(chunk_file_path: str) -> list[list[dict]]:
+async def get_chunk_file_content_for_embedding(chunk_file_path: str) -> list[list[dict]]:
     logger.info(f"Loading chunks from file for embedding: {chunk_file_path}")
     async with aiofiles.open(chunk_file_path) as f:
         document_chunks = json.loads(await f.read())
@@ -126,80 +155,41 @@ async def get_chunks_content_to_embedding(chunk_file_path: str) -> list[list[dic
         logger.warning(f"No chunks found in file: {chunk_file_path}")
         return []
 
-    batch_size = int(Config.embedding.BATCH_SIZE)
-    batches = [document_chunks[i : i + batch_size] for i in range(0, len(document_chunks), batch_size)]
-
-    logger.info(f"Divided {len(document_chunks)} chunks into {len(batches)} batches for embedding")
-    return batches
+    logger.info(f"Loaded {len(document_chunks)} chunks from file: {chunk_file_path}")
+    return document_chunks
 
 
 @activity.defn
-async def store_embedded_chunks(input: StoreDocumentInput) -> None:
-    tenant_id = input.tenant_id
-    chunk_strategy = input.chunk_strategy
-    document_original_path = input.document_original_path
-    document_chunks_path = input.document_chunks_path
-
-    logger.info(f"Starting storage of embedded chunks for document: {document_original_path}")
-    logger.debug(f"Tenant: {tenant_id}, Chunk strategy: {chunk_strategy}")
-
+async def store_embedded_chunks(input: list[Chunk]) -> None:
+    if not input:
+        logger.warning("No chunks provided for storage")
+        return
     repository = RepositoryFactory.get_repository()
-
-    # insert document data
-    document_name = document_original_path.split("/")[-1]
-    document_type = document_name.split(".")[-1].lower()
-    document_id = uuid.uuid4()
-    document_model = DocumentModel(
-        id=document_id,
-        name=document_name,
-        tenant_id=tenant_id,
-        type=DocumentTypeEnum[document_type],
-        chunk_strategy=chunk_strategy,
-    )
+    chunk_models = [
+        ChunkModel(
+            id=chunk.id,
+            tenant_id=chunk.tenant_id,
+            document_id=chunk.document_id,
+            type=ChunkTypeEnum[chunk.type],
+            chunk=chunk.chunk,
+            page_number=chunk.page_number,
+            embedding=chunk.embedding,
+        )
+        for chunk in input
+    ]
 
     try:
-        await repository.insert_document(document_model)
-        logger.info(f"Document {document_name} inserted with ID: {document_id}")
+        await repository.insert_batch_chunks(chunk_models)
+        logger.info(f"Stored {len(chunk_models)} chunks into the database")
     except Exception as e:
-        logger.error(f"Error inserting document into database: {e}")
+        logger.error(f"Error storing chunks into database: {e}")
         raise e
-
-    # insert chunks data
-    async with aiofiles.open(document_chunks_path) as f:
-        # if chunks is empty list, do not insert and add status to document as failed do chunk
-        document_chunks = json.loads(await f.read())
-
-        if not document_chunks:
-            logger.warning(f"No chunks found in file: {document_chunks_path}")
-            return
-
-        logger.info(f"Processing {len(document_chunks)} chunks for storage")
-
-        chunk_models = [
-            ChunkModel(
-                id=uuid.UUID(chunk["id"]),
-                tenant_id=tenant_id,
-                type=ChunkTypeEnum[chunk["type"]],
-                chunk=chunk["chunk"],
-                page_number=chunk["page_number"],
-                document_id=document_id,
-                embedding=chunk["embedding"],
-            )
-            for chunk in document_chunks
-        ]
-
-        try:
-            await repository.insert_chunks(chunk_models)
-            logger.info(f"Successfully stored {len(chunk_models)} chunks for document {document_name}")
-        except Exception as e:
-            logger.error(f"Error inserting chunks into the database: {e}")
-            raise e
 
 
 @activity.defn
-async def remove_temp_files(files_to_remove_list: list[str]) -> None:
+async def remove_temp_files(files_to_remove: list[str]) -> None:
     logger.info("Starting cleanup of temporary files")
-    logger.debug(f"Removing {len(files_to_remove_list)} temporary files")
+    logger.debug(f"Removing {len(files_to_remove)} temporary files")
 
     async def remove_single_file(file_path):
         try:
@@ -212,6 +202,6 @@ async def remove_temp_files(files_to_remove_list: list[str]) -> None:
             logger.error(f"Error removing temporary file {file_path}: {e}")
 
     # Execute all removal operations in parallel
-    await asyncio.gather(*[remove_single_file(file_path) for file_path in files_to_remove_list])
+    await asyncio.gather(*[remove_single_file(file_path) for file_path in files_to_remove])
 
     logger.info("Temporary files cleanup completed")

@@ -6,10 +6,11 @@ from temporalio.worker import Worker
 from gdai.commons.logger import logger
 
 from .activity import (
-    chunk_texts_in_batched_files,
-    extract,
-    get_chunks_content_to_embedding,
+    chunk_texts_to_batched_files,
+    extract_document_content,
+    get_chunk_file_content_for_embedding,
     remove_temp_files,
+    save_document_metadata,
     store_embedded_chunks,
     validate,
 )
@@ -28,9 +29,10 @@ async def main():
             workflows=[DocumentExtractionWorkflow],
             activities=[
                 validate,
-                extract,
-                chunk_texts_in_batched_files,
-                get_chunks_content_to_embedding,
+                save_document_metadata,
+                extract_document_content,
+                chunk_texts_to_batched_files,
+                get_chunk_file_content_for_embedding,
                 store_embedded_chunks,
                 remove_temp_files,
             ],

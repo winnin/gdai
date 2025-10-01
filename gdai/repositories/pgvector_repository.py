@@ -128,6 +128,36 @@ class PGVectorRepository(BaseRepository):
                 await session.rollback()
                 raise ValueError(f"Failed to insert document: {e!s}")
 
+    async def insert_batch_chunks(self, chunks: list[ChunkModel]) -> None:
+        """Insert multiple chunks into the database in a single batch operation.
+
+        Args:
+            chunks: List of chunk models to insert.
+        Raises:
+            ValueError: If there's an error inserting the chunks.
+        """
+        async with SessionLocal() as session:
+            try:
+                stmt = insert(ChunkModel).values(
+                    [
+                        {
+                            "id": chunk.id,
+                            "tenant_id": chunk.tenant_id,
+                            "document_id": chunk.document_id,
+                            "type": chunk.type,
+                            "chunk": chunk.chunk,
+                            "page_number": chunk.page_number,
+                            "embedding": chunk.embedding,
+                        }
+                        for chunk in chunks
+                    ]
+                )
+                await session.execute(stmt)
+                await session.commit()
+            except Exception as e:
+                await session.rollback()
+                raise ValueError(f"Failed to insert chunks in batch: {e!s}") from e
+
     async def get_chunks(self, tenant_id: str, document_id: str) -> list[ChunkModel]:
         """Retrieve all chunks for a specific document of a tenant.
 
