@@ -60,7 +60,7 @@ class FormatAnswerInput:
     query: str = ""
     max_num_chunks: int = 20
     document_ids: list[str] | None = None
-    llm_answer: str = ""
+    answer: str = ""
     chunks: list[Chunk] | None = None
     similarity_threshold: float | None = None
 

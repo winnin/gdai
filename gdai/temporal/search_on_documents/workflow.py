@@ -105,7 +105,7 @@ class DocumentSearchWorkflow:
                     query=search_input.query,
                     max_num_chunks=search_input.max_num_chunks,
                     document_ids=search_input.document_ids,
-                    llm_answer=llm_answer,
+                    answer=llm_answer,
                     chunks=chunks,
                     similarity_threshold=search_input.similarity_threshold,
                 ),

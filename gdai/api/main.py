@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 from contextlib import asynccontextmanager
 
 import uvicorn
@@ -8,26 +7,16 @@ from fastapi import FastAPI
 
 from gdai.api.routers.v1.document_router import router as document_router
 from gdai.api.routers.v1.search_router import router as search_router
-from gdai.background_daemons.embedding_document_daemon import EmbeddingDocumentDaemon
-from gdai.background_daemons.extract_document_daemon import ExtractDocumentDaemon
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    task1 = asyncio.create_task(ExtractDocumentDaemon().run())
-    task2 = asyncio.create_task(EmbeddingDocumentDaemon().run())
-
+    # No background daemons found; keeping a simple lifespan to allow future hooks
     try:
-        yield  # Aqui dentro, a API já está ativa
+        yield
     finally:
-        # Finalização (após a aplicação encerrar)
-        task1.cancel()
-        task2.cancel()
-        try:
-            await task1
-            await task2
-        except asyncio.CancelledError:
-            print("Daemons cancelled")
+        # Nothing to teardown currently
+        pass
 
 
 # Create FastAPI app

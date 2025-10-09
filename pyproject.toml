@@ -41,7 +41,7 @@ test = ["pytest>=8.4.0", "pytest-cov>=6.2.1", "pre-commit>=4.2.0", "pytest-async
 
 [tool.ruff]
 line-length = 120
-target-version = "py310"
+target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "UP", "I", "ARG"]
@@ -67,8 +67,15 @@ asyncio_default_fixture_loop_scope = "function"
 [tool.taskipy.tasks]
 
 configure-dev = { cmd = "uv sync --all-groups & pre-commit install & pre-commit install --hook-type pre-push", help = "Configure the environment" }
-reset-db = { cmd = "python -m gdai.scripts.reset_db", help = "Reset the database (DANGER: This will delete all data!)" }
-setup-db = { cmd = "python -m gdai.scripts.setup_db", help = "Setup the database (create tables)" }
+reset-db = { cmd = "python -m scripts.reset_db", help = "Reset the database (DANGER: This will delete all data!)" }
+setup-db = { cmd = "python -m scripts.setup_db", help = "Setup the database (create tables)" }
 
 run = { cmd = "uv run python -m gdai.api.main", help = "Run the FastAPI application" }
 tests = { cmd = "pytest", help = "Run all unit tests" }
+
+# Temporal workers
+temporal-all = { cmd = "uv run python -m gdai.temporal.main", help = "Run all Temporal workers (LLM, embedding, extraction, search)" }
+temporal-llm = { cmd = "uv run python -m gdai.temporal.conversational_llm.worker", help = "Run LLM worker (queue: llm-queue)" }
+temporal-embed = { cmd = "uv run python -m gdai.temporal.embedding_texts.worker", help = "Run embedding worker (queue: embedding-text-queue)" }
+temporal-extract = { cmd = "uv run python -m gdai.temporal.extract_document.worker", help = "Run extraction worker (queue: process-document-queue)" }
+temporal-search = { cmd = "uv run python -m gdai.temporal.search_on_documents.worker", help = "Run search worker (queue: search-on-documents-queue)" }

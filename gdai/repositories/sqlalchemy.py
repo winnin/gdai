@@ -3,6 +3,7 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 
 from gdai.commons.config import Config
 
+# TODO: change to accept any possible database.
 user = Config.db.PGVECTOR_USER
 password = Config.db.PGVECTOR_PASSWORD
 database = Config.db.PGVECTOR_DATABASE

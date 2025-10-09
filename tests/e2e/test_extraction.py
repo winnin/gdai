@@ -13,7 +13,9 @@ async def main() -> None:
     client: Client = await Client.connect("localhost:7233")
 
     input = DocumentExtracInput(
-        document_path="/home/fabricio/Desktop/data/arte_guerra.pdf", chunk_strategy="sentence", tenant_id="tenant_123"
+        document_path="./tests/fixtures/alice_in_wonderland_public_domain.pdf",
+        chunk_strategy="sentence",
+        tenant_id="tenant_123",
     )
 
     try:

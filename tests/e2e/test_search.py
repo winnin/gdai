@@ -9,11 +9,11 @@ async def main() -> None:
     client = await Client.connect("localhost:7233")
     input = SearchInput(
         query_id=f"{uuid.uuid4()}",
-        query="Como lutar num morro? ",
+        query="Quais são os personagens que aparecem em Alice no País das Maravilhas?, responda em portugues",
         tenant_id="tenant_123",
         similarity_threshold=0.10,
         max_num_chunks=30,
-        document_ids=["33b7f4bd-51f0-42d7-b3d0-d1e7e23e3ca4"],
+        document_ids=[],
     )
     result = await client.execute_workflow(
         "DocumentSearchWorkflow",
@@ -21,6 +21,7 @@ async def main() -> None:
         id=f"test_search_{uuid.uuid4()}",
         task_queue="search-on-documents-queue",
     )
+    # Ensure the workflow executes without interactive debugging
     print(f"Result: {result}")
 
 

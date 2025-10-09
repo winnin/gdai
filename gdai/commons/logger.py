@@ -12,6 +12,8 @@ load_dotenv(override=True)
 logging.getLogger("sqlalchemy").setLevel(logging.ERROR)
 logging.getLogger("sqlalchemy.engine").setLevel(logging.ERROR)
 logging.getLogger("chonkie").setLevel(logging.ERROR)
+logging.getLogger("tqdm").setLevel(logging.ERROR)
+logging.getLogger("rich.progress").setLevel(logging.ERROR)
 
 
 class ColorFormatter(logging.Formatter):
@@ -39,7 +41,19 @@ logging.getLogger().handlers = []
 class ModulePathFilter(logging.Filter):
     """Filter that adds module path information to log records"""
 
-    # ... (existing code unchanged)
+    def filter(self, record: logging.LogRecord) -> bool:
+        # Ensure module_path exists to satisfy formatter fields
+        try:
+            module_name = getattr(record, "module", None) or "unknown_module"
+            pathname = getattr(record, "pathname", None) or ""
+            record.module_path = f"{module_name}:{record.lineno}" if record.lineno else module_name
+            # Fallback: include file path when available
+            if pathname and module_name not in pathname:
+                record.module_path = f"{pathname}:{record.lineno}"
+        except Exception:
+            # Never break logging due to filter issues
+            record.module_path = "unknown:0"
+        return True
 
 
 # Create the GDAI logger
