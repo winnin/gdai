@@ -1,4 +1,4 @@
-from gdai.commons.config import Config
+from gdai.commons.settings import get_settings
 
 from .base_repository import BaseRepository  # noqa: F401
 
@@ -6,7 +6,8 @@ from .base_repository import BaseRepository  # noqa: F401
 class RepositoryFactory:
     @staticmethod
     def get_repository():
-        db_backend = Config.db.DATABASE
+        settings = get_settings()
+        db_backend = settings.database.database
         if db_backend == "pgvector":
             from gdai.repositories.pgvector_repository import PGVectorRepository
 

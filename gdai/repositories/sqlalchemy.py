@@ -1,22 +1,10 @@
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
+"""SQLAlchemy base models and configuration.
 
-from gdai.commons.config import Config
+DEPRECATED: The module-level engine and SessionLocal are deprecated.
+Use DatabaseManager.get_engine() and DatabaseManager.create_session() instead.
+"""
 
-# TODO: change to accept any possible database.
-user = Config.db.PGVECTOR_USER
-password = Config.db.PGVECTOR_PASSWORD
-database = Config.db.PGVECTOR_DATABASE
-host = Config.db.PGVECTOR_HOST
-port = Config.db.PGVECTOR_PORT
-min_size = Config.db.PGVECTOR_MIN_POOL_CONNECTIONS
-max_size = Config.db.PGVECTOR_MAX_POOL_CONNECTIONS
+from sqlalchemy.orm import declarative_base
 
-
-DATABASE_URL = (
-    f"postgresql+asyncpg://{user}:{password}@{host}:{port}/{database}"  # TODO: change to accept any possible database.
-)
-
-engine = create_async_engine(DATABASE_URL, echo=False, pool_size=min_size, max_overflow=max_size - min_size)
-SessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+# Base declarative model for all SQLAlchemy models
 Base = declarative_base()

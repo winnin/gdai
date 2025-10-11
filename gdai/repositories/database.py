@@ -5,7 +5,7 @@ from __future__ import annotations
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
-from gdai.commons.config import Config
+from gdai.commons.settings import get_settings
 
 
 class DatabaseManager:
@@ -31,20 +31,17 @@ class DatabaseManager:
 
     @classmethod
     def _create_engine(cls) -> AsyncEngine:
-        """Create a new database engine with configuration from Config.
+        """Create a new database engine with configuration from Settings.
 
         Returns:
             AsyncEngine: New SQLAlchemy async engine.
         """
-        user = Config.db.PGVECTOR_USER
-        password = Config.db.PGVECTOR_PASSWORD
-        database = Config.db.PGVECTOR_DATABASE
-        host = Config.db.PGVECTOR_HOST
-        port = Config.db.PGVECTOR_PORT
-        min_size = Config.db.PGVECTOR_MIN_POOL_CONNECTIONS
-        max_size = Config.db.PGVECTOR_MAX_POOL_CONNECTIONS
+        settings = get_settings()
+        db_config = settings.database
 
-        database_url = f"postgresql+asyncpg://{user}:{password}@{host}:{port}/{database}"
+        database_url = db_config.get_url()
+        min_size = db_config.min_pool_connections
+        max_size = db_config.max_pool_connections
 
         return create_async_engine(database_url, echo=False, pool_size=min_size, max_overflow=max_size - min_size)
 

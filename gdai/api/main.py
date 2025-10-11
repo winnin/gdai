@@ -15,6 +15,8 @@ from fastapi.responses import JSONResponse
 from gdai.api.routers import documents, health, queries
 from gdai.commons.exceptions import GDAIException
 from gdai.commons.logger import logger
+from gdai.repositories.database import DatabaseManager
+from gdai.temporal.client import TemporalClientManager
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -32,18 +34,42 @@ async def lifespan(app: FastAPI):  # noqa: ARG001
     # Startup
     logger.info("Starting GDAI API server...")
 
-    # TODO: Initialize Temporal client connection
-    # temporal_client = await connect_temporal_client()
-    # app.state.temporal_client = temporal_client
+    # Initialize Temporal client connection
+    try:
+        await TemporalClientManager.get_client()
+        logger.info("Temporal client initialized successfully")
+    except Exception as e:
+        logger.warning(f"Failed to initialize Temporal client: {e}")
+        logger.warning("API will start but Temporal workflows will not be available")
+
+    # Check database connectivity
+    try:
+        db_healthy = await DatabaseManager.health_check()
+        if db_healthy:
+            logger.info("Database connection healthy")
+        else:
+            logger.warning("Database connection unhealthy")
+    except Exception as e:
+        logger.warning(f"Database health check failed: {e}")
 
     yield
 
     # Shutdown
     logger.info("Shutting down GDAI API server...")
 
-    # TODO: Close Temporal client connection
-    # if hasattr(app.state, 'temporal_client'):
-    #     await app.state.temporal_client.close()
+    # Close Temporal client connection
+    try:
+        await TemporalClientManager.close()
+        logger.info("Temporal client closed")
+    except Exception as e:
+        logger.error(f"Error closing Temporal client: {e}")
+
+    # Close database connections
+    try:
+        await DatabaseManager.dispose()
+        logger.info("Database connections closed")
+    except Exception as e:
+        logger.error(f"Error closing database connections: {e}")
 
 
 def create_app() -> FastAPI:

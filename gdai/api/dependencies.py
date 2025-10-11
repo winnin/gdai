@@ -5,8 +5,10 @@ from __future__ import annotations
 from collections.abc import AsyncGenerator
 
 from fastapi import Header, HTTPException, status
+from temporalio.client import Client
 
 from gdai.repositories.pgvector_repository import PGVectorRepository
+from gdai.temporal.client import TemporalClientManager
 
 
 async def get_repository() -> AsyncGenerator[PGVectorRepository, None]:
@@ -39,14 +41,18 @@ async def get_current_tenant(x_tenant_id: str = Header(..., description="Tenant 
     return x_tenant_id.strip()
 
 
-async def get_temporal_client() -> object | None:
+async def get_temporal_client() -> Client:
     """Get Temporal client instance.
 
-    This is a stub implementation that returns None.
-    Will be implemented when Temporal workflows are integrated.
-
     Returns:
-        None: Placeholder for future Temporal client.
+        Client: Temporal client for workflow execution.
+
+    Raises:
+        HTTPException: If Temporal client is not available.
     """
-    # TODO: Implement Temporal client when workflows are ready
-    return None
+    try:
+        return await TemporalClientManager.get_client()
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=f"Temporal service unavailable: {str(e)}"
+        )

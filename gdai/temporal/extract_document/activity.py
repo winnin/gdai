@@ -8,9 +8,9 @@ from aiopath import AsyncPath
 from temporalio import activity
 
 from gdai.chunkers import ChunkerFactory
-from gdai.commons.config import Config
 from gdai.commons.enums import ChunkTypeEnum, DocumentTypeEnum
 from gdai.commons.logger import logger
+from gdai.commons.settings import get_settings
 from gdai.extractors import ExtractorFactory
 from gdai.repositories import RepositoryFactory
 from gdai.repositories.models import ChunkModel, DocumentModel
@@ -42,7 +42,9 @@ async def validate(input: DocumentExtracInput) -> None:
         raise ValueError(f"Document file is empty: {document_path}")
 
     # check if document exceeds maximum size
-    if file_size > Config.extractor.MAX_FILE_SIZE_MB * 1024 * 1024:  # configured limit in MB
+    settings = get_settings()
+    max_file_size_mb = settings.extractor.max_file_size_mb
+    if file_size > max_file_size_mb * 1024 * 1024:  # configured limit in MB
         logger.error(f"Document file {document_path} exceeds maximum allowed size")
         raise ValueError(f"Document file {document_path} exceeds maximum allowed size")
 
@@ -87,7 +89,9 @@ async def extract_document_content(input: DocumentExtracInput) -> str:
     extractor = ExtractorFactory.get_extractor(extractor_type=document_extension)
     try:
         extracted_document = extractor.extract_document_data(document_path)
-        output_file = os.path.join(Config.extractor.TMP_FOLDER, f"{uuid.uuid4()}.json")
+        settings = get_settings()
+        tmp_folder = settings.extractor.tmp_folder
+        output_file = os.path.join(tmp_folder, f"{uuid.uuid4()}.json")
         async with aiofiles.open(output_file, "w") as f:
             await f.write(json.dumps(extracted_document))
         logger.info(f"Document extraction completed. Output saved to: {output_file}")
@@ -129,7 +133,8 @@ async def chunk_texts_to_batched_files(input: ChunkDocumentInput) -> list[str]:
 
     # create batched chunk files
     logger.info(f"Generated {len(chunks)} chunks from document")
-    batch_size = int(Config.embedding.BATCH_SIZE)
+    settings = get_settings()
+    batch_size = settings.embedding.batch_size
     batches = [chunks[i : i + batch_size] for i in range(0, len(chunks), batch_size)]
 
     generated_files = []

@@ -1,7 +1,7 @@
 from temporalio import activity
 
-from gdai.commons.config import Config
 from gdai.commons.logger import logger
+from gdai.commons.settings import get_settings
 from gdai.embeddings import EmbeddingFactory
 
 
@@ -12,7 +12,8 @@ async def embedding_texts(text_to_embedding: dict[str, str]) -> dict[str, list[f
         logger.debug(f"Text IDs to embed: {list(text_to_embedding.keys())}")
 
         embedding_model = await EmbeddingFactory.get_embedding()
-        batch_size = Config.embedding.BATCH_SIZE
+        settings = get_settings()
+        batch_size = settings.embedding.batch_size
 
         if len(text_to_embedding) > batch_size:
             logger.error(f"Number of texts to embed {len(text_to_embedding)} exceeds the max batch size {batch_size}")
@@ -20,7 +21,7 @@ async def embedding_texts(text_to_embedding: dict[str, str]) -> dict[str, list[f
                 f"Number of texts to embed {len(text_to_embedding)} exceeds the max batch size {batch_size}"
             )
 
-        max_text_size = Config.embedding.MAX_TEXT_SIZE
+        max_text_size = settings.embedding.max_text_size
         texts = [text[:max_text_size] for text in text_to_embedding.values()]
 
         logger.debug(f"Text lengths after truncation: {[len(text) for text in texts]}")

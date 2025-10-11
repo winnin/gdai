@@ -6,14 +6,18 @@ import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Path, UploadFile, status
+from temporalio.client import Client
 
-from gdai.api.dependencies import get_current_tenant, get_repository
+from gdai.api.dependencies import get_current_tenant, get_repository, get_temporal_client
 from gdai.commons.enums import DocumentStatusEnum, DocumentTypeEnum
 from gdai.commons.exceptions import DocumentNotFoundError, FileUploadError
+from gdai.commons.logger import logger
 from gdai.domain.chunk import ChunkDTO, ChunkListResponse
 from gdai.domain.document import DocumentDTO, DocumentListResponse, DocumentStatusDTO
 from gdai.repositories.models import DocumentModel
 from gdai.repositories.pgvector_repository import PGVectorRepository
+from gdai.temporal.extract_document.schema import DocumentExtracInput
+from gdai.temporal.extract_document.workflow import DocumentExtractionWorkflow
 
 router = APIRouter()
 
@@ -32,6 +36,7 @@ async def upload_document(
     chunk_strategy: str = Form("recursive", description="Chunking strategy to use"),
     tenant_id: Annotated[str, Depends(get_current_tenant)] = None,
     repository: Annotated[PGVectorRepository, Depends(get_repository)] = None,
+    temporal_client: Annotated[Client, Depends(get_temporal_client)] = None,
 ) -> DocumentDTO:
     """Upload a new document for processing.
 
@@ -74,18 +79,24 @@ async def upload_document(
             chunk_strategy=chunk_strategy,
         )
 
-        # Save to database
+        # Save to database with "processing" status
+        document.status = DocumentStatusEnum.processing
         document = await repository.insert_document(document)
 
-        # TODO: Trigger Temporal workflow for document processing
-        # await temporal_client.start_workflow(
-        #     ExtractDocumentWorkflow.run,
-        #     ExtractDocumentInput(
-        #         document_id=str(document.id),
-        #         tenant_id=tenant_id,
-        #         file_path=file_path
-        #     )
-        # )
+        # Trigger Temporal workflow for document processing
+        try:
+            workflow_id = f"extract-doc-{document.id}"
+            await temporal_client.start_workflow(
+                DocumentExtractionWorkflow.run,
+                DocumentExtracInput(document_path=file_path, chunk_strategy=chunk_strategy, tenant_id=tenant_id),
+                id=workflow_id,
+                task_queue="document-processing",
+            )
+            logger.info(f"Started document extraction workflow {workflow_id} for document {document.id}")
+        except Exception as e:
+            logger.error(f"Failed to start workflow for document {document.id}: {e}")
+            # Don't fail the request - workflow can be retried
+            # Document status will remain "processing" and can be checked later
 
         return DocumentDTO.model_validate(document)
 

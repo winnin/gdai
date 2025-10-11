@@ -6,13 +6,17 @@ import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Path, status
+from temporalio.client import Client
 
-from gdai.api.dependencies import get_current_tenant, get_repository
+from gdai.api.dependencies import get_current_tenant, get_repository, get_temporal_client
 from gdai.commons.enums import QueryStatusEnum
 from gdai.commons.exceptions import QueryNotFoundError
+from gdai.commons.logger import logger
 from gdai.domain.query import QueryCreateDTO, QueryDTO, QueryListResponse, QueryResultDTO
 from gdai.repositories.models import QueryModel
 from gdai.repositories.pgvector_repository import PGVectorRepository
+from gdai.temporal.search_on_documents.schema import SearchInput
+from gdai.temporal.search_on_documents.workflow import DocumentSearchWorkflow
 
 router = APIRouter()
 
@@ -29,6 +33,7 @@ async def create_query(
     query_input: QueryCreateDTO = Body(..., description="Query parameters"),
     tenant_id: Annotated[str, Depends(get_current_tenant)] = None,
     repository: Annotated[PGVectorRepository, Depends(get_repository)] = None,
+    temporal_client: Annotated[Client, Depends(get_temporal_client)] = None,
 ) -> QueryDTO:
     """Create a new query for processing.
 
@@ -57,20 +62,32 @@ async def create_query(
             result="",
         )
 
-        # Save to database
+        # Save to database with "pending" status
+        query.status = QueryStatusEnum.pending
         query = await repository.insert_query(query)
 
-        # TODO: Trigger Temporal workflow for query processing
-        # await temporal_client.start_workflow(
-        #     ProcessQueryWorkflow.run,
-        #     ProcessQueryInput(
-        #         query_id=str(query.id),
-        #         tenant_id=tenant_id,
-        #         document_ids=[str(d) for d in query_input.document_ids] if query_input.document_ids else None,
-        #         similarity_threshold=query_input.similarity_threshold,
-        #         limit=query_input.limit
-        #     )
-        # )
+        # Trigger Temporal workflow for query processing
+        try:
+            workflow_id = f"search-{query.id}"
+            document_ids = [str(doc_id) for doc_id in query_input.document_ids] if query_input.document_ids else None
+
+            await temporal_client.start_workflow(
+                DocumentSearchWorkflow.run,
+                SearchInput(
+                    query_id=str(query.id),
+                    query=query_input.query,
+                    tenant_id=tenant_id,
+                    similarity_threshold=query_input.similarity_threshold,
+                    max_num_chunks=query_input.limit,
+                    document_ids=document_ids,
+                ),
+                id=workflow_id,
+                task_queue="search-queue",
+            )
+            logger.info(f"Started document search workflow {workflow_id} for query {query.id}")
+        except Exception as e:
+            logger.error(f"Failed to start workflow for query {query.id}: {e}")
+            # Don't fail the request - workflow can be retried
 
         return QueryDTO.model_validate(query)
 

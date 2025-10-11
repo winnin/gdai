@@ -1,4 +1,4 @@
-from gdai.commons.config import Config
+from gdai.commons.settings import get_settings
 from gdai.embeddings.cohere_embedding import CohereEmbeddingModel
 
 from .base_embedding import EmbeddingModel  # noqa: F401
@@ -7,8 +7,10 @@ from .base_embedding import EmbeddingModel  # noqa: F401
 class EmbeddingFactory:
     @staticmethod
     async def get_embedding():
-        model_name = Config.embedding.EMBEDDING_MODEL
-        api_key = Config.embedding.EMBEDDING_MODEL_API_KEY or ""
+        settings = get_settings()
+        embedding_config = settings.embedding
+        model_name = embedding_config.model
+        api_key = embedding_config.model_api_key or ""
         if model_name == "cohere/embed-v4.0":
             return await CohereEmbeddingModel.create(api_key)
         else:
