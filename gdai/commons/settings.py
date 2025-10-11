@@ -13,7 +13,7 @@ class DatabaseSettings(BaseSettings):
 
     model_config = SettingsConfigDict(env_prefix="PGVECTOR_", case_sensitive=False)
 
-    database_name: str = Field(..., alias="database", description="Database name")
+    database: str = Field(..., description="Database name")
     user: str = Field(..., description="Database user")
     password: str = Field(..., description="Database password")
     host: str = Field(default="localhost", description="Database host")
@@ -35,7 +35,7 @@ class DatabaseSettings(BaseSettings):
         Returns:
             str: PostgreSQL connection URL for asyncpg.
         """
-        return f"postgresql+asyncpg://{self.user}:{self.password}@{self.host}:{self.port}/{self.database_name}"
+        return f"postgresql+asyncpg://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
 
 
 class EmbeddingSettings(BaseSettings):
