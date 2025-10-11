@@ -453,9 +453,9 @@ class TestLLMModelEndToEnd:
     @pytest.mark.asyncio
     async def test_complete_llm_workflow(self):
         """Test complete workflow: create model -> call LLM -> verify response."""
-        api_key = os.getenv("LLM_MODEL_API_KEY")
-        if not api_key:
-            pytest.skip("LLM_MODEL_API_KEY not set in environment")
+        api_key = os.getenv("LLM_API_KEY")
+        if not api_key or "fake" in api_key.lower():
+            pytest.skip("Valid LLM_API_KEY not set in environment")
 
         # Step 1: Create model
         model = await OpenAIModel.create(model_name="gpt-4o-mini", api_key=api_key, temperature=0.5, max_tokens=100)
@@ -472,15 +472,18 @@ class TestLLMModelEndToEnd:
         assert isinstance(response, str)
         assert len(response) > 0
 
-        # Step 5: Verify content makes sense
-        assert "brasilia" in response.lower()
+        # Step 5: Verify content makes sense (normalize accents)
+        import unicodedata
+
+        response_normalized = unicodedata.normalize("NFKD", response.lower()).encode("ascii", "ignore").decode("ascii")
+        assert "brasilia" in response_normalized
 
     @pytest.mark.asyncio
     async def test_rag_workflow_simulation(self):
         """Test a RAG-like workflow with context and question."""
-        api_key = os.getenv("LLM_MODEL_API_KEY")
-        if not api_key:
-            pytest.skip("LLM_MODEL_API_KEY not set in environment")
+        api_key = os.getenv("LLM_API_KEY")
+        if not api_key or "fake" in api_key.lower():
+            pytest.skip("Valid LLM_API_KEY not set in environment")
 
         model = await OpenAIModel.create(model_name="gpt-4o-mini", api_key=api_key, temperature=0.3, max_tokens=100)
 
@@ -506,9 +509,9 @@ class TestLLMModelEndToEnd:
     @pytest.mark.asyncio
     async def test_multiple_models_independent(self):
         """Test that multiple model instances work independently."""
-        api_key = os.getenv("LLM_MODEL_API_KEY")
-        if not api_key:
-            pytest.skip("LLM_MODEL_API_KEY not set in environment")
+        api_key = os.getenv("LLM_API_KEY")
+        if not api_key or "fake" in api_key.lower():
+            pytest.skip("Valid LLM_API_KEY not set in environment")
 
         # Create two independent models
         model1 = await OpenAIModel.create(model_name="gpt-4o-mini", api_key=api_key, temperature=0.1, max_tokens=50)
@@ -530,9 +533,9 @@ class TestLLMModelEndToEnd:
     @pytest.mark.asyncio
     async def test_sequential_prompts_conversation(self):
         """Test sequential prompts simulating a conversation."""
-        api_key = os.getenv("LLM_MODEL_API_KEY")
-        if not api_key:
-            pytest.skip("LLM_MODEL_API_KEY not set in environment")
+        api_key = os.getenv("LLM_API_KEY")
+        if not api_key or "fake" in api_key.lower():
+            pytest.skip("Valid LLM_API_KEY not set in environment")
 
         model = await OpenAIModel.create(model_name="gpt-4o-mini", api_key=api_key, temperature=0.7, max_tokens=100)
 
@@ -557,9 +560,9 @@ class TestLLMModelEndToEnd:
     @pytest.mark.asyncio
     async def test_response_consistency_with_low_temperature(self):
         """Test that low temperature produces more consistent responses."""
-        api_key = os.getenv("LLM_MODEL_API_KEY")
-        if not api_key:
-            pytest.skip("LLM_MODEL_API_KEY not set in environment")
+        api_key = os.getenv("LLM_API_KEY")
+        if not api_key or "fake" in api_key.lower():
+            pytest.skip("Valid LLM_API_KEY not set in environment")
 
         model = await OpenAIModel.create(model_name="gpt-4o-mini", api_key=api_key, temperature=0.0, max_tokens=50)
 
