@@ -18,6 +18,7 @@ GDAI is an open-source platform designed to provide a robust, multi-tenant vecto
   - [Database Schema](#database-schema)
   - [Workflow Orchestration](#workflow-orchestration)
 - [Getting Started](#getting-started)
+- [Triggering Workflows](#triggering-workflows)
 - [Documentation](#documentation)
 - [Contributing](#contributing)
 
@@ -39,9 +40,9 @@ GDAI is an open-source platform designed to provide a robust, multi-tenant vecto
 - **🔍 Semantic Search:** Vector similarity search with pgvector and advanced semantic techniques
 - **🤖 RAG (Retrieval-Augmented Generation):** Combine retrieval with OpenAI models for context-aware answers
 - **📊 Source Traceability:** Every answer includes references to original documents and locations
-- **🌐 API-First:** RESTful API built with FastAPI for easy integration
-- **🔄 Workflow Orchestration:** Temporal.io workflows for reliable document processing
+- **🔄 Workflow-Based Processing:** Temporal.io workflows for reliable, scalable document processing
 - **📈 Auditing:** Built-in mechanisms to audit and review the provenance of answers
+- **🔌 Programmable:** Trigger workflows programmatically via Temporal Python client
 
 ---
 
@@ -52,12 +53,7 @@ GDAI is an open-source platform designed to provide a robust, multi-tenant vecto
 ```mermaid
 graph TB
     subgraph "Client Layer"
-        Client[API Client]
-    end
-
-    subgraph "API Layer"
-        API[FastAPI Server<br/>:8000]
-        Auth[Multi-Tenant<br/>Header: X-Tenant-ID]
+        Client[Temporal Client<br/>Python/CLI]
     end
 
     subgraph "Orchestration Layer - Temporal.io"
@@ -95,9 +91,7 @@ graph TB
         OpenAIAPI[OpenAI API]
     end
 
-    Client -->|HTTP Request| API
-    API -->|Validate| Auth
-    Auth -->|Start Workflow| TemporalServer
+    Client -->|Start Workflow| TemporalServer
 
     TemporalServer -->|Schedule| ExtractWF
     TemporalServer -->|Schedule| SearchWF
@@ -127,10 +121,7 @@ graph TB
 
     ExtractWorker -->|Upload| S3
 
-    API -->|Query| DB
-
     style Client fill:#e1f5ff
-    style API fill:#fff4e1
     style TemporalServer fill:#f0e1ff
     style DB fill:#e1ffe1
     style S3 fill:#e1ffe1
@@ -142,7 +133,6 @@ graph TB
 
 | Layer             | Components                            | Technology                       |
 | ----------------- | ------------------------------------- | -------------------------------- |
-| **API**           | REST Endpoints, Dependencies          | FastAPI, Pydantic                |
 | **Orchestration** | Workflow Engine, Workers              | Temporal.io                      |
 | **Processing**    | Extractors, Chunkers, Embedders, LLMs | PyMuPDF, Chonkie, Cohere, OpenAI |
 | **Storage**       | Database, Object Storage              | PostgreSQL + pgvector, MinIO     |
@@ -204,7 +194,7 @@ erDiagram
 
 #### Multi-Tenancy
 
-All tables include a `tenant_id` column (indexed) to ensure complete data isolation between tenants. Every query is automatically scoped by the tenant from the `X-Tenant-ID` header.
+All tables include a `tenant_id` column (indexed) to ensure complete data isolation between tenants. Every workflow execution is scoped by tenant ID to maintain data boundaries.
 
 #### Vector Search
 
@@ -222,14 +212,14 @@ CREATE INDEX ON chunk USING hnsw (embedding vector_cosine_ops);
 
 ```mermaid
 sequenceDiagram
-    participant API as FastAPI
+    participant Client as Temporal Client
     participant Temporal as Temporal Server
     participant ExtractWF as Extract Workflow
     participant EmbedWF as Embed Workflow
     participant DB as PostgreSQL
     participant S3 as MinIO
 
-    API->>Temporal: Start DocumentExtractionWorkflow
+    Client->>Temporal: Start DocumentExtractionWorkflow
     activate ExtractWF
 
     ExtractWF->>ExtractWF: 1. Validate Document
@@ -255,7 +245,7 @@ sequenceDiagram
     ExtractWF->>S3: 7. Upload extracted document
     ExtractWF->>ExtractWF: 8. Cleanup temp files
 
-    ExtractWF-->>API: Success
+    ExtractWF-->>Client: Success
     deactivate ExtractWF
 ```
 
@@ -263,14 +253,14 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    participant API as FastAPI
+    participant Client as Temporal Client
     participant Temporal as Temporal Server
     participant SearchWF as Search Workflow
     participant EmbedWF as Embed Workflow
     participant LLMWF as LLM Workflow
     participant DB as PostgreSQL
 
-    API->>Temporal: Start DocumentSearchWorkflow
+    Client->>Temporal: Start DocumentSearchWorkflow
     activate SearchWF
 
     SearchWF->>DB: 1. Register Query
@@ -299,7 +289,7 @@ sequenceDiagram
     SearchWF->>SearchWF: 7. Format Final Answer
     Note over SearchWF: Include chunks, sources,<br/>similarity scores
 
-    SearchWF-->>API: SearchResult with sources
+    SearchWF-->>Client: SearchResult with sources
     deactivate SearchWF
 ```
 
@@ -368,10 +358,10 @@ Each workflow runs on dedicated worker queues for scalability and isolation:
    task setup-db
    ```
 
-7. **Start development environment:**
+7. **Start Temporal workers:**
 
    ```bash
-   task dev
+   task temporal-all
    ```
 
    This starts:
@@ -380,11 +370,168 @@ Each workflow runs on dedicated worker queues for scalability and isolation:
    - ✅ Temporal Server (port 7233, UI: 8233)
    - ✅ MinIO (port 9000, console: 9001)
    - ✅ All Temporal workers
-   - ✅ FastAPI server (port 8000)
 
-8. **Access the API:**
+8. **Access Temporal Web UI:**
 
-   Open your browser at: **http://localhost:8000/docs**
+   Open your browser at: **http://localhost:8233**
+
+---
+
+## 🔌 Triggering Workflows
+
+GDAI is a workflow-based processing system. You can trigger workflows programmatically using the Temporal Python client or via the Temporal CLI.
+
+### Using the Temporal Python Client
+
+#### Document Processing Example
+
+```python
+from temporalio.client import Client
+from gdai.temporal.document_management.workflows import DocumentExtractionWorkflow
+from gdai.temporal.document_management.schemas import DocumentExtractionInput
+
+async def process_document():
+    # Connect to Temporal server
+    client = await Client.connect("localhost:7233")
+
+    # Prepare workflow input
+    workflow_input = DocumentExtractionInput(
+        tenant_id="my-tenant",
+        document_path="/path/to/document.pdf",
+        document_name="document.pdf",
+        chunk_strategy="sentence"
+    )
+
+    # Start the workflow
+    handle = await client.start_workflow(
+        DocumentExtractionWorkflow.run,
+        workflow_input,
+        id=f"document-extraction-{document_id}",
+        task_queue="process-document-queue"
+    )
+
+    # Wait for completion
+    result = await handle.result()
+    print(f"Document processed: {result.document_id}")
+    return result
+
+# Run the workflow
+import asyncio
+asyncio.run(process_document())
+```
+
+#### Semantic Search Example
+
+```python
+from temporalio.client import Client
+from gdai.temporal.document_management.workflows import DocumentSearchWorkflow
+from gdai.temporal.document_management.schemas import DocumentSearchInput
+
+async def search_documents():
+    # Connect to Temporal server
+    client = await Client.connect("localhost:7233")
+
+    # Prepare search input
+    search_input = DocumentSearchInput(
+        tenant_id="my-tenant",
+        query="What are the main findings?",
+        max_num_chunks=5,
+        similarity_threshold=0.7,
+        similarity_metric="cosine"
+    )
+
+    # Start the search workflow
+    handle = await client.start_workflow(
+        DocumentSearchWorkflow.run,
+        search_input,
+        id=f"search-{query_id}",
+        task_queue="search-on-documents-queue"
+    )
+
+    # Wait for results
+    result = await handle.result()
+
+    # Process results
+    print(f"Answer: {result.answer}")
+    print(f"\nSources ({len(result.chunks)} chunks):")
+    for chunk in result.chunks:
+        print(f"  - Document: {chunk.document_name}")
+        print(f"    Page: {chunk.page_number}")
+        print(f"    Similarity: {chunk.similarity_score:.3f}")
+        print(f"    Text: {chunk.text[:100]}...")
+
+    return result
+
+# Run the search
+import asyncio
+asyncio.run(search_documents())
+```
+
+### Using Temporal CLI
+
+You can also trigger workflows using the Temporal CLI:
+
+#### Document Processing via CLI
+
+```bash
+temporal workflow start \
+  --task-queue process-document-queue \
+  --type DocumentExtractionWorkflow \
+  --workflow-id document-extraction-123 \
+  --input '{
+    "tenant_id": "my-tenant",
+    "document_path": "/path/to/document.pdf",
+    "document_name": "document.pdf",
+    "chunk_strategy": "sentence"
+  }'
+```
+
+#### Search via CLI
+
+```bash
+temporal workflow start \
+  --task-queue search-on-documents-queue \
+  --type DocumentSearchWorkflow \
+  --workflow-id search-456 \
+  --input '{
+    "tenant_id": "my-tenant",
+    "query": "What are the main findings?",
+    "max_num_chunks": 5,
+    "similarity_threshold": 0.7,
+    "similarity_metric": "cosine"
+  }'
+```
+
+#### Query Workflow Results
+
+```bash
+# Check workflow status
+temporal workflow describe --workflow-id document-extraction-123
+
+# Get workflow result
+temporal workflow show --workflow-id document-extraction-123
+```
+
+### Workflow Input Parameters
+
+#### DocumentExtractionWorkflow
+
+| Parameter      | Type   | Description                                  | Required |
+| -------------- | ------ | -------------------------------------------- | -------- |
+| tenant_id      | string | Tenant identifier for data isolation         | Yes      |
+| document_path  | string | Path to the document file                    | Yes      |
+| document_name  | string | Name of the document                         | Yes      |
+| chunk_strategy | string | Chunking strategy (sentence, semantic, etc.) | Yes      |
+
+#### DocumentSearchWorkflow
+
+| Parameter            | Type   | Description                           | Required |
+| -------------------- | ------ | ------------------------------------- | -------- |
+| tenant_id            | string | Tenant identifier for data isolation  | Yes      |
+| query                | string | User search query                     | Yes      |
+| max_num_chunks       | int    | Maximum number of chunks to retrieve  | No       |
+| similarity_threshold | float  | Minimum similarity score (0.0 to 1.0) | No       |
+| similarity_metric    | string | Metric to use (cosine, l2, ip)        | No       |
 
 ---
 
@@ -404,7 +551,7 @@ Each workflow runs on dedicated worker queues for scalability and isolation:
 ## 🧪 Testing
 
 ```bash
-# Quick tests (unit + API, ~3 seconds)
+# Quick tests (unit, ~3 seconds)
 task tests-quick
 
 # All tests with coverage
@@ -413,7 +560,6 @@ task tests
 # Specific test suites
 task tests-unit
 task tests-integration
-task tests-api
 ```
 
 ---
@@ -423,8 +569,11 @@ task tests-api
 ### Day-to-day Development
 
 ```bash
-# Start dev environment
-task dev
+# Start infrastructure services
+docker compose up -d
+
+# Start Temporal workers
+task temporal-all
 
 # In another terminal, run tests frequently
 task tests-quick
@@ -432,56 +581,20 @@ task tests-quick
 # Make changes, run full tests before committing
 task tests
 
-# Stop everything: Ctrl+C and
+# Stop everything
 docker compose down
 ```
 
 ### Common Tasks
 
-| Task                      | Command             |
-| ------------------------- | ------------------- |
-| Start dev environment     | `task dev`          |
-| Start only infrastructure | `task dev-infra`    |
-| Run tests                 | `task tests`        |
-| Quick tests               | `task tests-quick`  |
-| Setup database            | `task setup-db`     |
-| Reset database ⚠️         | `task reset-db`     |
-| Run API only              | `task run`          |
-| Run all workers           | `task temporal-all` |
-
----
-
-## 🌟 API Examples
-
-### Upload and Process a Document
-
-```bash
-curl -X POST "http://localhost:8000/api/v1/documents" \
-  -H "X-Tenant-ID: my-tenant" \
-  -H "Content-Type: multipart/form-data" \
-  -F "file=@document.pdf" \
-  -F "chunk_strategy=sentence"
-```
-
-### Search Documents
-
-```bash
-curl -X POST "http://localhost:8000/api/v1/queries" \
-  -H "X-Tenant-ID: my-tenant" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "query": "What are the main findings?",
-    "max_num_chunks": 5,
-    "similarity_threshold": 0.7
-  }'
-```
-
-Response includes:
-
-- LLM-generated answer
-- Source chunks with similarity scores
-- Document references
-- Page numbers
+| Task                 | Command             |
+| -------------------- | ------------------- |
+| Start infrastructure | `task dev-infra`    |
+| Run all workers      | `task temporal-all` |
+| Run tests            | `task tests`        |
+| Quick tests          | `task tests-quick`  |
+| Setup database       | `task setup-db`     |
+| Reset database ⚠️    | `task reset-db`     |
 
 ---
 
@@ -510,12 +623,13 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 Built with:
 
-- [FastAPI](https://fastapi.tiangolo.com/) - Modern Python web framework
 - [Temporal.io](https://temporal.io/) - Workflow orchestration
 - [pgvector](https://github.com/pgvector/pgvector) - Vector similarity search
 - [Cohere](https://cohere.ai/) - Text embeddings
 - [OpenAI](https://openai.com/) - Language models
 - [LangChain](https://langchain.com/) - LLM orchestration
+- [PyMuPDF](https://pymupdf.readthedocs.io/) - PDF processing
+- [Chonkie](https://github.com/bhavnicksm/chonkie) - Text chunking
 
 ---
 

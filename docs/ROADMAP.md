@@ -7,7 +7,6 @@ This roadmap outlines the planned features and improvements for GDAI. The timeli
 - [ ] Embedding Open AI
 - [ ] Image Extractor (OCR)
 - [ ] Query for a specific document
-- [ ] API following vector store from openai
 - [ ] Tests (coverage > 60%)
 
 ## September 2025

@@ -13,8 +13,6 @@ dependencies = [
     "clean-text>=0.6.0",
     "click>=8.1.8",
     "cohere>=5.15.0",
-    "fastapi-cli>=0.0.7",
-    "fastapi[standard]>=0.115.12",
     "langchain[openai]>=0.3.25",
     "langgraph>=0.4.7",
     "mkdocs>=1.6.1",
@@ -79,11 +77,7 @@ setup-db = { cmd = "uv run python gdai/scripts/setup_db.py", help = "Setup the d
 tests = { cmd = "./gdai/scripts/tests.sh", help = "Run all tests with coverage" }
 tests-unit = { cmd = "./gdai/scripts/tests.sh unit", help = "Run unit tests only" }
 tests-integration = { cmd = "./gdai/scripts/tests.sh integration", help = "Run integration tests only" }
-tests-api = { cmd = "./gdai/scripts/tests.sh api", help = "Run API tests only" }
-tests-quick = { cmd = "./gdai/scripts/tests.sh quick", help = "Run quick test suite (unit + api, no coverage)" }
-
-# Application
-run = { cmd = "uv run python -m gdai.api.main", help = "Run the FastAPI application" }
+tests-quick = { cmd = "./gdai/scripts/tests.sh quick", help = "Run quick test suite (unit, no coverage)" }
 
 # Temporal workers
 temporal-all = { cmd = "uv run python -m gdai.temporal.main", help = "Run all Temporal workers (LLM, embedding, extraction, search)" }

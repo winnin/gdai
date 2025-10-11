@@ -15,4 +15,4 @@ To empower organizations with a platform that not only delivers precise answers 
 
 ## Acknowledgements
 
-GDAI builds upon open-source technologies such as PostgreSQL, pgvector, FastAPI, and modern NLP/LLM frameworks.
+GDAI builds upon open-source technologies such as PostgreSQL, pgvector, Temporal.io, and modern NLP/LLM frameworks.

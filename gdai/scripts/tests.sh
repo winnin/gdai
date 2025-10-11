@@ -105,12 +105,6 @@ case "$TEST_TYPE" in
         run_tests "tests/integration/" "Integration Tests" "gdai"
         ;;
 
-    api)
-        echo -e "${BLUE}Running API Tests Only${NC}"
-        echo ""
-        run_tests "tests/api/" "API Tests" "gdai"
-        ;;
-
     commons)
         echo -e "${BLUE}Running Commons Module Tests${NC}"
         echo ""
@@ -145,9 +139,6 @@ case "$TEST_TYPE" in
         # Run integration tests
         run_tests "tests/integration/" "Integration Tests" "gdai" || exit 1
 
-        # Run API tests
-        run_tests "tests/api/" "API Tests" "gdai" || exit 1
-
         echo -e "${GREEN}========================================${NC}"
         echo -e "${GREEN}  All Test Suites Passed! ✓${NC}"
         echo -e "${GREEN}========================================${NC}"
@@ -158,7 +149,6 @@ case "$TEST_TYPE" in
         echo ""
         COVERAGE="no"
         run_tests "tests/unit/" "Unit Tests" "gdai" || exit 1
-        run_tests "tests/api/" "API Tests" "gdai" || exit 1
         ;;
 
     *)
@@ -170,12 +160,11 @@ case "$TEST_TYPE" in
         echo "  all           - Run all tests (default)"
         echo "  unit          - Run only unit tests"
         echo "  integration   - Run only integration tests"
-        echo "  api           - Run only API tests"
         echo "  commons       - Run commons module tests"
         echo "  repositories  - Run repository tests"
         echo "  llms          - Run LLM tests"
         echo "  embeddings    - Run embedding tests"
-        echo "  quick         - Run quick test suite (unit + api, no coverage)"
+        echo "  quick         - Run quick test suite (unit, no coverage)"
         echo ""
         echo "Coverage (optional):"
         echo "  yes - Generate coverage report (default)"
@@ -190,7 +179,7 @@ case "$TEST_TYPE" in
         echo "  $0 unit                   # Run unit tests with coverage"
         echo "  $0 integration no         # Run integration tests without coverage"
         echo "  $0 all yes yes            # Run all tests with coverage, verbose"
-        echo "  $0 quick                  # Quick test (unit + api, no coverage)"
+        echo "  $0 quick                  # Quick test (unit, no coverage)"
         exit 1
         ;;
 esac

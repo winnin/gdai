@@ -74,11 +74,6 @@ cleanup() {
     echo -e "${YELLOW}========================================${NC}"
 
     # Kill background processes
-    if [ ! -z "$API_PID" ]; then
-        echo -e "${YELLOW}Stopping API server (PID: $API_PID)...${NC}"
-        kill $API_PID 2>/dev/null || true
-    fi
-
     if [ ! -z "$WORKERS_PID" ]; then
         echo -e "${YELLOW}Stopping Temporal workers (PID: $WORKERS_PID)...${NC}"
         kill $WORKERS_PID 2>/dev/null || true
@@ -128,7 +123,7 @@ echo -e "${BLUE}Step 1: Starting infrastructure services...${NC}"
 echo -e "${CYAN}  • PostgreSQL (pgvector) on port 5555${NC}"
 echo -e "${CYAN}  • Temporal Server on port 7233${NC}"
 echo -e "${CYAN}  • Temporal UI on port 8233${NC}"
-echo -e "${CYAN}  • MinIO on ports 9000 (API) and 9001 (Console)${NC}"
+echo -e "${CYAN}  • MinIO on ports 9000 (S3) and 9001 (Console)${NC}"
 echo ""
 
 # Check if docker-compose.yaml exists
@@ -190,37 +185,21 @@ sleep 2  # Give workers time to start
 
 echo ""
 
-# Start API server
-echo -e "${BLUE}Step 5: Starting FastAPI server...${NC}"
-echo -e "${CYAN}  API will be available at: ${YELLOW}http://localhost:8000${NC}"
-echo -e "${CYAN}  API docs will be available at: ${YELLOW}http://localhost:8000/docs${NC}"
-uv run python -m gdai.api.main > "${PROJECT_ROOT}/logs/api.log" 2>&1 &
-API_PID=$!
-echo -e "${GREEN}✓ API server started (PID: $API_PID)${NC}"
-echo -e "${CYAN}  Logs: ${YELLOW}tail -f logs/api.log${NC}"
-
-# Wait for API to be ready
-sleep 3
-wait_for_service "API Server" 8000
-
 echo ""
 echo -e "${GREEN}========================================${NC}"
 echo -e "${GREEN}  Development environment is ready! ✓${NC}"
 echo -e "${GREEN}========================================${NC}"
 echo ""
 echo -e "${CYAN}Available services:${NC}"
-echo -e "  • API Server: ${YELLOW}http://localhost:8000${NC}"
-echo -e "  • API Documentation: ${YELLOW}http://localhost:8000/docs${NC}"
 echo -e "  • Temporal UI: ${YELLOW}http://localhost:8233${NC}"
 echo -e "  • MinIO Console: ${YELLOW}http://localhost:9001${NC} (minioadmin/minioadmin)"
 echo -e "  • PostgreSQL: ${YELLOW}postgresql://testuser:testpwd@localhost:5555/vectordb${NC}"
 echo ""
 echo -e "${CYAN}Logs:${NC}"
-echo -e "  • API: ${YELLOW}tail -f logs/api.log${NC}"
 echo -e "  • Workers: ${YELLOW}tail -f logs/workers.log${NC}"
 echo ""
 echo -e "${BLUE}Press Ctrl+C to stop all services${NC}"
 echo ""
 
-# Keep script running and show combined logs
-tail -f "${PROJECT_ROOT}/logs/api.log" "${PROJECT_ROOT}/logs/workers.log" 2>/dev/null || wait
+# Keep script running and show worker logs
+tail -f "${PROJECT_ROOT}/logs/workers.log" 2>/dev/null || wait
