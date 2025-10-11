@@ -119,6 +119,9 @@ class PGVectorRepository(BaseRepository):
     async def delete_document(self, tenant_id: str, document_id: str) -> bool:
         """Delete a specific document by ID for a tenant.
 
+        This method first deletes all chunks associated with the document
+        to handle the foreign key constraint, then deletes the document itself.
+
         Args:
             tenant_id: The ID of the tenant.
             document_id: The ID of the document to delete.
@@ -127,10 +130,15 @@ class PGVectorRepository(BaseRepository):
             bool: True if document was deleted, False if not found.
         """
         session = self._get_session()
-        stmt = delete(DocumentModel).where(
-            DocumentModel.tenant_id == tenant_id, DocumentModel.id == uuid.UUID(document_id)
-        )
-        result = await session.execute(stmt)
+        doc_uuid = uuid.UUID(document_id)
+
+        # First, delete all chunks associated with this document
+        chunks_stmt = delete(ChunkModel).where(ChunkModel.tenant_id == tenant_id, ChunkModel.document_id == doc_uuid)
+        await session.execute(chunks_stmt)
+
+        # Then delete the document itself
+        doc_stmt = delete(DocumentModel).where(DocumentModel.tenant_id == tenant_id, DocumentModel.id == doc_uuid)
+        result = await session.execute(doc_stmt)
         await session.commit()
         return result.rowcount > 0
 
