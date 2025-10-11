@@ -66,12 +66,24 @@ asyncio_default_fixture_loop_scope = "function"
 
 [tool.taskipy.tasks]
 
-configure-dev = { cmd = "uv sync --all-groups & pre-commit install & pre-commit install --hook-type pre-push", help = "Configure the environment" }
-reset-db = { cmd = "python -m scripts.reset_db", help = "Reset the database (DANGER: This will delete all data!)" }
-setup-db = { cmd = "python -m scripts.setup_db", help = "Setup the database (create tables)" }
+# Development environment
+configure-dev = { cmd = "uv sync --all-groups && pre-commit install && pre-commit install --hook-type pre-push", help = "Configure the development environment" }
+dev = { cmd = "./gdai/scripts/dev.sh", help = "Start complete development environment (infrastructure + workers + API)" }
+dev-infra = { cmd = "./gdai/scripts/dev.sh infra", help = "Start only infrastructure services (PostgreSQL, Temporal, MinIO)" }
 
+# Database management
+reset-db = { cmd = "uv run python gdai/scripts/reset_db.py", help = "Reset the database (DANGER: This will delete all data!)" }
+setup-db = { cmd = "uv run python gdai/scripts/setup_db.py", help = "Setup the database (create tables)" }
+
+# Testing
+tests = { cmd = "./gdai/scripts/tests.sh", help = "Run all tests with coverage" }
+tests-unit = { cmd = "./gdai/scripts/tests.sh unit", help = "Run unit tests only" }
+tests-integration = { cmd = "./gdai/scripts/tests.sh integration", help = "Run integration tests only" }
+tests-api = { cmd = "./gdai/scripts/tests.sh api", help = "Run API tests only" }
+tests-quick = { cmd = "./gdai/scripts/tests.sh quick", help = "Run quick test suite (unit + api, no coverage)" }
+
+# Application
 run = { cmd = "uv run python -m gdai.api.main", help = "Run the FastAPI application" }
-tests = { cmd = "pytest", help = "Run all unit tests" }
 
 # Temporal workers
 temporal-all = { cmd = "uv run python -m gdai.temporal.main", help = "Run all Temporal workers (LLM, embedding, extraction, search)" }
