@@ -554,6 +554,8 @@ See [ROADMAP.md](ROADMAP.md) for planned features and improvements:
 
 - [Contributing Guidelines](docs/contributing.md) - How to contribute to GDAI
 - [Code of Conduct](docs/code_of_conduct.md) - Community guidelines
+- [GitHub Actions](docs/github-actions.md) - CI/CD workflows explanation
+- [Codecov Setup](docs/codecov-setup.md) - Code coverage configuration
 - [About](docs/about.md) - Project background and motivation
 - [Changelog](CHANGELOG.md) - Version history
 - [Roadmap](ROADMAP.md) - Future plans
