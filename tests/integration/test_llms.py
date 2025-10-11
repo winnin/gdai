@@ -358,15 +358,20 @@ class TestLLMFactoryIntegration:
     @pytest.mark.asyncio
     async def test_factory_creates_openai_model(self):
         """Test that factory creates OpenAIModel."""
-        api_key = os.getenv("LLM_MODEL_API_KEY")
+        api_key = os.getenv("LLM_API_KEY")
         if not api_key:
-            pytest.skip("LLM_MODEL_API_KEY not set in environment")
+            pytest.skip("LLM_API_KEY not set in environment")
 
         # Set environment variables for Config
         os.environ["LLM_MODEL"] = "openai/gpt-4o-mini"
-        os.environ["LLM_MODEL_API_KEY"] = api_key
+        os.environ["LLM_API_KEY"] = api_key
         os.environ["LLM_TEMPERATURE"] = "0.7"
         os.environ["LLM_MAX_TOKENS"] = "100"
+
+        # Clear settings cache to pick up new env vars
+        from gdai.commons.settings import get_settings
+
+        get_settings.cache_clear()
 
         model = await LLMFactory.get_llm()
 
@@ -379,26 +384,25 @@ class TestLLMFactoryIntegration:
         """Test that factory raises error for unsupported model."""
         # Save original values
         original_model = os.environ.get("LLM_MODEL")
-        original_key = os.environ.get("LLM_MODEL_API_KEY")
+        original_key = os.environ.get("LLM_API_KEY")
+        original_temp = os.environ.get("LLM_TEMPERATURE")
+        original_tokens = os.environ.get("LLM_MAX_TOKENS")
 
-        from gdai.commons.config import Config
-
-        original_config_model = Config.llm.LLM_MODEL
+        from gdai.commons.settings import get_settings
 
         try:
             # Set unsupported model
             os.environ["LLM_MODEL"] = "unsupported/model"
-            os.environ["LLM_MODEL_API_KEY"] = "fake_key"
+            os.environ["LLM_API_KEY"] = "fake_key"
+            os.environ["LLM_TEMPERATURE"] = "0.7"
+            os.environ["LLM_MAX_TOKENS"] = "1000"
 
-            # Update Config
-            Config.llm.LLM_MODEL = "unsupported/model"
+            # Clear settings cache to pick up new env vars
+            get_settings.cache_clear()
 
             with pytest.raises(ValueError, match="Unsupported LLM model"):
                 await LLMFactory.get_llm()
         finally:
-            # Restore original Config
-            Config.llm.LLM_MODEL = original_config_model
-
             # Restore original env values
             if original_model:
                 os.environ["LLM_MODEL"] = original_model
@@ -406,9 +410,22 @@ class TestLLMFactoryIntegration:
                 del os.environ["LLM_MODEL"]
 
             if original_key:
-                os.environ["LLM_MODEL_API_KEY"] = original_key
-            elif "LLM_MODEL_API_KEY" in os.environ:
-                del os.environ["LLM_MODEL_API_KEY"]
+                os.environ["LLM_API_KEY"] = original_key
+            elif "LLM_API_KEY" in os.environ:
+                del os.environ["LLM_API_KEY"]
+
+            if original_temp:
+                os.environ["LLM_TEMPERATURE"] = original_temp
+            elif "LLM_TEMPERATURE" in os.environ:
+                del os.environ["LLM_TEMPERATURE"]
+
+            if original_tokens:
+                os.environ["LLM_MAX_TOKENS"] = original_tokens
+            elif "LLM_MAX_TOKENS" in os.environ:
+                del os.environ["LLM_MAX_TOKENS"]
+
+            # Clear cache again to restore original settings
+            get_settings.cache_clear()
 
     @pytest.mark.asyncio
     async def test_factory_created_model_works(self):

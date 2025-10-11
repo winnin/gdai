@@ -17,11 +17,13 @@ pytest_plugins = ("pytest_asyncio",)
 
 
 @pytest_asyncio.fixture
-def repository():
-    """Create repository instance.
+async def repository():
+    """Create repository instance as async context manager.
 
     Note: This assumes the database has been set up using scripts/setup_db.py
     """
+    from gdai.repositories.database import DatabaseManager
+
     try:
         # Verify database configuration is available
         _ = Config.db.PGVECTOR_USER
@@ -30,7 +32,14 @@ def repository():
     except Exception as e:
         pytest.skip(f"Database configuration not available: {e}")
 
-    return PGVectorRepository()
+    # Ensure clean state before creating repository
+    await DatabaseManager.dispose()
+
+    async with PGVectorRepository() as repo:
+        yield repo
+
+    # Clean up after test
+    await DatabaseManager.dispose()
 
 
 @pytest_asyncio.fixture
@@ -104,22 +113,16 @@ class TestPGVectorRepositoryDocuments:
         # Delete document
         await repository.delete_document(tenant_id, str(doc_id))
 
-        # Verify deletion - get_document raises ValueError when not found
-        try:
-            await repository.get_document(tenant_id, str(doc_id))
-            assert False, "Expected ValueError for deleted document"
-        except ValueError as e:
-            assert "not found" in str(e)
+        # Verify deletion - get_document returns None when not found
+        result = await repository.get_document(tenant_id, str(doc_id))
+        assert result is None, "Expected None for deleted document"
 
     @pytest.mark.asyncio
     async def test_get_document_nonexistent(self, repository, tenant_id):
-        """Test retrieving a nonexistent document raises ValueError."""
+        """Test retrieving a nonexistent document returns None."""
         doc_id = str(uuid4())
-        try:
-            await repository.get_document(tenant_id, doc_id)
-            assert False, "Expected ValueError for nonexistent document"
-        except ValueError as e:
-            assert "not found" in str(e)
+        result = await repository.get_document(tenant_id, doc_id)
+        assert result is None, "Expected None for nonexistent document"
 
     @pytest.mark.asyncio
     async def test_tenant_isolation_documents(self, repository):
@@ -135,11 +138,8 @@ class TestPGVectorRepositoryDocuments:
         await repository.insert_document(document)
 
         # Tenant2 should not see the document
-        try:
-            await repository.get_document(tenant2, str(doc_id))
-            assert False, "Expected ValueError when accessing other tenant's document"
-        except ValueError as e:
-            assert "not found" in str(e)
+        result = await repository.get_document(tenant2, str(doc_id))
+        assert result is None, "Expected None when accessing other tenant's document"
 
         # Tenant1 should see the document
         retrieved_document = await repository.get_document(tenant1, str(doc_id))
@@ -282,7 +282,7 @@ class TestPGVectorRepositoryChunks:
         await repository.insert_chunks(chunks)
 
         # Get chunks without embedding
-        chunks_without_embedding = await repository.get_chunks_without_embedding(batch_size=20)
+        chunks_without_embedding = await repository.get_chunks_without_embedding(tenant_id=tenant_id, batch_size=20)
         assert len(chunks_without_embedding) >= 2
         for chunk in chunks_without_embedding:
             if str(chunk.document_id) == str(doc_id):
@@ -510,14 +510,20 @@ class TestPGVectorRepositoryVectorSearch:
         await repository.update_chunks(chunks_with_embeddings)
 
         # Search with query similar to first embedding
-        query_embedding = (base_embedding + 0.05 * np.random.rand(1536)).tolist()
+        query_vector = (base_embedding + 0.05 * np.random.rand(1536)).tolist()
         results = await repository.search_chunks_by_similarity_on_document_ids(
-            tenant_id=tenant_id, document_ids=[str(doc_id)], query_embedding=query_embedding, limit=2
+            tenant_id=tenant_id,
+            query_vector=query_vector,
+            similarity_threshold=0.0,
+            document_ids=[str(doc_id)],
+            limit=2,
         )
 
         assert len(results) == 2
-        # Results should be ordered by similarity
-        assert results[0].chunk in ["Machine learning is great", "Deep learning is powerful"]
+        # Results should be ordered by similarity (tuple of ChunkModel, score)
+        assert results[0][0].chunk in ["Machine learning is great", "Deep learning is powerful"]
+        # Check that similarity scores are present
+        assert isinstance(results[0][1], float)
 
     @pytest.mark.asyncio
     async def test_search_multiple_documents(self, repository, tenant_id):
@@ -594,9 +600,13 @@ class TestPGVectorRepositoryVectorSearch:
         await repository.update_chunks(chunks_with_embeddings)
 
         # Search across both documents
-        query_embedding = np.random.rand(1536).tolist()
+        query_vector = np.random.rand(1536).tolist()
         results = await repository.search_chunks_by_similarity_on_document_ids(
-            tenant_id=tenant_id, document_ids=[str(doc_id1), str(doc_id2)], query_embedding=query_embedding, limit=10
+            tenant_id=tenant_id,
+            query_vector=query_vector,
+            similarity_threshold=0.0,
+            document_ids=[str(doc_id1), str(doc_id2)],
+            limit=10,
         )
 
         assert len(results) == 2
@@ -778,9 +788,13 @@ class TestPGVectorRepositoryIntegration:
         await repository.update_chunks(chunks_with_embeddings)
 
         # 4. Search for relevant chunks
-        query_embedding = (base_embedding + 0.05 * np.random.rand(1536)).tolist()
+        query_vector = (base_embedding + 0.05 * np.random.rand(1536)).tolist()
         search_results = await repository.search_chunks_by_similarity_on_document_ids(
-            tenant_id=tenant_id, document_ids=[str(doc_id)], query_embedding=query_embedding, limit=2
+            tenant_id=tenant_id,
+            query_vector=query_vector,
+            similarity_threshold=0.0,
+            document_ids=[str(doc_id)],
+            limit=2,
         )
 
         assert len(search_results) == 2
@@ -790,8 +804,8 @@ class TestPGVectorRepositoryIntegration:
         query = QueryModel(id=query_id, tenant_id=tenant_id, query="What is Python?", status=QueryStatusEnum.pending)
         await repository.insert_query(query)
 
-        # 6. Link chunks to query
-        links = [(str(chunk.id), 0.9) for chunk in search_results]
+        # 6. Link chunks to query (search_results is list of tuples: (ChunkModel, score))
+        links = [(str(chunk.id), score) for chunk, score in search_results]
         await repository.insert_query_chunk_links(
             tenant_id=tenant_id, query_id=str(query_id), chunks_ids_with_similarity=links
         )
@@ -928,8 +942,5 @@ class TestPGVectorRepositoryIntegration:
 
         # Delete document
         await repository.delete_document(tenant_id, str(doc_id))
-        try:
-            await repository.get_document(tenant_id, str(doc_id))
-            assert False, "Expected ValueError for deleted document"
-        except ValueError as e:
-            assert "not found" in str(e)
+        result = await repository.get_document(tenant_id, str(doc_id))
+        assert result is None, "Expected None for deleted document"

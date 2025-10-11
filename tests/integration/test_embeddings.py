@@ -315,25 +315,22 @@ class TestEmbeddingFactoryIntegration:
         # Save original values
         original_model = os.environ.get("EMBEDDING_MODEL")
         original_key = os.environ.get("EMBEDDING_MODEL_API_KEY")
+        original_dimension = os.environ.get("EMBEDDING_DIMENSION")
 
-        from gdai.commons.config import Config
-
-        original_config_model = Config.embedding.EMBEDDING_MODEL
+        from gdai.commons.settings import get_settings
 
         try:
             # Set unsupported model
             os.environ["EMBEDDING_MODEL"] = "unsupported/model"
             os.environ["EMBEDDING_MODEL_API_KEY"] = "fake_key"
+            os.environ["EMBEDDING_DIMENSION"] = "1536"
 
-            # Need to reload config for env changes to take effect
-            Config.embedding.EMBEDDING_MODEL = "unsupported/model"
+            # Clear the settings cache to pick up new env vars
+            get_settings.cache_clear()
 
             with pytest.raises(ValueError, match="Unsupported embedding model"):
                 await EmbeddingFactory.get_embedding()
         finally:
-            # Restore original Config
-            Config.embedding.EMBEDDING_MODEL = original_config_model
-
             # Restore original env values
             if original_model:
                 os.environ["EMBEDDING_MODEL"] = original_model
@@ -344,6 +341,14 @@ class TestEmbeddingFactoryIntegration:
                 os.environ["EMBEDDING_MODEL_API_KEY"] = original_key
             elif "EMBEDDING_MODEL_API_KEY" in os.environ:
                 del os.environ["EMBEDDING_MODEL_API_KEY"]
+
+            if original_dimension:
+                os.environ["EMBEDDING_DIMENSION"] = original_dimension
+            elif "EMBEDDING_DIMENSION" in os.environ:
+                del os.environ["EMBEDDING_DIMENSION"]
+
+            # Clear cache again to restore original settings
+            get_settings.cache_clear()
 
     @pytest.mark.asyncio
     async def test_factory_created_model_works(self):
