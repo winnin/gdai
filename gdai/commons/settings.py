@@ -13,7 +13,7 @@ class DatabaseSettings(BaseSettings):
 
     model_config = SettingsConfigDict(env_prefix="PGVECTOR_", case_sensitive=False)
 
-    database: str = Field(..., description="Database name")
+    database_name: str = Field(..., alias="database", description="Database name")
     user: str = Field(..., description="Database user")
     password: str = Field(..., description="Database password")
     host: str = Field(default="localhost", description="Database host")
@@ -35,7 +35,7 @@ class DatabaseSettings(BaseSettings):
         Returns:
             str: PostgreSQL connection URL for asyncpg.
         """
-        return f"postgresql+asyncpg://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
+        return f"postgresql+asyncpg://{self.user}:{self.password}@{self.host}:{self.port}/{self.database_name}"
 
 
 class EmbeddingSettings(BaseSettings):
@@ -116,6 +116,12 @@ class Settings:
 
     def __init__(self):
         """Initialize all settings from environment variables."""
+        import os
+
+        # Database backend type (e.g., "pgvector")
+        self.database_backend = os.getenv("DATABASE", "pgvector")
+
+        # Database connection settings
         self.database = DatabaseSettings()
         self.embedding = EmbeddingSettings()
         self.llm = LLMSettings()
@@ -123,8 +129,6 @@ class Settings:
         self.temporal = TemporalSettings()
 
         # Application settings - read from environment or use defaults
-        import os
-
         self.app_name = os.getenv("APP_NAME", "GDAI")
         self.debug = os.getenv("DEBUG", "false").lower() in ("true", "1", "yes")
         self.log_level = os.getenv("LOG_LEVEL", "INFO")

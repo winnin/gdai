@@ -7,7 +7,7 @@ class RepositoryFactory:
     @staticmethod
     def get_repository():
         settings = get_settings()
-        db_backend = settings.database.database
+        db_backend = settings.database_backend
         if db_backend == "pgvector":
             from gdai.repositories.pgvector_repository import PGVectorRepository
 
