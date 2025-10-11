@@ -359,7 +359,7 @@ Each workflow runs on dedicated worker queues for scalability and isolation:
 5. **Start infrastructure services:**
 
    ```bash
-   docker-compose up -d
+   docker compose up -d
    ```
 
 6. **Setup database:**
@@ -433,7 +433,7 @@ task tests-quick
 task tests
 
 # Stop everything: Ctrl+C and
-docker-compose down
+docker compose down
 ```
 
 ### Common Tasks

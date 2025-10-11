@@ -11,6 +11,9 @@ services:
     volumes:
       - minio_data:/data # Persist data to a local directory
     command: server /data --console-address ":9001"
+    networks:
+      - app_network
+    restart: unless-stopped
 
   temporal:
     image: temporalio/temporal:latest
@@ -18,6 +21,9 @@ services:
     ports:
       - "7233:7233" # Main Temporal service port
       - "8233:8233" # Temporal UI
+    networks:
+      - app_network
+    restart: unless-stopped
 
   pgvector:
     image: ankane/pgvector:latest

@@ -131,8 +131,15 @@ echo -e "${CYAN}  • Temporal UI on port 8233${NC}"
 echo -e "${CYAN}  • MinIO on ports 9000 (API) and 9001 (Console)${NC}"
 echo ""
 
+# Check if docker-compose.yaml exists
+if [ ! -f "${PROJECT_ROOT}/docker-compose.yaml" ]; then
+    echo -e "${RED}Error: docker-compose.yaml not found in project root${NC}"
+    exit 1
+fi
+
 # Start docker-compose services
-$DOCKER_COMPOSE_CMD up -d
+echo -e "${YELLOW}Running: $DOCKER_COMPOSE_CMD -f ${PROJECT_ROOT}/docker-compose.yaml up -d${NC}"
+$DOCKER_COMPOSE_CMD -f "${PROJECT_ROOT}/docker-compose.yaml" up -d
 
 # Wait for services to be ready
 echo ""
@@ -165,9 +172,9 @@ if [ "$START_SERVICES" = "infra" ]; then
     echo -e "${CYAN}Services available:${NC}"
     echo -e "  • PostgreSQL: ${YELLOW}postgresql://testuser:testpwd@localhost:5555/vectordb${NC}"
     echo -e "  • Temporal UI: ${YELLOW}http://localhost:8233${NC}"
-    echo -e "  • MinIO Console: ${YELLOW}http://localhost:9001${NC} (admin/admin)"
+    echo -e "  • MinIO Console: ${YELLOW}http://localhost:9001${NC} (minioadmin/minioadmin)"
     echo ""
-    echo -e "${BLUE}To stop services, run:${NC} $DOCKER_COMPOSE_CMD down"
+    echo -e "${BLUE}To stop services, run:${NC} $DOCKER_COMPOSE_CMD -f ${PROJECT_ROOT}/docker-compose.yaml down"
     echo ""
     exit 0
 fi
@@ -205,7 +212,7 @@ echo -e "${CYAN}Available services:${NC}"
 echo -e "  • API Server: ${YELLOW}http://localhost:8000${NC}"
 echo -e "  • API Documentation: ${YELLOW}http://localhost:8000/docs${NC}"
 echo -e "  • Temporal UI: ${YELLOW}http://localhost:8233${NC}"
-echo -e "  • MinIO Console: ${YELLOW}http://localhost:9001${NC} (admin/admin)"
+echo -e "  • MinIO Console: ${YELLOW}http://localhost:9001${NC} (minioadmin/minioadmin)"
 echo -e "  • PostgreSQL: ${YELLOW}postgresql://testuser:testpwd@localhost:5555/vectordb${NC}"
 echo ""
 echo -e "${CYAN}Logs:${NC}"
