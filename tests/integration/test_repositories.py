@@ -20,7 +20,7 @@ pytest_plugins = ("pytest_asyncio",)
 async def repository():
     """Create repository instance as async context manager.
 
-    Note: This assumes the database has been set up using scripts/setup_db.py
+    Note: This assumes the database has been set up using gdai/scripts/setup_db.py
     """
     from gdai.repositories.database import DatabaseManager
 
