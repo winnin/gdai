@@ -10,7 +10,7 @@ class EmbeddingFactory:
         settings = get_settings()
         embedding_config = settings.embedding
         model_name = embedding_config.model
-        api_key = embedding_config.model_api_key or ""
+        api_key = embedding_config.api_key or ""
         if model_name == "cohere/embed-v4.0":
             return await CohereEmbeddingModel.create(api_key)
         else:

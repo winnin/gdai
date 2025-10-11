@@ -44,7 +44,7 @@ class EmbeddingSettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="EMBEDDING_", case_sensitive=False)
 
     model: str = Field(..., description="Embedding model name")
-    model_api_key: str = Field(..., description="API key for embedding service")
+    api_key: str = Field(..., description="API key for embedding service")
     dimension: int = Field(..., gt=0, description="Embedding dimension")
     max_text_size: int = Field(default=5000, gt=0, description="Maximum text size for embedding")
     batch_size: int = Field(default=96, gt=0, description="Maximum batch size")

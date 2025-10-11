@@ -15,6 +15,27 @@ NC='\033[0m' # No Color
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 export PYTHONPATH="${PROJECT_ROOT}:${PYTHONPATH}"
 
+# Load environment variables from .env
+if [ -f "${PROJECT_ROOT}/.env" ]; then
+    echo -e "${BLUE}Loading environment from .env...${NC}"
+    set -a  # automatically export all variables
+    source "${PROJECT_ROOT}/.env"
+    set +a
+else
+    echo -e "${YELLOW}Warning: .env not found. Using default test values.${NC}"
+    # Set minimal required environment variables for tests
+    export EMBEDDING_API_KEY="${EMBEDDING_API_KEY:-test-embedding-key}"
+    export EMBEDDING_MODEL="${EMBEDDING_MODEL:-cohere/embed-v4.0}"
+    export EMBEDDING_DIMENSION="${EMBEDDING_DIMENSION:-1536}"
+    export LLM_API_KEY="${LLM_API_KEY:-test-llm-key}"
+    export LLM_MODEL="${LLM_MODEL:-openai/gpt-4o}"
+    export PGVECTOR_USER="${PGVECTOR_USER:-testuser}"
+    export PGVECTOR_PASSWORD="${PGVECTOR_PASSWORD:-testpwd}"
+    export PGVECTOR_DATABASE="${PGVECTOR_DATABASE:-vectordb}"
+    export PGVECTOR_HOST="${PGVECTOR_HOST:-localhost}"
+    export PGVECTOR_PORT="${PGVECTOR_PORT:-5555}"
+fi
+
 echo -e "${BLUE}========================================${NC}"
 echo -e "${BLUE}  GDAI Test Suite Runner${NC}"
 echo -e "${BLUE}========================================${NC}"

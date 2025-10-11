@@ -7,20 +7,69 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: ankane/pgvector:latest
+        env:
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpwd
+          POSTGRES_DB: vectordb
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5555:5432
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
+
       - name: Install UV
-        run: wget -qO- https://astral.sh/uv/install.sh | sh
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+
+      - name: Add UV to PATH
+        run: echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
       - name: Install dependencies
         run: uv sync --all-groups
-      #- name: Run coverage tests
-      #  run: uv run pytest --cov=src --cov-fail-under=50
-      #- name: Archive code coverage results
-      #  uses: actions/upload-artifact@v4
-      #  with:
-      #    name: code-coverage-report
-      #    path: htmlcov/
-      #    retention-days: 14
+
+      - name: Create .env file
+        run: |
+          cat > .env << EOF
+          EMBEDDING_API_KEY=test-key
+          EMBEDDING_MODEL=cohere/embed-v4.0
+          EMBEDDING_DIMENSION=1536
+          LLM_API_KEY=test-key
+          LLM_MODEL=openai/gpt-4o
+          PGVECTOR_USER=testuser
+          PGVECTOR_PASSWORD=testpwd
+          PGVECTOR_DATABASE=vectordb
+          PGVECTOR_HOST=localhost
+          PGVECTOR_PORT=5555
+          EOF
+
+      - name: Run unit tests with coverage
+        run: uv run pytest tests/unit/ --cov=gdai --cov-report=xml --cov-report=html --cov-report=term
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Archive code coverage results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: code-coverage-report
+          path: htmlcov/
+          retention-days: 14
