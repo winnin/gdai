@@ -145,7 +145,7 @@ class EmbeddingConfig(ConfigComponent):
     BATCH_SIZE = int(os.getenv("EMBEDDING_BATCH_SIZE") or 64)
     DIMENSION = int(os.getenv("EMBEDDING_DIMENSION"))
     EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL")
-    EMBEDDING_MODEL_API_KEY = os.getenv("EMBEDDING_MODEL_API_KEY")
+    EMBEDDING_MODEL_API_KEY = os.getenv("EMBEDDING_API_KEY")  # Use EMBEDDING_API_KEY from .env
 
     @classmethod
     def validate(cls) -> bool:

@@ -7,6 +7,9 @@ from functools import lru_cache
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+# Import config to ensure .env is loaded before settings are instantiated
+from gdai.commons import config  # noqa: F401
+
 
 class DatabaseSettings(BaseSettings):
     """Database configuration settings."""
