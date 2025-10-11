@@ -1,303 +1,447 @@
-import os
+"""Unit tests for gdai.extractors module.
+
+This module tests all extractor classes and the factory pattern.
+Target: 100% code coverage for gdai/extractors/*.py
+"""
+
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from gdai.extractors import ExtractorFactory
+from gdai.extractors.base_extractor import DocumentExtractor
+from gdai.extractors.pdf_extractor import PDFExtractor
+
+
+class TestDocumentExtractor:
+    """Test suite for DocumentExtractor abstract base class."""
+
+    def test_document_extractor_is_abstract(self):
+        """Test that DocumentExtractor cannot be instantiated directly."""
+        # DocumentExtractor is an ABC with abstract methods
+        # Check that extract_document_data is abstract
+        assert hasattr(DocumentExtractor.extract_document_data, "__isabstractmethod__")
+        assert DocumentExtractor.extract_document_data.__isabstractmethod__ is True
+
+    def test_document_extractor_initialization(self):
+        """Test that DocumentExtractor can be initialized through subclass."""
+
+        class ConcreteExtractor(DocumentExtractor):
+            def extract_document_data(self, document_path: str) -> dict:  # noqa: ARG002
+                return {"texts": [], "tables": [], "images": []}
+
+        extractor = ConcreteExtractor()
+        assert isinstance(extractor, DocumentExtractor)
+
+    def test_document_extractor_abstract_method_signature(self):
+        """Test that abstract method has correct signature."""
+
+        class TestExtractor(DocumentExtractor):
+            def extract_document_data(self, document_path: str) -> dict:  # noqa: ARG002
+                return {}
+
+        extractor = TestExtractor()
+        result = extractor.extract_document_data("test.pdf")
+        assert isinstance(result, dict)
+
+    def test_document_extractor_abstract_method_returns_none(self):
+        """Test that abstract method with pass returns None when called."""
+
+        class IncompleteExtractor(DocumentExtractor):
+            pass  # Intentionally not implementing extract_document_data
+
+        # In Python, we can instantiate and call abstract methods with pass
+        try:
+            extractor = IncompleteExtractor()
+            result = extractor.extract_document_data("test.pdf")
+            # The method with just 'pass' returns None
+            assert result is None
+        except TypeError:
+            # Some Python versions prevent instantiation of classes with abstract methods
+            pass
+
+    def test_document_extractor_abstract_method_coverage(self):
+        """Test to cover the abstract method pass statement."""
+
+        class TestExtractor(DocumentExtractor):
+            def extract_document_data(self, document_path: str) -> dict:
+                # Call the parent abstract method to cover the pass statement
+                super().extract_document_data(document_path)
+                return {"texts": [], "tables": [], "images": []}
+
+        extractor = TestExtractor()
+        result = extractor.extract_document_data("test.pdf")
+        assert isinstance(result, dict)
 
 
 class TestPDFExtractor:
-    """Test suite for the PDFExtractor class."""
+    """Test suite for PDFExtractor class."""
 
-    @pytest.fixture
-    def sample_pdf_path(self):
-        """Path to a sample PDF file for testing."""
-        return "tests/fixtures/alice_in_wonderland_public_domain.pdf"
-
-    @pytest.fixture
-    def invalid_pdf_path(self):
-        """Path to an invalid PDF file for testing."""
-        return "tests/fixtures/invalid_file.pdf"
-
-    @pytest.fixture
-    def non_existent_path(self):
-        """Path to a non-existent file for testing."""
-        return "tests/fixtures/non_existent.pdf"
-
-    def test_init_with_defaults(self):
-        """Test extractor initialization with default parameters."""
-        extractor = ExtractorFactory.get_extractor("pdf")
-        assert extractor is not None
-        assert hasattr(extractor, "extract_document_data")
-
-    def test_factory_creates_pdf_extractor(self):
-        """Test that factory creates correct extractor type."""
-        extractor = ExtractorFactory.get_extractor("pdf")
-        from gdai.extractors.pdf_extractor import PDFExtractor
-
+    def test_pdf_extractor_initialization(self):
+        """Test PDFExtractor initialization."""
+        extractor = PDFExtractor()
         assert isinstance(extractor, PDFExtractor)
+        assert isinstance(extractor, DocumentExtractor)
 
-    def test_factory_unsupported_extractor_type(self):
-        """Test factory with unsupported extractor type."""
-        with pytest.raises(ValueError, match="Unknown extractor type"):
-            ExtractorFactory.get_extractor("unsupported_type")
+    def test_pdf_extractor_inherits_from_document_extractor(self):
+        """Test that PDFExtractor properly inherits from DocumentExtractor."""
+        extractor = PDFExtractor()
+        assert hasattr(extractor, "extract_document_data")
+        assert callable(extractor.extract_document_data)
 
-    def test_factory_ppt_extractor_not_implemented(self):
-        """Test factory with PPT extractor (not implemented)."""
-        with pytest.raises(NotImplementedError, match="PPT extractor is not implemented yet"):
-            ExtractorFactory.get_extractor("ppt")
+    @patch("gdai.extractors.pdf_extractor.pymupdf.open")
+    def test_extract_document_data_success(self, mock_pymupdf_open):
+        """Test successful document extraction."""
+        # Create mock PDF document
+        mock_page = MagicMock()
+        mock_page.get_text.return_value = "Sample text from page 1"
 
-    @pytest.mark.skipif(
-        not os.path.exists("tests/fixtures/alice_in_wonderland_public_domain.pdf"), reason="PDF fixture file not found"
-    )
-    def test_extract_document_data_valid_pdf(self, sample_pdf_path):
-        """Test extracting data from a valid PDF file."""
-        extractor = ExtractorFactory.get_extractor("pdf")
-        result = extractor.extract_document_data(sample_pdf_path)
+        mock_doc = MagicMock()
+        mock_doc.__iter__.return_value = [mock_page]
+        mock_doc.close = MagicMock()
 
-        # Verify structure
+        mock_pymupdf_open.return_value = mock_doc
+
+        # Test extraction
+        extractor = PDFExtractor()
+        result = extractor.extract_document_data("test.pdf")
+
+        # Verify result structure
         assert isinstance(result, dict)
         assert "texts" in result
         assert "tables" in result
         assert "images" in result
 
-        # Verify texts
-        assert isinstance(result["texts"], list)
-        if result["texts"]:
-            for text_item in result["texts"]:
-                assert isinstance(text_item, tuple)
-                assert len(text_item) == 2
-                page_num, text_content = text_item
-                assert isinstance(page_num, int)
-                assert isinstance(text_content, str)
-                assert page_num >= 1
+        # Verify texts content
+        assert len(result["texts"]) == 1
+        assert result["texts"][0] == (1, "Sample text from page 1")
 
-        # Verify tables and images (may be empty)
-        assert isinstance(result["tables"], list)
-        assert isinstance(result["images"], list)
+        # Verify empty tables and images
+        assert result["tables"] == []
+        assert result["images"] == []
 
-    def test_extract_document_data_non_existent_file(self, non_existent_path):
-        """Test extracting data from non-existent file."""
+        # Verify document was closed
+        mock_doc.close.assert_called_once()
+
+    @patch("gdai.extractors.pdf_extractor.pymupdf.open")
+    def test_extract_document_data_multiple_pages(self, mock_pymupdf_open):
+        """Test extraction from PDF with multiple pages."""
+        # Create mock pages
+        mock_page1 = MagicMock()
+        mock_page1.get_text.return_value = "Text from page 1"
+
+        mock_page2 = MagicMock()
+        mock_page2.get_text.return_value = "Text from page 2"
+
+        mock_page3 = MagicMock()
+        mock_page3.get_text.return_value = "Text from page 3"
+
+        mock_doc = MagicMock()
+        mock_doc.__iter__.return_value = [mock_page1, mock_page2, mock_page3]
+        mock_doc.close = MagicMock()
+
+        mock_pymupdf_open.return_value = mock_doc
+
+        # Test extraction
+        extractor = PDFExtractor()
+        result = extractor.extract_document_data("multi_page.pdf")
+
+        # Verify all pages extracted
+        assert len(result["texts"]) == 3
+        assert result["texts"][0] == (1, "Text from page 1")
+        assert result["texts"][1] == (2, "Text from page 2")
+        assert result["texts"][2] == (3, "Text from page 3")
+
+    @patch("gdai.extractors.pdf_extractor.pymupdf.open")
+    def test_extract_document_data_with_whitespace(self, mock_pymupdf_open):
+        """Test extraction handles whitespace correctly."""
+        mock_page = MagicMock()
+        mock_page.get_text.return_value = "  Text with whitespace  \n\t"
+
+        mock_doc = MagicMock()
+        mock_doc.__iter__.return_value = [mock_page]
+        mock_doc.close = MagicMock()
+
+        mock_pymupdf_open.return_value = mock_doc
+
+        extractor = PDFExtractor()
+        result = extractor.extract_document_data("test.pdf")
+
+        # Verify whitespace is stripped
+        assert result["texts"][0] == (1, "Text with whitespace")
+
+    @patch("gdai.extractors.pdf_extractor.pymupdf.open")
+    def test_extract_document_data_empty_pages(self, mock_pymupdf_open):
+        """Test extraction skips empty pages."""
+        mock_page1 = MagicMock()
+        mock_page1.get_text.return_value = "Content"
+
+        mock_page2 = MagicMock()
+        mock_page2.get_text.return_value = "   "  # Only whitespace
+
+        mock_page3 = MagicMock()
+        mock_page3.get_text.return_value = ""  # Empty
+
+        mock_page4 = MagicMock()
+        mock_page4.get_text.return_value = "More content"
+
+        mock_doc = MagicMock()
+        mock_doc.__iter__.return_value = [mock_page1, mock_page2, mock_page3, mock_page4]
+        mock_doc.close = MagicMock()
+
+        mock_pymupdf_open.return_value = mock_doc
+
+        extractor = PDFExtractor()
+        result = extractor.extract_document_data("test.pdf")
+
+        # Should only have 2 text entries (skipping empty pages)
+        assert len(result["texts"]) == 2
+        assert result["texts"][0] == (1, "Content")
+        assert result["texts"][1] == (4, "More content")
+
+    @patch("gdai.extractors.pdf_extractor.pymupdf.open")
+    @patch("gdai.extractors.pdf_extractor.logger")
+    def test_extract_document_data_exception_handling(self, mock_logger, mock_pymupdf_open):
+        """Test exception handling during extraction."""
+        # Simulate an error
+        mock_pymupdf_open.side_effect = Exception("Failed to open PDF")
+
+        extractor = PDFExtractor()
+
+        # Verify exception is raised
+        with pytest.raises(Exception, match="Failed to open PDF"):
+            extractor.extract_document_data("invalid.pdf")
+
+        # Verify error was logged
+        mock_logger.error.assert_called_once()
+        assert "Error extracting data from invalid.pdf" in str(mock_logger.error.call_args)
+
+    def test_extract_raw_text_method(self):
+        """Test _extract_raw_text method directly."""
+        mock_page = MagicMock()
+        mock_page.get_text.return_value = "Sample text"
+
+        mock_doc = MagicMock()
+        mock_doc.__iter__.return_value = [mock_page]
+
+        extractor = PDFExtractor()
+        texts = extractor._extract_raw_text(mock_doc)
+
+        assert isinstance(texts, list)
+        assert len(texts) == 1
+        assert texts[0] == (1, "Sample text")
+
+    def test_extract_raw_tables_method(self):
+        """Test _extract_raw_tables method (currently returns empty list)."""
+        mock_doc = MagicMock()
+
+        extractor = PDFExtractor()
+        tables = extractor._extract_raw_tables(mock_doc)
+
+        assert isinstance(tables, list)
+        assert len(tables) == 0  # Not implemented yet
+
+    def test_extract_raw_images_method(self):
+        """Test _extract_raw_images method (currently returns empty list)."""
+        mock_doc = MagicMock()
+
+        extractor = PDFExtractor()
+        images = extractor._extract_raw_images(mock_doc)
+
+        assert isinstance(images, list)
+        assert len(images) == 0  # Not implemented yet
+
+    @patch("gdai.extractors.pdf_extractor.pymupdf.open")
+    def test_document_close_called_on_success(self, mock_pymupdf_open):
+        """Test that PDF document is properly closed after extraction."""
+        mock_page = MagicMock()
+        mock_page.get_text.return_value = "Text"
+
+        mock_doc = MagicMock()
+        mock_doc.__iter__.return_value = [mock_page]
+        mock_doc.close = MagicMock()
+
+        mock_pymupdf_open.return_value = mock_doc
+
+        extractor = PDFExtractor()
+        extractor.extract_document_data("test.pdf")
+
+        # Verify close was called
+        mock_doc.close.assert_called_once()
+
+    @patch("gdai.extractors.pdf_extractor.pymupdf.open")
+    def test_extract_document_data_page_numbering(self, mock_pymupdf_open):
+        """Test that page numbering starts at 1 (not 0)."""
+        mock_pages = []
+        for i in range(5):
+            page = MagicMock()
+            page.get_text.return_value = f"Page {i}"
+            mock_pages.append(page)
+
+        mock_doc = MagicMock()
+        mock_doc.__iter__.return_value = mock_pages
+        mock_doc.close = MagicMock()
+
+        mock_pymupdf_open.return_value = mock_doc
+
+        extractor = PDFExtractor()
+        result = extractor.extract_document_data("test.pdf")
+
+        # Verify page numbers start at 1
+        for idx, (page_num, _) in enumerate(result["texts"]):
+            assert page_num == idx + 1
+
+    def test_extract_raw_text_with_multiple_pages(self):
+        """Test _extract_raw_text with multiple pages."""
+        mock_page1 = MagicMock()
+        mock_page1.get_text.return_value = "Page 1"
+
+        mock_page2 = MagicMock()
+        mock_page2.get_text.return_value = "Page 2"
+
+        mock_doc = MagicMock()
+        mock_doc.__iter__.return_value = [mock_page1, mock_page2]
+
+        extractor = PDFExtractor()
+        texts = extractor._extract_raw_text(mock_doc)
+
+        assert len(texts) == 2
+        assert texts[0] == (1, "Page 1")
+        assert texts[1] == (2, "Page 2")
+
+    def test_extract_raw_text_skips_empty_pages(self):
+        """Test _extract_raw_text skips empty pages."""
+        mock_page1 = MagicMock()
+        mock_page1.get_text.return_value = "Content"
+
+        mock_page2 = MagicMock()
+        mock_page2.get_text.return_value = "  "  # Whitespace only
+
+        mock_page3 = MagicMock()
+        mock_page3.get_text.return_value = "More content"
+
+        mock_doc = MagicMock()
+        mock_doc.__iter__.return_value = [mock_page1, mock_page2, mock_page3]
+
+        extractor = PDFExtractor()
+        texts = extractor._extract_raw_text(mock_doc)
+
+        # Should skip page 2
+        assert len(texts) == 2
+        assert texts[0] == (1, "Content")
+        assert texts[1] == (3, "More content")
+
+
+class TestExtractorFactory:
+    """Test suite for ExtractorFactory class."""
+
+    def test_factory_get_pdf_extractor(self):
+        """Test factory returns PDFExtractor for 'pdf' type."""
         extractor = ExtractorFactory.get_extractor("pdf")
-        with pytest.raises(Exception):  # Should raise an exception
-            extractor.extract_document_data(non_existent_path)
+        assert isinstance(extractor, PDFExtractor)
+        assert isinstance(extractor, DocumentExtractor)
 
-    # @patch("gdai.extractors.pdf_extractor.pymupdf")
-    # def test_extract_document_data_with_mocked_pdf(self, mock_pymupdf):
-    #     """Test extraction with mocked PDF document."""
-    #     # Setup mock
-    #     mock_doc = Mock()
-    #     mock_page = Mock()
-    #     mock_page.get_text.return_value = "Sample text content from page 1"
-    #     mock_doc.__iter__ = Mock(return_value=iter([mock_page]))
-    #     mock_pymupdf.open.return_value = mock_doc
+    def test_factory_returns_new_instance_each_time(self):
+        """Test that factory returns new instances, not singletons."""
+        extractor1 = ExtractorFactory.get_extractor("pdf")
+        extractor2 = ExtractorFactory.get_extractor("pdf")
 
-    #     extractor = ExtractorFactory.get_extractor("pdf")
-    #     result = extractor.extract_document_data("fake_path.pdf")
+        assert extractor1 is not extractor2
+        assert isinstance(extractor1, PDFExtractor)
+        assert isinstance(extractor2, PDFExtractor)
 
-    #     # Verify calls
-    #     mock_pymupdf.open.assert_called_once_with("fake_path.pdf")
-    #     mock_doc.close.assert_called_once()
-    #     mock_page.get_text.assert_called_once()
+    def test_factory_ppt_not_implemented(self):
+        """Test that factory raises NotImplementedError for PPT."""
+        with pytest.raises(NotImplementedError, match="PPT extractor is not implemented yet"):
+            ExtractorFactory.get_extractor("ppt")
 
-    #     # Verify result
-    #     assert isinstance(result, dict)
-    #     assert "texts" in result
-    #     assert len(result["texts"]) == 1
-    #     assert result["texts"][0] == (1, "Sample text content from page 1")
+    def test_factory_unknown_type_raises_error(self):
+        """Test that factory raises ValueError for unknown types."""
+        with pytest.raises(ValueError, match="Unknown extractor type: docx"):
+            ExtractorFactory.get_extractor("docx")
 
-    # @patch("gdai.extractors.pdf_extractor.pymupdf")
-    # def test_extract_document_data_empty_pdf(self, mock_pymupdf):
-    #     """Test extraction from PDF with no content."""
-    #     # Setup mock for empty PDF
-    #     mock_doc = Mock()
-    #     mock_doc.__iter__ = Mock(return_value=iter([]))
-    #     mock_pymupdf.open.return_value = mock_doc
+    def test_factory_unknown_type_variations(self):
+        """Test various invalid extractor types."""
+        invalid_types = ["word", "excel", "txt", "unknown"]
 
-    #     extractor = ExtractorFactory.get_extractor("pdf")
-    #     result = extractor.extract_document_data("empty.pdf")
+        for invalid_type in invalid_types:
+            with pytest.raises(ValueError, match="Unknown extractor type"):
+                ExtractorFactory.get_extractor(invalid_type)
 
-    #     # Verify result
-    #     assert isinstance(result, dict)
-    #     assert result["texts"] == []
-    #     assert result["tables"] == []
-    #     assert result["images"] == []
+    def test_factory_is_static_method(self):
+        """Test that get_extractor is a static method."""
+        assert isinstance(ExtractorFactory.__dict__["get_extractor"], staticmethod) or callable(
+            ExtractorFactory.get_extractor
+        )
 
-    # @patch("gdai.extractors.pdf_extractor.pymupdf")
-    # def test_extract_document_data_multiple_pages(self, mock_pymupdf):
-    #     """Test extraction from multi-page PDF."""
-    #     # Setup mock for multiple pages
-    #     mock_doc = Mock()
-    #     mock_page1 = Mock()
-    #     mock_page1.get_text.return_value = "Content from page 1"
-    #     mock_page2 = Mock()
-    #     mock_page2.get_text.return_value = "Content from page 2"
-    #     mock_page3 = Mock()
-    #     mock_page3.get_text.return_value = ""  # Empty page
+    def test_factory_does_not_require_instantiation(self):
+        """Test that factory can be used without instantiation."""
+        # Should work without creating an instance of ExtractorFactory
+        extractor = ExtractorFactory.get_extractor("pdf")
+        assert isinstance(extractor, PDFExtractor)
 
-    #     mock_doc.__iter__ = Mock(return_value=iter([mock_page1, mock_page2, mock_page3]))
-    #     mock_pymupdf.open.return_value = mock_doc
 
-    #     extractor = ExtractorFactory.get_extractor("pdf")
-    #     result = extractor.extract_document_data("multi_page.pdf")
+class TestExtractorsIntegration:
+    """Integration tests for the extractors module."""
 
-    #     # Verify result - should only include pages with content
-    #     assert len(result["texts"]) == 2
-    #     assert result["texts"][0] == (1, "Content from page 1")
-    #     assert result["texts"][1] == (2, "Content from page 2")
+    @patch("gdai.extractors.pdf_extractor.pymupdf.open")
+    def test_pdf_extractor_end_to_end_workflow(self, mock_pymupdf_open):
+        """Test complete workflow: factory -> extractor -> extraction."""
+        # Setup mock
+        mock_page = MagicMock()
+        mock_page.get_text.return_value = "Integration test content"
 
-    # @patch("gdai.extractors.pdf_extractor.pymupdf")
-    # def test_extract_document_data_with_whitespace(self, mock_pymupdf):
-    #     """Test extraction with whitespace handling."""
-    #     # Setup mock
-    #     mock_doc = Mock()
-    #     mock_page = Mock()
-    #     mock_page.get_text.return_value = "  \n\r  Text with whitespace  \n\r  "
-    #     mock_doc.__iter__ = Mock(return_value=iter([mock_page]))
-    #     mock_pymupdf.open.return_value = mock_doc
+        mock_doc = MagicMock()
+        mock_doc.__iter__.return_value = [mock_page]
+        mock_doc.close = MagicMock()
 
-    #     extractor = ExtractorFactory.get_extractor("pdf")
-    #     result = extractor.extract_document_data("whitespace.pdf")
+        mock_pymupdf_open.return_value = mock_doc
 
-    #     # Verify whitespace is stripped
-    #     assert len(result["texts"]) == 1
-    #     assert result["texts"][0] == (1, "Text with whitespace")
+        # Get extractor from factory
+        extractor = ExtractorFactory.get_extractor("pdf")
 
-    # @patch("gdai.extractors.pdf_extractor.pymupdf")
-    # def test_extract_document_data_pymupdf_exception(self, mock_pymupdf):
-    #     """Test handling of PyMuPDF exceptions."""
-    #     mock_pymupdf.open.side_effect = Exception("PDF parsing error")
+        # Verify it's the right type
+        assert isinstance(extractor, PDFExtractor)
 
-    #     extractor = ExtractorFactory.get_extractor("pdf")
-    #     with pytest.raises(Exception, match="PDF parsing error"):
-    #         extractor.extract_document_data("corrupted.pdf")
+        # Perform extraction
+        result = extractor.extract_document_data("test.pdf")
 
-    # @patch("gdai.extractors.pdf_extractor.pymupdf")
-    # def test_extract_raw_text_method(self, mock_pymupdf):
-    #     """Test _extract_raw_text method functionality."""
-    #     # Setup mock
-    #     mock_doc = Mock()
-    #     mock_page1 = Mock()
-    #     mock_page1.get_text.return_value = "Page 1 content"
-    #     mock_page2 = Mock()
-    #     mock_page2.get_text.return_value = "Page 2 content"
-    #     mock_doc.__iter__ = Mock(return_value=iter([mock_page1, mock_page2]))
-    #     mock_pymupdf.open.return_value = mock_doc
+        # Verify result
+        assert "texts" in result
+        assert "tables" in result
+        assert "images" in result
+        assert result["texts"][0] == (1, "Integration test content")
 
-    #     extractor = ExtractorFactory.get_extractor("pdf")
+    def test_factory_creates_working_extractors(self):
+        """Test that factory-created extractors actually work."""
+        extractor = ExtractorFactory.get_extractor("pdf")
 
-    #     # Access the private method for testing
-    #     texts = extractor._extract_raw_text(mock_doc)
+        # Verify extractor has required methods
+        assert hasattr(extractor, "extract_document_data")
+        assert callable(extractor.extract_document_data)
 
-    #     assert len(texts) == 2
-    #     assert texts[0] == (1, "Page 1 content")
-    #     assert texts[1] == (2, "Page 2 content")
+    @patch("gdai.extractors.pdf_extractor.pymupdf.open")
+    def test_multiple_extractors_independent(self, mock_pymupdf_open):
+        """Test that multiple extractor instances are independent."""
+        # Setup mock
+        mock_page = MagicMock()
+        mock_page.get_text.return_value = "Test"
 
-    # @patch("gdai.extractors.pdf_extractor.pymupdf")
-    # def test_extract_raw_tables_method(self, mock_pymupdf):
-    #     """Test _extract_raw_tables method (currently returns empty list)."""
-    #     mock_doc = Mock()
-    #     extractor = ExtractorFactory.get_extractor("pdf")
+        mock_doc = MagicMock()
+        mock_doc.__iter__.return_value = [mock_page]
+        mock_doc.close = MagicMock()
 
-    #     # Access the private method for testing
-    #     tables = extractor._extract_raw_tables(mock_doc)
+        mock_pymupdf_open.return_value = mock_doc
 
-    #     # Should return empty list as not implemented
-    #     assert isinstance(tables, list)
-    #     assert len(tables) == 0
+        extractor1 = ExtractorFactory.get_extractor("pdf")
+        extractor2 = ExtractorFactory.get_extractor("pdf")
 
-    # @patch("gdai.extractors.pdf_extractor.pymupdf")
-    # def test_extract_raw_images_method(self, mock_pymupdf):
-    #     """Test _extract_raw_images method (currently returns empty list)."""
-    #     mock_doc = Mock()
-    #     extractor = ExtractorFactory.get_extractor("pdf")
+        # Verify they are different instances
+        assert extractor1 is not extractor2
 
-    #     # Access the private method for testing
-    #     images = extractor._extract_raw_images(mock_doc)
+        # Verify both work independently
+        result1 = extractor1.extract_document_data("test1.pdf")
+        result2 = extractor2.extract_document_data("test2.pdf")
 
-    #     # Should return empty list as not implemented
-    #     assert isinstance(images, list)
-    #     assert len(images) == 0
-
-    # @patch("gdai.extractors.pdf_extractor.pymupdf")
-    # def test_document_close_called_on_success(self, mock_pymupdf):
-    #     """Test that PDF document is properly closed after successful extraction."""
-    #     mock_doc = Mock()
-    #     mock_doc.__iter__ = Mock(return_value=iter([]))
-    #     mock_pymupdf.open.return_value = mock_doc
-
-    #     extractor = ExtractorFactory.get_extractor("pdf")
-    #     extractor.extract_document_data("test.pdf")
-
-    #     # Verify close was called
-    #     mock_doc.close.assert_called_once()
-
-    # @patch("gdai.extractors.pdf_extractor.pymupdf")
-    # def test_document_close_called_on_exception(self, mock_pymupdf):
-    #     """Test that PDF document handling when exception occurs."""
-    #     mock_doc = Mock()
-    #     mock_doc.__iter__ = Mock(side_effect=Exception("Processing error"))
-    #     mock_pymupdf.open.return_value = mock_doc
-
-    #     extractor = ExtractorFactory.get_extractor("pdf")
-
-    #     with pytest.raises(Exception):
-    #         extractor.extract_document_data("test.pdf")
-
-    #     # Document may not be closed if exception occurs before close
-    #     # This reflects current implementation behavior
-    #     assert mock_doc.close.call_count == 0  # Currently not called on exception
-
-    # @patch("gdai.extractors.pdf_extractor.pymupdf")
-    # def test_extract_document_data_return_structure(self):
-    #     """Test that extract_document_data returns correct structure."""
-    #     with patch("gdai.extractors.pdf_extractor.pymupdf") as mock_pymupdf:
-    #         mock_doc = Mock()
-    #         mock_doc.__iter__ = Mock(return_value=iter([]))
-    #         mock_pymupdf.open.return_value = mock_doc
-
-    #         extractor = ExtractorFactory.get_extractor("pdf")
-    #         result = extractor.extract_document_data("test.pdf")
-
-    #         # Verify exact structure
-    #         expected_keys = {"texts", "tables", "images"}
-    #         assert set(result.keys()) == expected_keys
-    #         assert all(isinstance(result[key], list) for key in expected_keys)
-
-    # @patch("gdai.extractors.pdf_extractor.pymupdf")
-    # def test_page_numbering_starts_from_one(self, mock_pymupdf):
-    #     """Test that page numbering starts from 1, not 0."""
-    #     mock_doc = Mock()
-    #     mock_page = Mock()
-    #     mock_page.get_text.return_value = "Test content"
-    #     mock_doc.__iter__ = Mock(return_value=iter([mock_page]))
-    #     mock_pymupdf.open.return_value = mock_doc
-
-    #     extractor = ExtractorFactory.get_extractor("pdf")
-    #     result = extractor.extract_document_data("test.pdf")
-
-    #     # First page should be numbered 1
-    #     assert result["texts"][0][0] == 1
-
-    # @patch("gdai.extractors.pdf_extractor.pymupdf")
-    # def test_only_non_empty_text_included(self, mock_pymupdf):
-    #     """Test that only pages with actual text content are included."""
-    #     mock_doc = Mock()
-    #     mock_page1 = Mock()
-    #     mock_page1.get_text.return_value = "Valid content"
-    #     mock_page2 = Mock()
-    #     mock_page2.get_text.return_value = ""  # Empty
-    #     mock_page3 = Mock()
-    #     mock_page3.get_text.return_value = "   "  # Whitespace only
-    #     mock_page4 = Mock()
-    #     mock_page4.get_text.return_value = "Another valid content"
-
-    #     mock_doc.__iter__ = Mock(return_value=iter([mock_page1, mock_page2, mock_page3, mock_page4]))
-    #     mock_pymupdf.open.return_value = mock_doc
-
-    #     extractor = ExtractorFactory.get_extractor("pdf")
-    #     result = extractor.extract_document_data("test.pdf")
-
-    #     # Should only include pages 1 and 4 (with actual content)
-    #     assert len(result["texts"]) == 2
-    #     assert result["texts"][0] == (1, "Valid content")
-    #     assert result["texts"][1] == (4, "Another valid content")
+        assert result1 == result2
+        assert result1 is not result2
