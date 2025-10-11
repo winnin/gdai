@@ -445,3 +445,141 @@ class TestExtractorsIntegration:
 
         assert result1 == result2
         assert result1 is not result2
+
+
+class TestExtractorsWithRealPDFs:
+    """Integration tests using real PDF files from fixtures."""
+
+    def test_extract_alice_in_wonderland_pdf(self):
+        """Test extraction from Alice in Wonderland PDF."""
+        pdf_path = "tests/fixtures/alice_in_wonderland_public_domain.pdf"
+
+        extractor = ExtractorFactory.get_extractor("pdf")
+        result = extractor.extract_document_data(pdf_path)
+
+        # Verify structure
+        assert isinstance(result, dict)
+        assert "texts" in result
+        assert "tables" in result
+        assert "images" in result
+
+        # Verify content
+        assert isinstance(result["texts"], list)
+        assert len(result["texts"]) > 0  # Should have extracted text
+
+        # Verify each text item
+        for page_num, text_content in result["texts"]:
+            assert isinstance(page_num, int)
+            assert page_num >= 1
+            assert isinstance(text_content, str)
+            assert len(text_content) > 0
+
+        # Check that "Alice" appears in the text (it's Alice in Wonderland!)
+        all_text = " ".join([text for _, text in result["texts"]])
+        assert "Alice" in all_text or "ALICE" in all_text
+
+    def test_extract_frankenstein_pdf(self):
+        """Test extraction from Frankenstein PDF."""
+        pdf_path = "tests/fixtures/frankenstein_public_domain.pdf"
+
+        extractor = ExtractorFactory.get_extractor("pdf")
+        result = extractor.extract_document_data(pdf_path)
+
+        # Verify structure
+        assert isinstance(result, dict)
+        assert "texts" in result
+        assert "tables" in result
+        assert "images" in result
+
+        # Verify content
+        assert isinstance(result["texts"], list)
+        assert len(result["texts"]) > 0
+
+        # Verify page numbering
+        page_numbers = [page_num for page_num, _ in result["texts"]]
+        assert page_numbers == sorted(page_numbers)  # Should be in order
+        assert page_numbers[0] >= 1  # Starts from 1
+
+        # Check that "Frankenstein" appears in the text
+        all_text = " ".join([text for _, text in result["texts"]])
+        assert "Frankenstein" in all_text or "FRANKENSTEIN" in all_text or "Victor" in all_text
+
+    def test_extract_moby_dick_pdf(self):
+        """Test extraction from Moby Dick PDF."""
+        pdf_path = "tests/fixtures/moby_dick_public_domain.pdf"
+
+        extractor = ExtractorFactory.get_extractor("pdf")
+        result = extractor.extract_document_data(pdf_path)
+
+        # Verify structure
+        assert isinstance(result, dict)
+        assert "texts" in result
+        assert "tables" in result
+        assert "images" in result
+
+        # Verify content
+        assert isinstance(result["texts"], list)
+        assert len(result["texts"]) > 0
+
+        # Verify page numbering is sequential
+        page_numbers = [page_num for page_num, _ in result["texts"]]
+        for i in range(len(page_numbers) - 1):
+            # Page numbers should increase (might skip empty pages)
+            assert page_numbers[i + 1] >= page_numbers[i]
+
+        # Check that "Moby" or "whale" appears in the text
+        all_text = " ".join([text for _, text in result["texts"]])
+        assert "Moby" in all_text or "MOBY" in all_text or "whale" in all_text or "Whale" in all_text
+
+    def test_real_pdf_text_not_empty(self):
+        """Test that real PDFs produce non-empty text."""
+        pdf_files = [
+            "tests/fixtures/alice_in_wonderland_public_domain.pdf",
+            "tests/fixtures/frankenstein_public_domain.pdf",
+            "tests/fixtures/moby_dick_public_domain.pdf",
+        ]
+
+        extractor = ExtractorFactory.get_extractor("pdf")
+
+        for pdf_path in pdf_files:
+            result = extractor.extract_document_data(pdf_path)
+
+            # Each PDF should have extracted text
+            assert len(result["texts"]) > 0, f"No text extracted from {pdf_path}"
+
+            # Each text entry should have content
+            for page_num, text in result["texts"]:
+                assert len(text) > 0, f"Empty text on page {page_num} in {pdf_path}"
+
+    def test_real_pdf_tables_and_images_structure(self):
+        """Test that tables and images lists exist (even if empty)."""
+        pdf_path = "tests/fixtures/alice_in_wonderland_public_domain.pdf"
+
+        extractor = ExtractorFactory.get_extractor("pdf")
+        result = extractor.extract_document_data(pdf_path)
+
+        # Tables and images should be lists (currently not implemented, so empty)
+        assert isinstance(result["tables"], list)
+        assert isinstance(result["images"], list)
+
+    def test_multiple_real_pdf_extractions(self):
+        """Test extracting from multiple PDFs in sequence."""
+        pdf_files = [
+            "tests/fixtures/alice_in_wonderland_public_domain.pdf",
+            "tests/fixtures/frankenstein_public_domain.pdf",
+        ]
+
+        extractor = ExtractorFactory.get_extractor("pdf")
+        results = []
+
+        for pdf_path in pdf_files:
+            result = extractor.extract_document_data(pdf_path)
+            results.append(result)
+
+        # Both should have extracted data
+        assert len(results) == 2
+        for result in results:
+            assert len(result["texts"]) > 0
+
+        # Results should be different
+        assert results[0]["texts"] != results[1]["texts"]
