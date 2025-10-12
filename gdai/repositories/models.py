@@ -34,6 +34,7 @@ class DocumentModel(Base, BaseModelMixin):
     name = Column(String, default="")
     status = Column(Enum(DocumentStatusEnum), default=DocumentStatusEnum.processed, nullable=False)
     type = Column(Enum(DocumentTypeEnum), nullable=False)
+    s3_path = Column(String, nullable=False, index=True)
     chunk_strategy = Column(Text, nullable=True)
 
     # Relationships

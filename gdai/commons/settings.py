@@ -114,6 +114,19 @@ class TemporalSettings(BaseSettings):
     task_queue: str = Field(default="gdai-task-queue", description="Default task queue")
 
 
+class S3Settings(BaseSettings):
+    """S3/MinIO storage configuration settings."""
+
+    model_config = SettingsConfigDict(env_prefix="S3_", case_sensitive=False)
+
+    endpoint: str = Field(..., description="S3/MinIO endpoint URL")
+    access_key: str = Field(..., description="S3/MinIO access key")
+    secret_key: str = Field(..., description="S3/MinIO secret key")
+    bucket: str = Field(..., description="S3/MinIO bucket name")
+    region: str = Field(default="us-east-1", description="S3 region")
+    use_ssl: bool = Field(default=False, description="Use SSL for S3 connections")
+
+
 class Settings:
     """Main application settings container."""
 
@@ -130,6 +143,7 @@ class Settings:
         self.llm = LLMSettings()
         self.extractor = ExtractorSettings()
         self.temporal = TemporalSettings()
+        self.s3 = S3Settings()
 
         # Application settings - read from environment or use defaults
         self.app_name = os.getenv("APP_NAME", "GDAI")

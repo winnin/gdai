@@ -5,6 +5,7 @@ from temporalio import activity
 from gdai.commons.exceptions import DocumentNotFoundError
 from gdai.commons.logger import logger
 from gdai.repositories import RepositoryFactory
+from gdai.services.s3_storage import get_s3_storage
 
 from .schema import (
     Chunk,
@@ -44,6 +45,7 @@ async def list_documents(input: ListDocumentsInput) -> ListDocumentsOutput:
                 name=doc.name,
                 status=doc.status.value,
                 type=doc.type.value,
+                s3_path=doc.s3_path,
                 chunk_strategy=doc.chunk_strategy,
                 created_at=doc.created_at,
                 updated_at=doc.updated_at,
@@ -86,6 +88,7 @@ async def get_document(input: GetDocumentInput) -> Document:
             name=doc.name,
             status=doc.status.value,
             type=doc.type.value,
+            s3_path=doc.s3_path,
             chunk_strategy=doc.chunk_strategy,
             created_at=doc.created_at,
             updated_at=doc.updated_at,
@@ -103,7 +106,7 @@ async def get_document(input: GetDocumentInput) -> Document:
 
 @activity.defn
 async def delete_document(input: DeleteDocumentInput) -> bool:
-    """Delete a document and all its associated chunks.
+    """Delete a document and all its associated chunks, including the S3 file.
 
     Args:
         input: Input containing tenant_id and document_id
@@ -124,15 +127,25 @@ async def delete_document(input: DeleteDocumentInput) -> bool:
         if not doc:
             raise DocumentNotFoundError(input.tenant_id, input.document_id)
 
+        s3_path = doc.s3_path
+
         # Delete chunks first
         await repository.delete_chunks(input.tenant_id, input.document_id)
         logger.info(f"Deleted chunks for document {input.document_id}")
 
-        # Delete document
+        # Delete document from database
         deleted = await repository.delete_document(input.tenant_id, input.document_id)
 
         if not deleted:
             raise Exception(f"Failed to delete document {input.document_id}")
+
+        # Delete file from S3
+        s3_storage = get_s3_storage()
+        try:
+            s3_storage.delete_file(s3_path)
+            logger.info(f"Deleted file from S3: {s3_path}")
+        except Exception as e:
+            logger.warning(f"Failed to delete file from S3 (document was deleted from DB): {e}")
 
         logger.info(f"Deleted document {input.document_id} for tenant {input.tenant_id}")
         return True

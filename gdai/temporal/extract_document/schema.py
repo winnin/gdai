@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 
 @dataclass
 class DocumentExtracInput:
-    document_path: str
+    s3_key: str  # S3 key of the document (e.g., tenant_id/filename)
     chunk_strategy: str
     tenant_id: str
 

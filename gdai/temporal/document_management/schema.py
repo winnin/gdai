@@ -12,6 +12,7 @@ class Document:
     name: str
     status: str
     type: str
+    s3_path: str
     chunk_strategy: str | None
     created_at: datetime
     updated_at: datetime

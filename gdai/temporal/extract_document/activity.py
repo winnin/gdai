@@ -14,6 +14,7 @@ from gdai.commons.settings import get_settings
 from gdai.extractors import ExtractorFactory
 from gdai.repositories import RepositoryFactory
 from gdai.repositories.models import ChunkModel, DocumentModel
+from gdai.services.s3_storage import get_s3_storage
 
 from .schema import Chunk, ChunkDocumentInput, DocumentExtracInput
 
@@ -21,45 +22,56 @@ from .schema import Chunk, ChunkDocumentInput, DocumentExtracInput
 @activity.defn
 async def validate(input: DocumentExtracInput) -> None:
     tenant_id = input.tenant_id
-    document_path = input.document_path
+    s3_key = input.s3_key
 
     # validate tenant_id
     if not tenant_id or not isinstance(tenant_id, str):
         logger.error("Invalid tenant_id provided")
         raise ValueError("Invalid tenant_id provided")
 
-    # check if document exists
-    if not await AsyncPath(document_path).exists():
-        logger.error(f"Document file does not exist: {document_path}")
-        raise FileNotFoundError(f"Document file does not exist: {document_path}")
+    # validate s3_key
+    if not s3_key or not isinstance(s3_key, str):
+        logger.error("Invalid s3_key provided")
+        raise ValueError("Invalid s3_key provided")
 
-    # check if document max size is not exceeded
-    file_size = (await AsyncPath(document_path).stat()).st_size
+    # check if document exists in S3
+    s3_storage = get_s3_storage()
+    if not s3_storage.file_exists(s3_key):
+        logger.error(f"Document file does not exist in S3: {s3_key}")
+        raise FileNotFoundError(f"Document file does not exist in S3: {s3_key}")
 
-    # check if document is empty
-    if file_size == 0:
-        logger.error(f"Document file is empty: {document_path}")
-        raise ValueError(f"Document file is empty: {document_path}")
+    # get file metadata to check size
+    try:
+        response = s3_storage.client.head_object(Bucket=s3_storage.bucket, Key=s3_key)
+        file_size = response["ContentLength"]
 
-    # check if document exceeds maximum size
-    settings = get_settings()
-    max_file_size_mb = settings.extractor.max_file_size_mb
-    if file_size > max_file_size_mb * 1024 * 1024:  # configured limit in MB
-        logger.error(f"Document file {document_path} exceeds maximum allowed size")
-        raise ValueError(f"Document file {document_path} exceeds maximum allowed size")
+        # check if document is empty
+        if file_size == 0:
+            logger.error(f"Document file is empty: {s3_key}")
+            raise ValueError(f"Document file is empty: {s3_key}")
 
-    logger.info(f"Document validation completed for: {document_path}")
+        # check if document exceeds maximum size
+        settings = get_settings()
+        max_file_size_mb = settings.extractor.max_file_size_mb
+        if file_size > max_file_size_mb * 1024 * 1024:  # configured limit in MB
+            logger.error(f"Document file {s3_key} exceeds maximum allowed size")
+            raise ValueError(f"Document file {s3_key} exceeds maximum allowed size")
+
+        logger.info(f"Document validation completed for S3 file: {s3_key}")
+    except Exception as e:
+        logger.error(f"Error validating document in S3: {e}")
+        raise
 
 
 @activity.defn
 async def save_document_metadata(input: DocumentExtracInput) -> str:
     tenant_id = input.tenant_id
-    document_path = input.document_path
-    document_name = document_path.split("/")[-1]
+    s3_key = input.s3_key
+    document_name = s3_key.split("/")[-1]  # Extract filename from S3 key
     document_type = document_name.split(".")[-1].lower()
     chunk_strategy = input.chunk_strategy
 
-    logger.info(f"Saving document metadata for: {document_path}")
+    logger.info(f"Saving document metadata for S3 file: {s3_key}")
     logger.debug(f"Tenant: {tenant_id}, Document type: {document_type}, Chunk strategy: {chunk_strategy}")
 
     repository = RepositoryFactory.get_repository()
@@ -69,6 +81,7 @@ async def save_document_metadata(input: DocumentExtracInput) -> str:
         name=document_name,
         tenant_id=tenant_id,
         type=DocumentTypeEnum[document_type],
+        s3_path=s3_key,
         chunk_strategy=chunk_strategy,
     )
 
@@ -83,20 +96,40 @@ async def save_document_metadata(input: DocumentExtracInput) -> str:
 
 @activity.defn
 async def extract_document_content(input: DocumentExtracInput) -> str:
-    document_path = input.document_path
-    document_extension = document_path.split(".")[-1].lower()  # get document extension
-    logger.info(f"Starting document extraction for: {document_path} (type: {document_extension})")
-    extractor = ExtractorFactory.get_extractor(extractor_type=document_extension)
+    s3_key = input.s3_key
+    document_extension = s3_key.split(".")[-1].lower()  # get document extension
+
+    logger.info(f"Starting document extraction for S3 file: {s3_key} (type: {document_extension})")
+
+    # Download file from S3 to temporary location
+    settings = get_settings()
+    tmp_folder = settings.extractor.tmp_folder
+    local_file_path = os.path.join(tmp_folder, f"{uuid.uuid4()}.{document_extension}")
+
+    s3_storage = get_s3_storage()
     try:
-        extracted_document = extractor.extract_document_data(document_path)
-        settings = get_settings()
-        tmp_folder = settings.extractor.tmp_folder
+        # Download from S3
+        s3_storage.download_file(s3_key, local_file_path)
+        logger.info(f"Downloaded document from S3 to: {local_file_path}")
+
+        # Extract content
+        extractor = ExtractorFactory.get_extractor(extractor_type=document_extension)
+        extracted_document = extractor.extract_document_data(local_file_path)
+
+        # Save extracted content to JSON
         output_file = os.path.join(tmp_folder, f"{uuid.uuid4()}.json")
         async with aiofiles.open(output_file, "w") as f:
             await f.write(json.dumps(extracted_document))
+
+        # Clean up downloaded file
+        await AsyncPath(local_file_path).unlink()
+
         logger.info(f"Document extraction completed. Output saved to: {output_file}")
         return output_file
     except Exception as e:
+        # Clean up on error
+        if await AsyncPath(local_file_path).exists():
+            await AsyncPath(local_file_path).unlink()
         logger.error(f"Error extracting data from document: {e}")
         raise e
 

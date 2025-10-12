@@ -25,6 +25,7 @@ GDAI is an open-source platform designed to provide a robust, multi-tenant vecto
   - [Verifying Services](#verifying-services)
   - [Environment Variables](#environment-variables)
   - [Troubleshooting](#troubleshooting)
+- [Working with S3 Storage](#-working-with-s3-storage)
 - [Triggering Workflows](#-triggering-workflows)
 - [Deployment](#-deployment)
 - [Testing](#-testing)
@@ -46,6 +47,7 @@ GDAI is an open-source platform designed to provide a robust, multi-tenant vecto
 
 - **🏢 Tenant Management:** Complete data isolation for different clients or projects
 - **📄 Document Ingestion:** Process and embed documents from various formats (PDF, and more coming)
+- **📦 S3 Storage:** Scalable document storage with MinIO (dev) or AWS S3 (production)
 - **🔍 Semantic Search:** Vector similarity search with pgvector and advanced semantic techniques
 - **🤖 RAG (Retrieval-Augmented Generation):** Combine retrieval with OpenAI models for context-aware answers
 - **📊 Source Traceability:** Every answer includes references to original documents and locations
@@ -68,11 +70,14 @@ uv sync --all-groups
 
 # 2. Configure environment
 cp .env.example .env
-# Edit .env with your API keys (EMBEDDING_API_KEY, LLM_API_KEY)
+# Edit .env with your API keys:
+# - EMBEDDING_API_KEY (Cohere)
+# - LLM_API_KEY (OpenAI)
+# - S3 settings are pre-configured for local MinIO
 
 # 3. Start everything
 task configure-dev      # Setup development environment
-docker compose up -d    # Start infrastructure services
+docker compose up -d    # Start infrastructure (PostgreSQL, Temporal, MinIO)
 task setup-db           # Initialize database
 task temporal-all       # Start all Temporal workers
 ```
@@ -81,9 +86,13 @@ task temporal-all       # Start all Temporal workers
 
 - 🌐 Temporal UI: http://localhost:8233
 - 💾 PostgreSQL: localhost:5555
-- 📦 MinIO Console: http://localhost:9001
+- 📦 MinIO Console: http://localhost:9001 (minioadmin/minioadmin)
+- 📦 MinIO API: http://localhost:9000
 
-**Next Steps:** Jump to [Triggering Workflows](#-triggering-workflows) to start processing documents!
+**Next Steps:**
+
+1. See [Working with S3 Storage](#-working-with-s3-storage) to learn how to upload documents
+2. Jump to [Triggering Workflows](#-triggering-workflows) to start processing documents
 
 ---
 
@@ -116,6 +125,14 @@ task temporal-all       # Start all Temporal workers
 - **Reasoning:** Superior context understanding and answer generation
 - **Consistency:** Reliable output quality for production use
 - **Integration:** Well-documented API and extensive ecosystem
+
+**🎯 Why S3/MinIO for Document Storage?**
+
+- **Scalability:** Unlimited storage capacity for documents and files
+- **Multi-Tenancy:** Natural isolation using S3 key prefixes (tenant_id/filename)
+- **Durability:** Industry-standard object storage with high availability
+- **Flexibility:** MinIO for development, AWS S3 for production (same API)
+- **Cost-Effective:** Pay only for storage used, no database bloat
 
 ---
 
@@ -156,7 +173,7 @@ graph TB
 
     subgraph "💾 Storage Layer"
         DB[("🗄️ PostgreSQL<br/>+ pgvector<br/>Port: 5555")]
-        S3["📦 MinIO S3<br/>Document Storage<br/>Port: 9000"]
+        S3["📦 MinIO S3<br/>Document Storage<br/>Port: 9000<br/>Console: 9001"]
     end
 
     subgraph "🌐 External Services"
@@ -193,7 +210,8 @@ graph TB
     EmbedWorker -->|"💾 Store Vectors"| DB
     SearchWorker -->|"💾 Store Results"| DB
 
-    ExtractWorker -->|"📤 Upload Files"| S3
+    Client -->|"📤 Upload Documents"| S3
+    ExtractWorker -->|"📥 Download Files"| S3
 
     %% Styling
     classDef clientStyle fill:#e1f5ff,stroke:#0066cc,stroke-width:3px,color:#000
@@ -229,13 +247,13 @@ graph TB
 
 ### Component Breakdown
 
-| Layer             | Components                            | Technology                       | Purpose                                 |
-| ----------------- | ------------------------------------- | -------------------------------- | --------------------------------------- |
-| **Client**        | Python SDK, CLI                       | Temporal Client                  | Trigger and monitor workflows           |
-| **Orchestration** | Workflow Engine, Workers              | Temporal.io                      | Reliable, distributed task execution    |
-| **Processing**    | Extractors, Chunkers, Embedders, LLMs | PyMuPDF, Chonkie, Cohere, OpenAI | Document understanding and generation   |
-| **Storage**       | Relational + Vector DB, Object Store  | PostgreSQL + pgvector, MinIO     | Persistent metadata, vectors, and files |
-| **External**      | Embedding & LLM APIs                  | Cohere, OpenAI                   | AI model inference                      |
+| Layer             | Components                            | Technology                       | Purpose                                |
+| ----------------- | ------------------------------------- | -------------------------------- | -------------------------------------- |
+| **Client**        | Python SDK, CLI                       | Temporal Client                  | Trigger and monitor workflows          |
+| **Orchestration** | Workflow Engine, Workers              | Temporal.io                      | Reliable, distributed task execution   |
+| **Processing**    | Extractors, Chunkers, Embedders, LLMs | PyMuPDF, Chonkie, Cohere, OpenAI | Document understanding and generation  |
+| **Storage**       | Relational + Vector DB, Object Store  | PostgreSQL + pgvector, MinIO/S3  | Metadata, vectors (DB), documents (S3) |
+| **External**      | Embedding & LLM APIs                  | Cohere, OpenAI                   | AI model inference                     |
 
 ---
 
@@ -253,6 +271,7 @@ erDiagram
         string name
         enum status "pending, processing, processed, failed"
         enum type "pdf, ppt, txt"
+        string s3_path "S3 key: tenant_id/filename"
         text chunk_strategy "sentence, semantic, etc"
         timestamp created_at
         timestamp updated_at
@@ -329,36 +348,37 @@ sequenceDiagram
     Client->>Temporal: Start DocumentExtractionWorkflow
     activate ExtractWF
 
-    ExtractWF->>ExtractWF: 1️⃣ Validate Document
-    Note over ExtractWF: Check file exists<br/>Validate format & size
+    ExtractWF->>S3: 1️⃣ Validate Document in S3
+    Note over ExtractWF,S3: Check file exists<br/>Validate format & size<br/>Using s3_key
 
     ExtractWF->>DB: 2️⃣ Save Document Metadata
     DB-->>ExtractWF: document_id
-    Note over DB: Status: "processing"
+    Note over DB: Status: "processing"<br/>Store s3_path
 
-    ExtractWF->>ExtractWF: 3️⃣ Extract Text from PDF
+    ExtractWF->>S3: 3️⃣ Download Document from S3
+    S3-->>ExtractWF: local_file_path
+    Note over S3: Temporary download
+
+    ExtractWF->>ExtractWF: 4️⃣ Extract Text from PDF
     Note over ExtractWF: PyMuPDF extraction<br/>Page-by-page processing<br/>Preserve structure
 
-    ExtractWF->>ExtractWF: 4️⃣ Chunk Texts
-    Note over ExtractWF: Sentence-based chunking<br/>Batch into files<br/>(default: 10 chunks/file)
+    ExtractWF->>ExtractWF: 5️⃣ Chunk Texts
+    Note over ExtractWF: Sentence-based chunking<br/>Batch into files<br/>(default: 96 chunks/batch)
 
     loop For each batch file
-        ExtractWF->>EmbedWF: 5️⃣ Call TextEmbeddingWorkflow
+        ExtractWF->>EmbedWF: 6️⃣ Call TextEmbeddingWorkflow
         activate EmbedWF
         EmbedWF->>EmbedWF: Generate embeddings via Cohere
         Note over EmbedWF: Batch size: 96<br/>Retries: 3<br/>Rate limiting
         EmbedWF-->>ExtractWF: embeddings map {chunk_id: vector}
         deactivate EmbedWF
 
-        ExtractWF->>DB: 6️⃣ Store chunks with embeddings
+        ExtractWF->>DB: 7️⃣ Store chunks with embeddings
         Note over DB: Bulk insert<br/>with pgvector data
     end
 
-    ExtractWF->>S3: 7️⃣ Upload extracted document
-    Note over S3: Backup original<br/>+ extracted text
-
     ExtractWF->>ExtractWF: 8️⃣ Cleanup temp files
-    Note over ExtractWF: Remove batch files<br/>Free disk space
+    Note over ExtractWF: Remove downloaded file<br/>Remove batch files<br/>Free disk space
 
     ExtractWF->>DB: 9️⃣ Update document status
     Note over DB: Status: "processed"
@@ -533,6 +553,14 @@ PGVECTOR_PASSWORD=testpwd
 PGVECTOR_DATABASE=vectordb
 PGVECTOR_HOST=localhost
 PGVECTOR_PORT=5555
+
+# S3/MinIO Configuration (REQUIRED)
+S3_ENDPOINT=http://localhost:9000
+S3_ACCESS_KEY=minioadmin
+S3_SECRET_KEY=minioadmin
+S3_BUCKET=gdai-documents
+S3_REGION=us-east-1
+S3_USE_SSL=false
 
 # Temporal Configuration (defaults should work)
 TEMPORAL_HOST=localhost
@@ -856,6 +884,58 @@ LLM_TEMPERATURE=0.7                       # Randomness (0.0-1.0)
 - **0.4-0.7:** Balanced creativity (recommended)
 - **0.8-1.0:** More creative, less predictable
 
+#### S3/MinIO Storage Configuration
+
+```bash
+S3_ENDPOINT=http://localhost:9000         # S3/MinIO endpoint URL
+S3_ACCESS_KEY=minioadmin                  # 🔑 REQUIRED - Access key
+S3_SECRET_KEY=minioadmin                  # 🔑 REQUIRED - Secret key
+S3_BUCKET=gdai-documents                  # 🔑 REQUIRED - Bucket name
+S3_REGION=us-east-1                       # S3 region (use us-east-1 for MinIO)
+S3_USE_SSL=false                          # Use SSL for connections
+```
+
+**Storage Organization:**
+
+Documents are stored in S3 with tenant isolation using key prefixes:
+
+```
+s3://gdai-documents/
+├── tenant-1/
+│   ├── document1.pdf
+│   ├── document2.pdf
+│   └── report.pdf
+├── tenant-2/
+│   ├── research.pdf
+│   └── analysis.pdf
+└── tenant-3/
+    └── whitepaper.pdf
+```
+
+**Development vs Production:**
+
+- **Development:** Use MinIO (started with Docker Compose)
+
+  - Endpoint: `http://localhost:9000`
+  - Console: `http://localhost:9001`
+  - Credentials: `minioadmin` / `minioadmin`
+
+- **Production:** Use AWS S3
+  - Endpoint: Leave empty or use regional endpoint
+  - Credentials: Use IAM roles or access keys
+  - Enable SSL: `S3_USE_SSL=true`
+
+**AWS S3 Production Example:**
+
+```bash
+S3_ENDPOINT=                              # Empty for AWS S3
+S3_ACCESS_KEY=AKIAIOSFODNN7EXAMPLE        # AWS access key
+S3_SECRET_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+S3_BUCKET=gdai-documents-prod
+S3_REGION=us-east-1
+S3_USE_SSL=true
+```
+
 ---
 
 ### Troubleshooting
@@ -1027,11 +1107,277 @@ docker compose down temporal
 docker compose up -d temporal
 ```
 
+#### S3/MinIO connection errors
+
+**Symptom:** `ClientError: Unable to connect to S3` or `Bucket does not exist`
+
+**Solution:**
+
+```bash
+# 1. Check MinIO is running
+docker compose ps minio
+
+# 2. Check MinIO logs
+docker compose logs minio
+
+# 3. Verify MinIO is accessible
+curl http://localhost:9000/minio/health/live
+
+# 4. Check S3 settings in .env
+cat .env | grep S3_
+
+# 5. Test connection with AWS CLI or mc (MinIO client)
+# Install mc: https://min.io/docs/minio/linux/reference/minio-mc.html
+mc alias set myminio http://localhost:9000 minioadmin minioadmin
+mc ls myminio
+
+# 6. Restart MinIO
+docker compose restart minio
+```
+
+#### File not found in S3
+
+**Symptom:** `FileNotFoundError: Document file does not exist in S3`
+
+**Solution:**
+
+```bash
+# 1. Check if file exists in S3
+mc ls myminio/gdai-documents/
+
+# 2. Verify S3 key format (must be tenant_id/filename)
+# Correct: my-tenant/document.pdf
+# Incorrect: document.pdf
+
+# 3. Upload file to S3 before processing
+python
+>>> from gdai.services.s3_storage import get_s3_storage
+>>> s3 = get_s3_storage()
+>>> s3.upload_file("my-tenant", "/path/to/document.pdf")
+
+# 4. List all files for tenant
+>>> s3.list_files("my-tenant")
+```
+
+#### S3 bucket creation failed
+
+**Symptom:** `Error creating bucket` or `Bucket already exists`
+
+**Solution:**
+
+```bash
+# 1. Check if bucket exists
+mc ls myminio/gdai-documents
+
+# 2. Create bucket manually if needed
+mc mb myminio/gdai-documents
+
+# 3. Set bucket policy for public read (optional, for development)
+mc anonymous set public myminio/gdai-documents
+
+# 4. Verify bucket configuration
+mc stat myminio/gdai-documents
+```
+
+---
+
+## 📦 Working with S3 Storage
+
+GDAI uses S3-compatible object storage (MinIO for development, AWS S3 for production) to store documents. All documents must be uploaded to S3 before processing.
+
+### S3StorageService
+
+The `S3StorageService` class provides a high-level interface for managing files in S3:
+
+```python
+from gdai.services.s3_storage import get_s3_storage
+
+# Get S3 storage service instance
+s3_storage = get_s3_storage()
+```
+
+### Uploading Documents
+
+#### Upload from Local File
+
+```python
+from gdai.services.s3_storage import get_s3_storage
+
+s3_storage = get_s3_storage()
+
+# Upload file with automatic tenant isolation
+s3_key = s3_storage.upload_file(
+    tenant_id="my-tenant",
+    file_path="/path/to/document.pdf",
+    object_name="document.pdf"  # Optional: defaults to filename
+)
+
+print(f"Uploaded to: {s3_key}")
+# Output: my-tenant/document.pdf
+```
+
+#### Upload from File Object
+
+```python
+from gdai.services.s3_storage import get_s3_storage
+
+s3_storage = get_s3_storage()
+
+# Upload from file-like object (e.g., from FastAPI UploadFile)
+with open("/path/to/document.pdf", "rb") as file_obj:
+    s3_key = s3_storage.upload_fileobj(
+        tenant_id="my-tenant",
+        file_obj=file_obj,
+        object_name="document.pdf"
+    )
+```
+
+### Downloading Documents
+
+```python
+from gdai.services.s3_storage import get_s3_storage
+
+s3_storage = get_s3_storage()
+
+# Download file from S3 to local filesystem
+s3_storage.download_file(
+    s3_key="my-tenant/document.pdf",
+    local_path="/tmp/document.pdf"
+)
+```
+
+### Checking File Existence
+
+```python
+from gdai.services.s3_storage import get_s3_storage
+
+s3_storage = get_s3_storage()
+
+# Check if file exists in S3
+exists = s3_storage.file_exists("my-tenant/document.pdf")
+print(f"File exists: {exists}")
+```
+
+### Listing Files
+
+```python
+from gdai.services.s3_storage import get_s3_storage
+
+s3_storage = get_s3_storage()
+
+# List all files for a tenant
+files = s3_storage.list_files(tenant_id="my-tenant")
+for file_key in files:
+    print(f"Found: {file_key}")
+
+# List files with prefix filter
+pdf_files = s3_storage.list_files(
+    tenant_id="my-tenant",
+    prefix="reports/"
+)
+```
+
+### Deleting Files
+
+```python
+from gdai.services.s3_storage import get_s3_storage
+
+s3_storage = get_s3_storage()
+
+# Delete file from S3
+s3_storage.delete_file("my-tenant/document.pdf")
+```
+
+### Getting S3 URLs
+
+```python
+from gdai.services.s3_storage import get_s3_storage
+
+s3_storage = get_s3_storage()
+
+# Get full S3 URL
+url = s3_storage.get_file_url("my-tenant/document.pdf")
+print(url)
+# Output: s3://gdai-documents/my-tenant/document.pdf
+```
+
+### Complete Upload and Process Example
+
+Here's a complete example that uploads a document to S3 and then triggers the extraction workflow:
+
+```python
+import asyncio
+import uuid
+from temporalio.client import Client
+from gdai.services.s3_storage import get_s3_storage
+from gdai.temporal.extract_document.workflow import DocumentExtractionWorkflow
+from gdai.temporal.extract_document.schema import DocumentExtracInput
+
+async def upload_and_process_document(tenant_id: str, local_file_path: str):
+    """Upload a document to S3 and process it."""
+
+    # Step 1: Upload to S3
+    print(f"📤 Uploading {local_file_path} to S3...")
+    s3_storage = get_s3_storage()
+
+    # Check if file already exists
+    filename = local_file_path.split("/")[-1]
+    s3_key = s3_storage.get_s3_key(tenant_id, filename)
+
+    if s3_storage.file_exists(s3_key):
+        print(f"⚠️  File already exists in S3: {s3_key}")
+        overwrite = input("Overwrite? (y/n): ")
+        if overwrite.lower() != 'y':
+            print("Cancelled.")
+            return
+
+    # Upload file
+    s3_key = s3_storage.upload_file(
+        tenant_id=tenant_id,
+        file_path=local_file_path
+    )
+    print(f"✅ Uploaded to S3: {s3_key}")
+
+    # Step 2: Trigger processing workflow
+    print("🔄 Starting document extraction workflow...")
+    client = await Client.connect("localhost:7233")
+
+    workflow_input = DocumentExtracInput(
+        tenant_id=tenant_id,
+        s3_key=s3_key,
+        chunk_strategy="sentence"
+    )
+
+    handle = await client.start_workflow(
+        DocumentExtractionWorkflow.run,
+        workflow_input,
+        id=f"extract-{tenant_id}-{uuid.uuid4()}",
+        task_queue="process-document-queue"
+    )
+
+    print(f"📋 Workflow started: {handle.id}")
+    print("⏳ Waiting for completion...")
+
+    # Wait for result
+    result = await handle.result()
+    print(f"✅ Processing complete: {result}")
+
+    return result
+
+# Usage
+asyncio.run(upload_and_process_document(
+    tenant_id="my-tenant",
+    local_file_path="/path/to/document.pdf"
+))
+```
+
 ---
 
 ## 🔌 Triggering Workflows
 
 GDAI is a workflow-based processing system. You can trigger workflows programmatically using the Temporal Python client or via the Temporal CLI.
+
+**Important:** For document extraction workflows, you must upload documents to S3 first. See the [Working with S3 Storage](#-working-with-s3-storage) section above.
 
 ### Available Workflows
 
@@ -1050,26 +1396,42 @@ GDAI is a workflow-based processing system. You can trigger workflows programmat
 
 #### 1. Document Processing Example
 
-Extract text, chunk, and embed a PDF document:
+Extract text, chunk, and embed a PDF document from S3:
 
 ```python
+import asyncio
+import uuid
 from temporalio.client import Client
 from gdai.temporal.extract_document.workflow import DocumentExtractionWorkflow
 from gdai.temporal.extract_document.schema import DocumentExtracInput
+from gdai.services.s3_storage import get_s3_storage
 
 async def process_document():
-    """Extract and embed a PDF document."""
-    # Connect to Temporal server
+    """Upload a document to S3 and then extract and embed it."""
+    tenant_id = "my-tenant"
+    local_file_path = "/path/to/document.pdf"
+
+    # Step 1: Upload document to S3
+    print("📤 Uploading document to S3...")
+    s3_storage = get_s3_storage()
+    s3_key = s3_storage.upload_file(
+        tenant_id=tenant_id,
+        file_path=local_file_path,
+        object_name="document.pdf"  # Optional: defaults to filename
+    )
+    print(f"✅ Uploaded to S3: {s3_key}")
+
+    # Step 2: Connect to Temporal server
     client = await Client.connect("localhost:7233")
 
-    # Prepare workflow input
+    # Step 3: Prepare workflow input with S3 key
     workflow_input = DocumentExtracInput(
-        tenant_id="my-tenant",
-        document_path="/path/to/document.pdf",
+        tenant_id=tenant_id,
+        s3_key=s3_key,  # Use S3 key instead of local path
         chunk_strategy="sentence"  # Options: sentence, semantic
     )
 
-    # Start the workflow
+    # Step 4: Start the workflow
     handle = await client.start_workflow(
         DocumentExtractionWorkflow.run,
         workflow_input,
@@ -1077,33 +1439,36 @@ async def process_document():
         task_queue="process-document-queue"
     )
 
-    # Wait for completion (async)
+    # Step 5: Wait for completion (async)
     result = await handle.result()
     print(f"✅ Document processed: {result}")
     return result
 
 # Run the workflow
-import asyncio
 asyncio.run(process_document())
 ```
 
 **Expected Output:**
 
 ```
-✅ Document processed: Document /path/to/document.pdf processed successfully.
+📤 Uploading document to S3...
+✅ Uploaded to S3: my-tenant/document.pdf
+✅ Document processed: Document my-tenant/document.pdf processed successfully.
 ```
 
 **What Happens:**
 
-1. Document is validated (file exists, size OK, format supported)
-2. Metadata saved to database (status: "processing")
-3. PDF extracted page-by-page with PyMuPDF
-4. Text chunked into sentences (or semantic chunks)
-5. Chunks batched (default: 10 chunks per file)
-6. Each batch sent to embedding workflow
-7. Chunks with embeddings stored in PostgreSQL
-8. Temporary files cleaned up
-9. Document status updated to "processed"
+1. **Upload:** Document uploaded to S3 with tenant isolation (tenant_id/filename)
+2. **Validate:** Document validated in S3 (file exists, size OK, format supported)
+3. **Save Metadata:** Document metadata saved to database with s3_path (status: "processing")
+4. **Download:** Document temporarily downloaded from S3 for processing
+5. **Extract:** PDF extracted page-by-page with PyMuPDF
+6. **Chunk:** Text chunked into sentences (or semantic chunks)
+7. **Batch:** Chunks batched (default: 96 chunks per batch)
+8. **Embed:** Each batch sent to embedding workflow (Cohere API)
+9. **Store:** Chunks with embeddings stored in PostgreSQL with pgvector
+10. **Cleanup:** Temporary files deleted from local filesystem
+11. **Complete:** Document status updated to "processed"
 
 ---
 
@@ -1283,14 +1648,21 @@ You can also trigger workflows using the Temporal CLI:
 
 #### Document Processing via CLI
 
+**Note:** You must upload the document to S3 first before using the CLI.
+
 ```bash
+# Step 1: Upload document to S3 (use AWS CLI or MinIO client)
+# For MinIO:
+mc cp /path/to/document.pdf myminio/gdai-documents/my-tenant/document.pdf
+
+# Step 2: Trigger workflow with S3 key
 temporal workflow start \
   --task-queue process-document-queue \
   --type DocumentExtractionWorkflow \
   --workflow-id document-extraction-$(uuidgen) \
   --input '{
     "tenant_id": "my-tenant",
-    "document_path": "/path/to/document.pdf",
+    "s3_key": "my-tenant/document.pdf",
     "chunk_strategy": "sentence"
   }'
 ```
@@ -1333,11 +1705,33 @@ temporal workflow observe --workflow-id document-extraction-123
 
 #### DocumentExtractionWorkflow
 
-| Parameter        | Type   | Description                             | Required | Default |
-| ---------------- | ------ | --------------------------------------- | -------- | ------- |
-| `tenant_id`      | string | Tenant identifier for data isolation    | Yes      | -       |
-| `document_path`  | string | Absolute path to PDF file               | Yes      | -       |
-| `chunk_strategy` | string | Chunking method: `sentence`, `semantic` | Yes      | -       |
+| Parameter        | Type   | Description                                       | Required | Default |
+| ---------------- | ------ | ------------------------------------------------- | -------- | ------- |
+| `tenant_id`      | string | Tenant identifier for data isolation              | Yes      | -       |
+| `s3_key`         | string | S3 key of the document (e.g., tenant_id/filename) | Yes      | -       |
+| `chunk_strategy` | string | Chunking method: `sentence`, `semantic`           | Yes      | -       |
+
+**S3 Key Format:**
+
+The `s3_key` should follow the pattern: `{tenant_id}/{filename}`
+
+Examples:
+
+- `my-tenant/document.pdf`
+- `acme-corp/research-paper.pdf`
+- `client-123/quarterly-report.pdf`
+
+**Important:** You must upload the document to S3 before triggering the workflow. Use the `S3StorageService` to upload:
+
+```python
+from gdai.services.s3_storage import get_s3_storage
+
+s3_storage = get_s3_storage()
+s3_key = s3_storage.upload_file(
+    tenant_id="my-tenant",
+    file_path="/path/to/document.pdf"
+)
+```
 
 **Chunk Strategies:**
 
@@ -1638,11 +2032,13 @@ TEMPORAL_TLS_KEY_PATH=/certs/client.key
 EMBEDDING_API_KEY=${COHERE_API_KEY}
 LLM_API_KEY=${OPENAI_API_KEY}
 
-# Object Storage (use AWS S3)
+# Object Storage (use AWS S3 for production)
+S3_ENDPOINT=                                # Leave empty for AWS S3
 S3_BUCKET=gdai-documents-prod
 S3_REGION=us-east-1
-AWS_ACCESS_KEY_ID=${AWS_KEY}
-AWS_SECRET_ACCESS_KEY=${AWS_SECRET}
+S3_ACCESS_KEY=${AWS_KEY}
+S3_SECRET_KEY=${AWS_SECRET}
+S3_USE_SSL=true
 
 # Logging
 GDAI_LOG_LEVEL=INFO
@@ -2035,7 +2431,8 @@ Built with:
 - [Chonkie](https://github.com/bhavnicksm/chonkie) - Text chunking
 - [FastAPI](https://fastapi.tiangolo.com/) - Web framework
 - [SQLAlchemy](https://www.sqlalchemy.org/) - ORM
-- [MinIO](https://min.io/) - Object storage
+- [MinIO](https://min.io/) - S3-compatible object storage
+- [boto3](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html) - AWS SDK for Python
 
 ---
 
