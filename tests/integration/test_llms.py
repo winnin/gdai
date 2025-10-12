@@ -1,4 +1,4 @@
-"""Integration tests for gdai.llms module.
+"""Integration tests for gdai.services.llms module.
 
 These tests interact with real OpenAI API to verify:
 - API connectivity and authentication
@@ -17,9 +17,7 @@ import os
 import pytest
 import pytest_asyncio
 
-from gdai.llms import LLMFactory
-from gdai.llms.base_llm import LLMModel
-from gdai.llms.openai_llm import OpenAIModel
+from gdai.services.llms import LLMFactory, LLMModel, OpenAIModel
 
 
 class TestLLMModelBase:
@@ -109,7 +107,7 @@ class TestOpenAIModelIntegration:
 
         model = await OpenAIModel.create(model_name="gpt-4o-mini", api_key=api_key, temperature=0.7, max_tokens=100)
 
-        from gdai.llms.base_llm import LLMModel
+        from gdai.services.llms import LLMModel
 
         assert isinstance(model, LLMModel)
         assert hasattr(model, "call_llm")

@@ -1,7 +1,7 @@
 from temporalio import activity
 
 from gdai.commons.logger import logger
-from gdai.llms import LLMFactory
+from gdai.services.llms import LLMFactory
 
 from .schema import PromptInput
 
