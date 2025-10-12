@@ -24,7 +24,7 @@ class TestPGVectorRepository:
             name="test.pdf",
             type=DocumentTypeEnum.pdf,
             s3_path=f"{sample_tenant_id}/test.pdf",
-            status=DocumentStatusEnum.processing,
+            status=DocumentStatusEnum.processed,
             chunk_strategy="semantic",
         )
 
@@ -33,7 +33,7 @@ class TestPGVectorRepository:
         assert result.id == doc_id
         assert result.name == "test.pdf"
         assert result.s3_path == f"{sample_tenant_id}/test.pdf"
-        assert result.status == DocumentStatusEnum.processing
+        assert result.status == DocumentStatusEnum.processed
         assert result.tenant_id == sample_tenant_id
 
     @pytest.mark.asyncio

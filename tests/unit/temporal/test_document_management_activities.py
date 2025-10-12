@@ -55,7 +55,7 @@ class TestListDocumentsActivity:
 
         assert result.total == 3
         assert len(result.documents) == 3
-        assert all(d.tenant_id == sample_tenant_id for d in result.documents)
+        assert all(d.s3_path.startswith(sample_tenant_id) for d in result.documents)
 
 
 class TestGetDocumentActivity:

@@ -36,8 +36,8 @@ async def list_documents(input: ListDocumentsInput) -> ListDocumentsOutput:
     """
     try:
         logger.info(f"Listing documents for tenant: {input.tenant_id}")
-        repository = RepositoryFactory.get_repository()
-        documents = await repository.get_all_documents(input.tenant_id)
+        async with RepositoryFactory.get_repository() as repository:
+            documents = await repository.get_all_documents(input.tenant_id)
 
         document_list = [
             Document(
@@ -77,8 +77,8 @@ async def get_document(input: GetDocumentInput) -> Document:
     """
     try:
         logger.info(f"Getting document {input.document_id} for tenant {input.tenant_id}")
-        repository = RepositoryFactory.get_repository()
-        doc = await repository.get_document(input.tenant_id, input.document_id)
+        async with RepositoryFactory.get_repository() as repository:
+            doc = await repository.get_document(input.tenant_id, input.document_id)
 
         if not doc:
             raise DocumentNotFoundError(input.tenant_id, input.document_id)
@@ -120,24 +120,24 @@ async def delete_document(input: DeleteDocumentInput) -> bool:
     """
     try:
         logger.info(f"Deleting document {input.document_id} for tenant {input.tenant_id}")
-        repository = RepositoryFactory.get_repository()
 
-        # Check if document exists
-        doc = await repository.get_document(input.tenant_id, input.document_id)
-        if not doc:
-            raise DocumentNotFoundError(input.tenant_id, input.document_id)
+        async with RepositoryFactory.get_repository() as repository:
+            # Check if document exists
+            doc = await repository.get_document(input.tenant_id, input.document_id)
+            if not doc:
+                raise DocumentNotFoundError(input.tenant_id, input.document_id)
 
-        s3_path = doc.s3_path
+            s3_path = doc.s3_path
 
-        # Delete chunks first
-        await repository.delete_chunks(input.tenant_id, input.document_id)
-        logger.info(f"Deleted chunks for document {input.document_id}")
+            # Delete chunks first
+            await repository.delete_chunks(input.tenant_id, input.document_id)
+            logger.info(f"Deleted chunks for document {input.document_id}")
 
-        # Delete document from database
-        deleted = await repository.delete_document(input.tenant_id, input.document_id)
+            # Delete document from database
+            deleted = await repository.delete_document(input.tenant_id, input.document_id)
 
-        if not deleted:
-            raise Exception(f"Failed to delete document {input.document_id}")
+            if not deleted:
+                raise Exception(f"Failed to delete document {input.document_id}")
 
         # Delete file from S3
         s3_storage = get_s3_storage()
@@ -173,15 +173,14 @@ async def get_document_chunks(input: GetDocumentChunksInput) -> GetDocumentChunk
     """
     try:
         logger.info(f"Getting chunks for document {input.document_id} for tenant {input.tenant_id}")
-        repository = RepositoryFactory.get_repository()
+        async with RepositoryFactory.get_repository() as repository:
+            # Check if document exists
+            doc = await repository.get_document(input.tenant_id, input.document_id)
+            if not doc:
+                raise DocumentNotFoundError(input.tenant_id, input.document_id)
 
-        # Check if document exists
-        doc = await repository.get_document(input.tenant_id, input.document_id)
-        if not doc:
-            raise DocumentNotFoundError(input.tenant_id, input.document_id)
-
-        # Get chunks
-        chunks = await repository.get_chunks(input.tenant_id, input.document_id)
+            # Get chunks
+            chunks = await repository.get_chunks(input.tenant_id, input.document_id)
 
         chunk_list = [
             Chunk(
@@ -222,16 +221,15 @@ async def get_document_status(input: GetDocumentStatusInput) -> DocumentStatus:
     """
     try:
         logger.info(f"Getting status for document {input.document_id} for tenant {input.tenant_id}")
-        repository = RepositoryFactory.get_repository()
+        async with RepositoryFactory.get_repository() as repository:
+            # Get document
+            doc = await repository.get_document(input.tenant_id, input.document_id)
+            if not doc:
+                raise DocumentNotFoundError(input.tenant_id, input.document_id)
 
-        # Get document
-        doc = await repository.get_document(input.tenant_id, input.document_id)
-        if not doc:
-            raise DocumentNotFoundError(input.tenant_id, input.document_id)
-
-        # Get chunk count
-        chunks = await repository.get_chunks(input.tenant_id, input.document_id)
-        chunk_count = len(chunks)
+            # Get chunk count
+            chunks = await repository.get_chunks(input.tenant_id, input.document_id)
+            chunk_count = len(chunks)
 
         error_message = None
         if doc.status.value == "failed":

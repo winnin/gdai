@@ -59,10 +59,16 @@ class TestValidateActivity:
     @pytest.mark.asyncio
     async def test_validate_file_too_large(self, s3_storage, tmp_path, sample_tenant_id, monkeypatch):
         """Test validation fails for files exceeding size limit."""
-        # Mock max file size to 1KB
-        from gdai.commons import settings
+        # Mock get_settings to return settings with very small file size limit
+        from unittest.mock import MagicMock
 
-        monkeypatch.setattr(settings.ExtractorSettings, "max_file_size_mb", property(lambda self: 0.001))
+        # Create a mock that returns small max_file_size_mb
+        mock_settings = MagicMock()
+        mock_settings.extractor = MagicMock()
+        mock_settings.extractor.max_file_size_mb = 0.001  # 1KB limit (0.001 MB)
+
+        # Monkeypatch get_settings to return our mock
+        monkeypatch.setattr("gdai.temporal.extract_document.activity.get_settings", lambda: mock_settings)
 
         # Upload 2KB file
         test_file = tmp_path / "large.pdf"
@@ -115,8 +121,8 @@ class TestSaveDocumentMetadataActivity:
         # Verify in database
         from gdai.repositories import RepositoryFactory
 
-        repo = RepositoryFactory.get_repository()
-        doc = await repo.get_document(sample_tenant_id, doc_id)
+        async with RepositoryFactory.get_repository() as repo:
+            doc = await repo.get_document(sample_tenant_id, doc_id)
 
         assert doc is not None
         assert doc.name == "document.pdf"
@@ -135,8 +141,8 @@ class TestSaveDocumentMetadataActivity:
         # Verify filename extraction
         from gdai.repositories import RepositoryFactory
 
-        repo = RepositoryFactory.get_repository()
-        doc = await repo.get_document(sample_tenant_id, doc_id)
+        async with RepositoryFactory.get_repository() as repo:
+            doc = await repo.get_document(sample_tenant_id, doc_id)
 
         assert doc.name == "my-document.pdf"
 
@@ -155,8 +161,8 @@ class TestSaveDocumentMetadataActivity:
             # Verify type is correctly set
             from gdai.repositories import RepositoryFactory
 
-            repo = RepositoryFactory.get_repository()
-            doc = await repo.get_document(sample_tenant_id, doc_id)
+            async with RepositoryFactory.get_repository() as repo:
+                doc = await repo.get_document(sample_tenant_id, doc_id)
 
             assert doc.type.value == file_type
 
@@ -284,8 +290,8 @@ class TestExtractActivitiesIntegration:
         # Verify document in database
         from gdai.repositories import RepositoryFactory
 
-        repo = RepositoryFactory.get_repository()
-        doc = await repo.get_document(sample_tenant_id, doc_id)
+        async with RepositoryFactory.get_repository() as repo:
+            doc = await repo.get_document(sample_tenant_id, doc_id)
 
         assert doc is not None
         assert doc.s3_path == s3_key

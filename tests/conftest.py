@@ -12,7 +12,6 @@ import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 from gdai.commons.settings import Settings, get_settings
-from gdai.repositories.database import DatabaseManager
 from gdai.repositories.models import Base
 from gdai.services.s3_storage import S3StorageService
 
@@ -29,7 +28,7 @@ def event_loop() -> Generator:
 def test_settings() -> Settings:
     """Get test settings with proper environment configuration."""
     # Ensure test environment is loaded
-    os.environ["PGVECTOR_DATABASE"] = "vectordb_test"
+    os.environ["PGVECTOR_DATABASE"] = "vectordb"  # Use same DB as docker-compose
     os.environ["S3_BUCKET"] = "gdai-test"
 
     # Clear the lru_cache to reload settings
@@ -67,9 +66,16 @@ async def db_session(db_engine) -> AsyncGenerator[AsyncSession, None]:
     This fixture provides a clean database session for each test,
     with automatic rollback after the test completes.
     """
-    async with DatabaseManager.create_session() as session:
+    from sqlalchemy.ext.asyncio import AsyncSession as SQLAlchemyAsyncSession
+    from sqlalchemy.orm import sessionmaker
+
+    # Create session factory
+    async_session_maker = sessionmaker(db_engine, class_=SQLAlchemyAsyncSession, expire_on_commit=False)
+
+    # Create session
+    async with async_session_maker() as session:
         yield session
-        # Session will be automatically closed and rolled back
+        await session.rollback()  # Rollback any uncommitted changes
 
 
 @pytest_asyncio.fixture(scope="function")

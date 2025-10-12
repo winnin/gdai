@@ -74,7 +74,6 @@ async def save_document_metadata(input: DocumentExtracInput) -> str:
     logger.info(f"Saving document metadata for S3 file: {s3_key}")
     logger.debug(f"Tenant: {tenant_id}, Document type: {document_type}, Chunk strategy: {chunk_strategy}")
 
-    repository = RepositoryFactory.get_repository()
     document_id = uuid.uuid4()
     document_model = DocumentModel(
         id=document_id,
@@ -86,7 +85,8 @@ async def save_document_metadata(input: DocumentExtracInput) -> str:
     )
 
     try:
-        await repository.insert_document(document_model)
+        async with RepositoryFactory.get_repository() as repository:
+            await repository.insert_document(document_model)
         logger.info(f"Document {document_name} metadata saved with ID: {document_id}")
         return str(document_id)
     except Exception as e:
@@ -202,7 +202,7 @@ async def store_embedded_chunks(input: list[Chunk]) -> None:
     if not input:
         logger.warning("No chunks provided for storage")
         return
-    repository = RepositoryFactory.get_repository()
+
     chunk_models = [
         ChunkModel(
             id=chunk.id,
@@ -217,7 +217,8 @@ async def store_embedded_chunks(input: list[Chunk]) -> None:
     ]
 
     try:
-        await repository.insert_batch_chunks(chunk_models)
+        async with RepositoryFactory.get_repository() as repository:
+            await repository.insert_batch_chunks(chunk_models)
         logger.info(f"Stored {len(chunk_models)} chunks into the database")
     except Exception as e:
         logger.error(f"Error storing chunks into database: {e}")
