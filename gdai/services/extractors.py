@@ -1,9 +1,27 @@
+"""Document extraction services.
+
+This module provides document data extraction functionality for various formats.
+"""
+
 from __future__ import annotations
+
+from abc import ABC, abstractmethod
 
 import pymupdf
 
 from gdai.commons.logger import logger
-from gdai.extractors.base_extractor import DocumentExtractor
+
+
+class DocumentExtractor(ABC):
+    """Base class for document extractors."""
+
+    def __init__(self):
+        pass
+
+    @abstractmethod
+    def extract_document_data(self, document_path: str) -> dict:
+        """Extract text from a document."""
+        pass
 
 
 class PDFExtractor(DocumentExtractor):
@@ -62,3 +80,18 @@ class PDFExtractor(DocumentExtractor):
         images: list = []
         # TODO: Implement image extraction logic
         return images
+
+
+class ExtractorFactory:
+    """Factory class to create extractor based on the type."""
+
+    @staticmethod
+    def get_extractor(extractor_type: str):
+        """Get an extractor instance based on the type."""
+        if extractor_type == "pdf":
+            return PDFExtractor()
+        if extractor_type == "ppt":
+            # Placeholder for PPT extractor, implement as needed
+            raise NotImplementedError("PPT extractor is not implemented yet.")
+        else:
+            raise ValueError(f"Unknown extractor type: {extractor_type}")

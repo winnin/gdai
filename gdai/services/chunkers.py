@@ -1,11 +1,33 @@
+"""Chunker services for document text processing.
+
+This module provides text chunking functionality with different strategies.
+"""
+
+from abc import abstractmethod
+
 from chonkie import SentenceChunker
 from cleantext import clean
 
-from gdai.chunkers.base_chunker import BaseChunker
+
+class BaseChunker:
+    """Base class for chunkers."""
+
+    def __init__(self, strategy: str):
+        """Initialize the chunker with any necessary parameters."""
+        self.strategy = strategy
+
+    @abstractmethod
+    def chunk(self, text: str) -> list[str]:
+        """Chunk the input text into smaller parts."""
+        pass
+
+    def __str__(self) -> str:
+        """Return a string representation of the chunker."""
+        return self.strategy
 
 
 class DocumentTextChunkerBySentence(BaseChunker):
-    """Base class for sentence chunkers."""
+    """Sentence-based text chunker using Chonkie library."""
 
     def __init__(self, min_sentences_per_chunks: int = 5):
         """Initialize the sentence chunker with any necessary parameters."""
@@ -42,3 +64,16 @@ class DocumentTextChunkerBySentence(BaseChunker):
             for chunk in chunks_page:
                 pages_chunks.append((page_number + 1, self._clean_text(chunk.text)))
         return pages_chunks
+
+
+class ChunkerFactory:
+    """Factory class to create chunkers based on the type."""
+
+    @staticmethod
+    def get_chunker(chunker_type: str):
+        """Get a chunker instance based on the type."""
+        if chunker_type == "sentence":
+            return DocumentTextChunkerBySentence()
+        # Add more chunker types as needed
+        else:
+            raise ValueError(f"Unknown chunker type: {chunker_type}")

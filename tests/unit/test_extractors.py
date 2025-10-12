@@ -1,16 +1,14 @@
-"""Unit tests for gdai.extractors module.
+"""Unit tests for gdai.services.extractors module.
 
 This module tests all extractor classes and the factory pattern.
-Target: 100% code coverage for gdai/extractors/*.py
+Target: 100% code coverage for gdai/services/extractors.py
 """
 
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from gdai.extractors import ExtractorFactory
-from gdai.extractors.base_extractor import DocumentExtractor
-from gdai.extractors.pdf_extractor import PDFExtractor
+from gdai.services.extractors import DocumentExtractor, ExtractorFactory, PDFExtractor
 
 
 class TestDocumentExtractor:

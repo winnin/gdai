@@ -1,4 +1,4 @@
-"""Integration tests for gdai.embeddings module.
+"""Integration tests for gdai.services.embeddings module.
 
 These tests interact with real Cohere API to verify:
 - API connectivity and authentication
@@ -17,8 +17,7 @@ import numpy as np
 import pytest
 import pytest_asyncio
 
-from gdai.embeddings import EmbeddingFactory
-from gdai.embeddings.cohere_embedding import CohereEmbeddingModel
+from gdai.services.embeddings import CohereEmbeddingModel, EmbeddingFactory
 
 
 class TestCohereEmbeddingModelIntegration:
@@ -60,7 +59,7 @@ class TestCohereEmbeddingModelIntegration:
 
         model = await CohereEmbeddingModel.create(api_key)
 
-        from gdai.embeddings.base_embedding import EmbeddingModel
+        from gdai.services.embeddings import EmbeddingModel
 
         assert isinstance(model, EmbeddingModel)
         assert hasattr(model, "generate_texts_embeddings")

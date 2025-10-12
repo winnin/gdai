@@ -2,7 +2,7 @@ from temporalio import activity
 
 from gdai.commons.logger import logger
 from gdai.commons.settings import get_settings
-from gdai.embeddings import EmbeddingFactory
+from gdai.services.embeddings import EmbeddingFactory
 
 
 @activity.defn

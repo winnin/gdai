@@ -7,13 +7,13 @@ import aiofiles
 from aiopath import AsyncPath
 from temporalio import activity
 
-from gdai.chunkers import ChunkerFactory
 from gdai.commons.enums import ChunkTypeEnum, DocumentTypeEnum
 from gdai.commons.logger import logger
 from gdai.commons.settings import get_settings
-from gdai.extractors import ExtractorFactory
 from gdai.repositories import RepositoryFactory
 from gdai.repositories.models import ChunkModel, DocumentModel
+from gdai.services.chunkers import ChunkerFactory
+from gdai.services.extractors import ExtractorFactory
 from gdai.services.s3_storage import get_s3_storage
 
 from .schema import Chunk, ChunkDocumentInput, DocumentExtracInput

@@ -1,7 +1,52 @@
+"""Embedding services for text vectorization.
+
+This module provides embedding generation functionality using various models.
+"""
+
+from __future__ import annotations
+
+from abc import ABC, abstractmethod
+
 import cohere
 import numpy as np
 
-from gdai.embeddings.base_embedding import EmbeddingModel
+from gdai.commons.settings import get_settings
+
+
+class EmbeddingModel(ABC):
+    """A base class for embedding models.
+
+    Attributes:
+        model_name (str): The name of the embedding model.
+    """
+
+    def __init__(self, model_name: str):
+        """Initialize the embedding model.
+
+        Args:
+            model_name (str): The name of the embedding model.
+        """
+        self.model_name = model_name
+
+    @abstractmethod
+    async def generate_texts_embeddings(self, texts: list[str]) -> list[list[float]]:
+        """Generate embeddings for multiple texts.
+
+        Args:
+            texts (list[str]): A list of input texts.
+
+        Returns:
+            list[list[float]]: A list of embedding vectors for the input texts.
+        """
+        pass
+
+    def __str__(self) -> str:
+        """Return a string representation of the embedding model.
+
+        Returns:
+            str: The name of the embedding model.
+        """
+        return self.model_name
 
 
 class CohereEmbeddingModel(EmbeddingModel):
@@ -84,3 +129,19 @@ class CohereEmbeddingModel(EmbeddingModel):
             return [self.normalize_embedding(embedding) for embedding in res.embeddings.float_]
         except Exception as e:
             raise Exception(f"Failed to generate embeddings for texts: {e}") from e
+
+
+class EmbeddingFactory:
+    """Factory class to create embedding models."""
+
+    @staticmethod
+    async def get_embedding():
+        """Get an embedding model instance based on settings."""
+        settings = get_settings()
+        embedding_config = settings.embedding
+        model_name = embedding_config.model
+        api_key = embedding_config.api_key or ""
+        if model_name == "cohere/embed-v4.0":
+            return await CohereEmbeddingModel.create(api_key)
+        else:
+            raise ValueError(f"Unsupported embedding model: {model_name}")

@@ -1,10 +1,15 @@
-"""Unit tests for gdai.chunkers modules."""
+"""Unit tests for gdai.services.chunkers module."""
 
 import pytest
 
-from gdai.chunkers import ChunkerFactory, SentenceChunker
-from gdai.chunkers.base_chunker import BaseChunker
-from gdai.chunkers.sentence_chunker import DocumentTextChunkerBySentence
+from gdai.services.chunkers import (
+    BaseChunker,
+    ChunkerFactory,
+    DocumentTextChunkerBySentence,
+)
+
+# Alias for backward compatibility in tests
+SentenceChunker = DocumentTextChunkerBySentence
 
 
 class TestBaseChunker:
