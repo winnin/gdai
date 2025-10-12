@@ -87,7 +87,7 @@ class TestPDFExtractor:
         assert hasattr(extractor, "extract_document_data")
         assert callable(extractor.extract_document_data)
 
-    @patch("gdai.extractors.pdf_extractor.pymupdf.open")
+    @patch("gdai.services.extractors.pymupdf.open")
     def test_extract_document_data_success(self, mock_pymupdf_open):
         """Test successful document extraction."""
         # Create mock PDF document
@@ -121,7 +121,7 @@ class TestPDFExtractor:
         # Verify document was closed
         mock_doc.close.assert_called_once()
 
-    @patch("gdai.extractors.pdf_extractor.pymupdf.open")
+    @patch("gdai.services.extractors.pymupdf.open")
     def test_extract_document_data_multiple_pages(self, mock_pymupdf_open):
         """Test extraction from PDF with multiple pages."""
         # Create mock pages
@@ -150,7 +150,7 @@ class TestPDFExtractor:
         assert result["texts"][1] == (2, "Text from page 2")
         assert result["texts"][2] == (3, "Text from page 3")
 
-    @patch("gdai.extractors.pdf_extractor.pymupdf.open")
+    @patch("gdai.services.extractors.pymupdf.open")
     def test_extract_document_data_with_whitespace(self, mock_pymupdf_open):
         """Test extraction handles whitespace correctly."""
         mock_page = MagicMock()
@@ -168,7 +168,7 @@ class TestPDFExtractor:
         # Verify whitespace is stripped
         assert result["texts"][0] == (1, "Text with whitespace")
 
-    @patch("gdai.extractors.pdf_extractor.pymupdf.open")
+    @patch("gdai.services.extractors.pymupdf.open")
     def test_extract_document_data_empty_pages(self, mock_pymupdf_open):
         """Test extraction skips empty pages."""
         mock_page1 = MagicMock()
@@ -197,8 +197,8 @@ class TestPDFExtractor:
         assert result["texts"][0] == (1, "Content")
         assert result["texts"][1] == (4, "More content")
 
-    @patch("gdai.extractors.pdf_extractor.pymupdf.open")
-    @patch("gdai.extractors.pdf_extractor.logger")
+    @patch("gdai.services.extractors.pymupdf.open")
+    @patch("gdai.services.extractors.logger")
     def test_extract_document_data_exception_handling(self, mock_logger, mock_pymupdf_open):
         """Test exception handling during extraction."""
         # Simulate an error
@@ -249,7 +249,7 @@ class TestPDFExtractor:
         assert isinstance(images, list)
         assert len(images) == 0  # Not implemented yet
 
-    @patch("gdai.extractors.pdf_extractor.pymupdf.open")
+    @patch("gdai.services.extractors.pymupdf.open")
     def test_document_close_called_on_success(self, mock_pymupdf_open):
         """Test that PDF document is properly closed after extraction."""
         mock_page = MagicMock()
@@ -267,7 +267,7 @@ class TestPDFExtractor:
         # Verify close was called
         mock_doc.close.assert_called_once()
 
-    @patch("gdai.extractors.pdf_extractor.pymupdf.open")
+    @patch("gdai.services.extractors.pymupdf.open")
     def test_extract_document_data_page_numbering(self, mock_pymupdf_open):
         """Test that page numbering starts at 1 (not 0)."""
         mock_pages = []
@@ -382,7 +382,7 @@ class TestExtractorFactory:
 class TestExtractorsIntegration:
     """Integration tests for the extractors module."""
 
-    @patch("gdai.extractors.pdf_extractor.pymupdf.open")
+    @patch("gdai.services.extractors.pymupdf.open")
     def test_pdf_extractor_end_to_end_workflow(self, mock_pymupdf_open):
         """Test complete workflow: factory -> extractor -> extraction."""
         # Setup mock
@@ -418,7 +418,7 @@ class TestExtractorsIntegration:
         assert hasattr(extractor, "extract_document_data")
         assert callable(extractor.extract_document_data)
 
-    @patch("gdai.extractors.pdf_extractor.pymupdf.open")
+    @patch("gdai.services.extractors.pymupdf.open")
     def test_multiple_extractors_independent(self, mock_pymupdf_open):
         """Test that multiple extractor instances are independent."""
         # Setup mock
