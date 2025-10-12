@@ -168,6 +168,9 @@ echo ""
 
 # Start services based on argument
 if [ "$START_SERVICES" = "infra" ]; then
+    # Remove trap for infra mode (we don't want to cleanup on exit)
+    trap - EXIT
+
     echo -e "${GREEN}========================================${NC}"
     echo -e "${GREEN}  Infrastructure services started!${NC}"
     echo -e "${GREEN}========================================${NC}"
