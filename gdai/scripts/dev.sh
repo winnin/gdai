@@ -132,6 +132,14 @@ if [ ! -f "${PROJECT_ROOT}/docker-compose.yaml" ]; then
     exit 1
 fi
 
+# Stop all running services before starting (only for infra mode)
+if [ "$START_SERVICES" = "infra" ]; then
+    echo -e "${YELLOW}Stopping all existing Docker services...${NC}"
+    $DOCKER_COMPOSE_CMD -f "${PROJECT_ROOT}/docker-compose.yaml" down 2>/dev/null || true
+    echo -e "${GREEN}✓ All services stopped${NC}"
+    echo ""
+fi
+
 # Start docker-compose services
 echo -e "${YELLOW}Running: $DOCKER_COMPOSE_CMD -f ${PROJECT_ROOT}/docker-compose.yaml up -d${NC}"
 $DOCKER_COMPOSE_CMD -f "${PROJECT_ROOT}/docker-compose.yaml" up -d
