@@ -4,14 +4,14 @@ import uuid
 
 import pytest
 
-from gdai.repositories import RepositoryFactory
+from gdai.repositories.pgvector_repository import PGVectorRepository
 
 
 class TestDocumentProcessingFlow:
     """Integration tests for end-to-end document processing."""
 
     @pytest.mark.asyncio
-    async def test_upload_and_store_document(self, s3_storage, db_session, sample_pdf_path, sample_tenant_id):
+    async def test_upload_and_store_document(self, db_session, s3_storage, sample_pdf_path, sample_tenant_id):
         """Test complete flow: upload to S3 -> save metadata -> verify."""
         # Step 1: Upload to S3
         s3_key = s3_storage.upload_file(sample_tenant_id, str(sample_pdf_path))
@@ -23,7 +23,7 @@ class TestDocumentProcessingFlow:
         from gdai.commons.enums import DocumentTypeEnum
         from gdai.repositories.models import DocumentModel
 
-        repo = RepositoryFactory.get_repository()
+        repo = PGVectorRepository(db_session)
 
         doc_id = uuid.uuid4()
         doc = DocumentModel(
@@ -55,7 +55,7 @@ class TestDocumentProcessingFlow:
             assert download_path.stat().st_size > 0
 
     @pytest.mark.asyncio
-    async def test_document_deletion_flow(self, s3_storage, db_session, sample_pdf_path, sample_tenant_id):
+    async def test_document_deletion_flow(self, db_session, s3_storage, sample_pdf_path, sample_tenant_id):
         """Test complete deletion flow: create -> delete from DB and S3."""
         # Create document
         s3_key = s3_storage.upload_file(sample_tenant_id, str(sample_pdf_path))
@@ -63,7 +63,7 @@ class TestDocumentProcessingFlow:
         from gdai.commons.enums import DocumentTypeEnum
         from gdai.repositories.models import DocumentModel
 
-        repo = RepositoryFactory.get_repository()
+        repo = PGVectorRepository(db_session)
 
         doc_id = uuid.uuid4()
         doc = DocumentModel(
@@ -89,7 +89,7 @@ class TestDocumentProcessingFlow:
         assert not s3_storage.file_exists(s3_key)
 
     @pytest.mark.asyncio
-    async def test_multi_tenant_isolation(self, s3_storage, db_session, sample_pdf_path):
+    async def test_multi_tenant_isolation(self, db_session, s3_storage, sample_pdf_path):
         """Test that documents are isolated between tenants."""
         tenant1 = "tenant-1"
         tenant2 = "tenant-2"
@@ -104,7 +104,7 @@ class TestDocumentProcessingFlow:
         from gdai.commons.enums import DocumentTypeEnum
         from gdai.repositories.models import DocumentModel
 
-        repo = RepositoryFactory.get_repository()
+        repo = PGVectorRepository(db_session)
 
         doc1 = DocumentModel(
             id=uuid.uuid4(),

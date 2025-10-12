@@ -17,7 +17,7 @@ pytest_plugins = ("pytest_asyncio",)
 
 
 @pytest_asyncio.fixture
-async def repository():
+async def repository(db_engine):
     """Create repository instance as async context manager.
 
     Note: This assumes the database has been set up using gdai/scripts/setup_db.py
@@ -61,6 +61,7 @@ class TestPGVectorRepositoryDocuments:
             tenant_id=tenant_id,
             type=DocumentTypeEnum.pdf,
             chunk_strategy="recursive",
+            s3_path=f"{tenant_id}/test_document.pdf",
         )
 
         # Insert document
@@ -87,6 +88,7 @@ class TestPGVectorRepositoryDocuments:
                 tenant_id=tenant_id,
                 type=DocumentTypeEnum.pdf,
                 chunk_strategy="recursive",
+                s3_path=f"{tenant_id}/document_{idx}.pdf",
             )
             await repository.insert_document(document)
 
@@ -107,6 +109,7 @@ class TestPGVectorRepositoryDocuments:
             tenant_id=tenant_id,
             type=DocumentTypeEnum.pdf,
             chunk_strategy="recursive",
+            s3_path=f"{tenant_id}/document_to_delete.pdf",
         )
         await repository.insert_document(document)
 
@@ -133,7 +136,12 @@ class TestPGVectorRepositoryDocuments:
 
         # Insert document for tenant1
         document = DocumentModel(
-            id=doc_id, name="tenant1_doc.pdf", tenant_id=tenant1, type=DocumentTypeEnum.pdf, chunk_strategy="recursive"
+            id=doc_id,
+            name="tenant1_doc.pdf",
+            tenant_id=tenant1,
+            type=DocumentTypeEnum.pdf,
+            chunk_strategy="recursive",
+            s3_path=f"{tenant1}/tenant1_doc.pdf",
         )
         await repository.insert_document(document)
 
@@ -157,6 +165,7 @@ class TestPGVectorRepositoryDocuments:
             tenant_id=tenant_id,
             type=DocumentTypeEnum.pdf,
             chunk_strategy="recursive",
+            s3_path=f"{tenant_id}/timestamp_doc.pdf",
         )
         await repository.insert_document(document)
 
@@ -182,6 +191,7 @@ class TestPGVectorRepositoryChunks:
             tenant_id=tenant_id,
             type=DocumentTypeEnum.pdf,
             chunk_strategy="recursive",
+            s3_path=f"{tenant_id}/doc_with_chunks.pdf",
         )
         await repository.insert_document(document)
 
@@ -224,6 +234,7 @@ class TestPGVectorRepositoryChunks:
             tenant_id=tenant_id,
             type=DocumentTypeEnum.pdf,
             chunk_strategy="recursive",
+            s3_path=f"{tenant_id}/batch_chunks_doc.pdf",
         )
         await repository.insert_document(document)
 
@@ -255,6 +266,7 @@ class TestPGVectorRepositoryChunks:
             tenant_id=tenant_id,
             type=DocumentTypeEnum.pdf,
             chunk_strategy="recursive",
+            s3_path=f"{tenant_id}/no_embedding_doc.pdf",
         )
         await repository.insert_document(document)
 
@@ -298,6 +310,7 @@ class TestPGVectorRepositoryChunks:
             tenant_id=tenant_id,
             type=DocumentTypeEnum.pdf,
             chunk_strategy="recursive",
+            s3_path=f"{tenant_id}/embedding_update_doc.pdf",
         )
         await repository.insert_document(document)
 
@@ -340,6 +353,7 @@ class TestPGVectorRepositoryChunks:
             tenant_id=tenant_id,
             type=DocumentTypeEnum.pdf,
             chunk_strategy="recursive",
+            s3_path=f"{tenant_id}/delete_chunks_doc.pdf",
         )
         await repository.insert_document(document)
 
@@ -384,6 +398,7 @@ class TestPGVectorRepositoryChunks:
             tenant_id=tenant1,
             type=DocumentTypeEnum.pdf,
             chunk_strategy="recursive",
+            s3_path=f"{tenant1}/tenant1_chunks_doc.pdf",
         )
         await repository.insert_document(document)
 
@@ -410,6 +425,7 @@ class TestPGVectorRepositoryChunks:
             tenant_id=tenant_id,
             type=DocumentTypeEnum.pdf,
             chunk_strategy="recursive",
+            s3_path=f"{tenant_id}/cascade_delete_doc.pdf",
         )
         await repository.insert_document(document)
 
@@ -439,6 +455,7 @@ class TestPGVectorRepositoryVectorSearch:
             tenant_id=tenant_id,
             type=DocumentTypeEnum.pdf,
             chunk_strategy="recursive",
+            s3_path=f"{tenant_id}/similarity_search_doc.pdf",
         )
         await repository.insert_document(document)
 
@@ -538,6 +555,7 @@ class TestPGVectorRepositoryVectorSearch:
             tenant_id=tenant_id,
             type=DocumentTypeEnum.pdf,
             chunk_strategy="recursive",
+            s3_path=f"{tenant_id}/multi_doc1.pdf",
         )
         document2 = DocumentModel(
             id=doc_id2,
@@ -545,6 +563,7 @@ class TestPGVectorRepositoryVectorSearch:
             tenant_id=tenant_id,
             type=DocumentTypeEnum.pdf,
             chunk_strategy="recursive",
+            s3_path=f"{tenant_id}/multi_doc2.pdf",
         )
         await repository.insert_document(document1)
         await repository.insert_document(document2)
@@ -659,6 +678,7 @@ class TestPGVectorRepositoryQueries:
             tenant_id=tenant_id,
             type=DocumentTypeEnum.pdf,
             chunk_strategy="recursive",
+            s3_path=f"{tenant_id}/link_test_doc.pdf",
         )
         await repository.insert_document(document)
 
@@ -718,6 +738,7 @@ class TestPGVectorRepositoryIntegration:
             tenant_id=tenant_id,
             type=DocumentTypeEnum.pdf,
             chunk_strategy="recursive",
+            s3_path=f"{tenant_id}/rag_workflow_doc.pdf",
         )
         await repository.insert_document(document)
 
@@ -829,7 +850,12 @@ class TestPGVectorRepositoryIntegration:
         # Tenant 1 creates document
         doc1_id = uuid4()
         document1 = DocumentModel(
-            id=doc1_id, name="tenant1_doc.pdf", tenant_id=tenant1, type=DocumentTypeEnum.pdf, chunk_strategy="recursive"
+            id=doc1_id,
+            name="tenant1_doc.pdf",
+            tenant_id=tenant1,
+            type=DocumentTypeEnum.pdf,
+            chunk_strategy="recursive",
+            s3_path=f"{tenant1}/tenant1_doc.pdf",
         )
         await repository.insert_document(document1)
 
@@ -847,7 +873,12 @@ class TestPGVectorRepositoryIntegration:
         # Tenant 2 creates document
         doc2_id = uuid4()
         document2 = DocumentModel(
-            id=doc2_id, name="tenant2_doc.pdf", tenant_id=tenant2, type=DocumentTypeEnum.pdf, chunk_strategy="recursive"
+            id=doc2_id,
+            name="tenant2_doc.pdf",
+            tenant_id=tenant2,
+            type=DocumentTypeEnum.pdf,
+            chunk_strategy="recursive",
+            s3_path=f"{tenant2}/tenant2_doc.pdf",
         )
         await repository.insert_document(document2)
 
@@ -892,6 +923,7 @@ class TestPGVectorRepositoryIntegration:
             tenant_id=tenant_id,
             type=DocumentTypeEnum.pdf,
             chunk_strategy="recursive",
+            s3_path=f"{tenant_id}/lifecycle_doc.pdf",
         )
         await repository.insert_document(document)
 

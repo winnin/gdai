@@ -365,7 +365,7 @@ class TestPGVectorRepository:
         assert len(tenant1_accessing_doc2) == 0
 
     @pytest.mark.asyncio
-    async def test_context_manager_usage(self, test_settings, sample_tenant_id):
+    async def test_context_manager_usage(self, db_engine, test_settings, sample_tenant_id):
         """Test repository usage as context manager."""
         # Use repository as context manager
         async with PGVectorRepository() as repo:
