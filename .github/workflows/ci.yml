@@ -228,6 +228,8 @@ jobs:
           EOF
 
       - name: Setup database
+        env:
+          PYTHONPATH: ${{ github.workspace }}
         run: |
           uv run python gdai/scripts/setup_db.py
 
