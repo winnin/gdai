@@ -90,3 +90,9 @@ temporal-llm = { cmd = "uv run python -m gdai.temporal.conversational_llm.worker
 temporal-embed = { cmd = "uv run python -m gdai.temporal.embedding_texts.worker", help = "Run embedding worker (queue: embedding-text-queue)" }
 temporal-extract = { cmd = "uv run python -m gdai.temporal.extract_document.worker", help = "Run extraction worker (queue: process-document-queue)" }
 temporal-search = { cmd = "uv run python -m gdai.temporal.search_on_documents.worker", help = "Run search worker (queue: search-on-documents-queue)" }
+
+# Documentation
+docs-update = { cmd = "./gdai/scripts/update_docs.sh", help = "Update MkDocs documentation from main files" }
+docs-serve = { cmd = "uv run mkdocs serve", help = "Start MkDocs development server (http://localhost:8000)" }
+docs-build = { cmd = "uv run mkdocs build", help = "Build static documentation site" }
+docs-deploy = { cmd = "uv run mkdocs gh-deploy --force", help = "Deploy documentation to GitHub Pages" }
