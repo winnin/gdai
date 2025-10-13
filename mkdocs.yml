@@ -1,12 +1,23 @@
 site_name: GDAI
+site_url: https://winnin.github.io/gdai/
+site_description: Multi-Tenant Vector Store with Auditable Semantic Search
+site_author: GDAI Team
+repo_url: https://github.com/winnin/gdai
+repo_name: winnin/gdai
 
 nav:
   - Home: index.md
-  - Contributing: contributing.md
-  - Code of Conduct: code_of_conduct.md
-  - About: about.md
-  - Changelog: CHANGELOG.md
-  - Roadmap: ROADMAP.md
+  - Guides:
+      - Contributing: contributing.md
+      - Code of Conduct: code_of_conduct.md
+  - Setup & CI/CD:
+      - Scripts Documentation: scripts.md
+      - GitHub Actions: github-actions.md
+      - Codecov Setup: codecov-setup.md
+  - Project Info:
+      - Changelog: CHANGELOG.md
+      - Roadmap: ROADMAP.md
+      - About: about.md
 
 theme:
   name: dracula

@@ -10,14 +10,6 @@ on:
       - "CHANGELOG.md"
       - "mkdocs.yml"
       - ".github/workflows/docs.yml"
-  pull_request:
-    branches: [main]
-    paths:
-      - "docs/**"
-      - "README.md"
-      - "ROADMAP.md"
-      - "CHANGELOG.md"
-      - "mkdocs.yml"
   workflow_dispatch:
 
 permissions:
@@ -91,7 +83,9 @@ jobs:
     name: Deploy to GitHub Pages
     runs-on: ubuntu-latest
     needs: build-docs
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: |
+      github.event_name == 'push' && github.ref == 'refs/heads/main' ||
+      github.event_name == 'workflow_dispatch'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
