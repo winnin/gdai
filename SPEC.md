@@ -30,10 +30,13 @@
 
 **Test Coverage:**
 
-- 155 unit tests (100% passing) - Pure tests with no external dependencies
-- 103 integration tests (100% passing) - Tests requiring PostgreSQL, MinIO, Cohere, OpenAI
+- 244 total tests (155 unit + 89 integration)
+- 77% code coverage
+- Unit tests: Pure tests with no external dependencies
+- Integration tests: Tests requiring PostgreSQL, MinIO, Cohere, OpenAI
 - Flat test structure for easy navigation (no nested subdirectories)
 - Clear separation between unit and integration tests
+- Automated coverage reporting via GitHub Actions
 
 ---
 
@@ -43,21 +46,20 @@
 
 Configuration, logging, enums, exceptions, and settings for the application.
 
-#### config.py
+#### settings.py
 
-- `ConfigComponent` - Base configuration component with validation
-- `ConfigComponent.validate()` - Validates configuration (returns bool)
-- `DatabaseConfig` - Database connection configuration
-- `DatabaseConfig.validate()` - Validates database settings
-- `LLMConfig` - AI models configuration
-- `LLMConfig.validate()` - Validates LLM settings
-- `ExtractorConfig` - Document extractor configuration
-- `ExtractorConfig.validate()` - Validates extractor settings
-- `EmbeddingConfig` - Document embedding service configuration
-- `EmbeddingConfig.validate()` - Validates embedding settings
-- `Config` - Main configuration class grouping all components
-- `Config.validate_all()` - Validates all configuration components
-- `Config.get_component()` - Gets configuration component by name
+**Modern Pydantic Settings-based configuration (replaced old config.py)**
+
+- `DatabaseSettings` - Database connection configuration with type validation
+- `S3Settings` - S3/MinIO storage configuration
+- `EmbeddingSettings` - Embedding service configuration (Cohere)
+- `LLMSettings` - LLM configuration (OpenAI)
+- `ExtractorSettings` - Document extractor configuration
+- `TemporalSettings` - Temporal.io connection settings
+- `LogSettings` - Logging configuration
+- `Settings` - Main settings class (Pydantic BaseSettings)
+- `get_settings()` - LRU-cached function to get settings instance
+- **Features**: Automatic .env loading, type-safe validation, immutable configuration
 
 #### enums.py
 

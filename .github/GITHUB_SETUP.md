@@ -13,6 +13,22 @@ Este documento descreve todas as configurações necessárias no GitHub para que
 
 ---
 
+## 🔄 Workflows Configurados
+
+O projeto possui **5 workflows GitHub Actions** automatizados:
+
+| Workflow           | Arquivo              | Trigger                         | Descrição                                     |
+| ------------------ | -------------------- | ------------------------------- | --------------------------------------------- |
+| **CI**             | `ci.yml`             | Push em qualquer branch         | Code quality + Unit tests + Integration tests |
+| **PR Checks**      | `pr-checks.yml`      | Pull requests para main/develop | Validação de PRs + Coverage + Security        |
+| **Security**       | `security.yml`       | Push, PR, schedule (weekly)     | Scans de vulnerabilidades (safety, bandit)    |
+| **Docs**           | `docs.yml`           | Push em main (arquivos docs/)   | Deploy de documentação para GitHub Pages      |
+| **Coverage Badge** | `coverage-badge.yml` | Push em qualquer branch         | Atualiza badge de coverage automaticamente    |
+
+**Total de código de workflows**: ~1,100 linhas de YAML
+
+---
+
 ## 🔐 Secrets Necessários
 
 Configure os seguintes secrets em: **Settings → Secrets and variables → Actions → New repository secret**
