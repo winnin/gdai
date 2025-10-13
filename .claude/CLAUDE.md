@@ -56,6 +56,7 @@ gdai/
 ├── temporal/                     # Temporal.io workflows
 │   ├── main.py                  # Worker launcher (all workflows)
 │   ├── client.py                # Temporal client utilities
+│   ├── upload_file/             # File upload to S3 workflow
 │   ├── extract_document/        # Document extraction workflow
 │   ├── embedding_texts/         # Text embedding workflow
 │   ├── document_management/     # Document CRUD workflow
@@ -75,12 +76,13 @@ tests/
 │   ├── test_enums.py
 │   └── test_logger.py
 │
-└── integration/                  # Integration tests (103 tests)
+└── integration/                  # Integration tests (109 tests)
     ├── test_repositories.py
     ├── test_s3_storage.py
     ├── test_document_flow.py
     ├── test_extract_activities.py
     ├── test_document_management_activities.py
+    ├── test_upload_file_workflow.py  # File upload workflow tests
     ├── test_embeddings.py       # Requires EMBEDDING_API_KEY
     └── test_llms.py             # Requires LLM_API_KEY
 ```
@@ -103,6 +105,7 @@ task setup-db                   # Create database tables
 
 # Start workers
 task temporal-all               # All workers (recommended)
+task temporal-upload            # Only file upload worker
 task temporal-extract           # Only extraction worker
 task temporal-embed             # Only embedding worker
 task temporal-llm               # Only LLM worker
@@ -229,6 +232,7 @@ GDAI_LOG_FORMAT=[%(asctime)s] [GDAI] [%(levelname)s]: %(message)s
 
 | Workflow               | Queue                       | Purpose                              |
 | ---------------------- | --------------------------- | ------------------------------------ |
+| **UploadFile**         | `upload-file-queue`         | Upload files to S3/MinIO storage     |
 | **ExtractDocument**    | `process-document-queue`    | Extract text/metadata from documents |
 | **EmbedTexts**         | `embedding-text-queue`      | Generate embeddings for text chunks  |
 | **DocumentManagement** | `document-management-queue` | CRUD operations for documents        |
@@ -242,6 +246,7 @@ GDAI_LOG_FORMAT=[%(asctime)s] [GDAI] [%(levelname)s]: %(message)s
 task temporal-all
 
 # Individual workers (for scaling in production)
+task temporal-upload     # Handles file uploads to S3
 task temporal-extract    # Handles document extraction
 task temporal-embed      # Handles embedding generation
 task temporal-llm        # Handles LLM queries
