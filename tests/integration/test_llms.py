@@ -17,6 +17,7 @@ import os
 import pytest
 import pytest_asyncio
 
+from gdai.commons.settings import get_settings
 from gdai.services.llms import LLMFactory, LLMModel, OpenAIModel
 
 
@@ -428,21 +429,56 @@ class TestLLMFactoryIntegration:
     @pytest.mark.asyncio
     async def test_factory_created_model_works(self):
         """Test that factory-created model actually works."""
-        api_key = os.getenv("LLM_MODEL_API_KEY")
-        if not api_key:
-            pytest.skip("LLM_MODEL_API_KEY not set in environment")
+        api_key = os.getenv("LLM_API_KEY")
+        if not api_key or "fake" in api_key.lower() or not api_key.strip():
+            pytest.skip("Valid LLM_API_KEY not set in environment")
 
-        os.environ["LLM_MODEL"] = "openai/gpt-4o-mini"
-        os.environ["LLM_MODEL_API_KEY"] = api_key
-        os.environ["LLM_TEMPERATURE"] = "0.7"
-        os.environ["LLM_MAX_TOKENS"] = "50"
+        # Save original env vars
+        original_model = os.getenv("LLM_MODEL")
+        original_api_key = os.getenv("LLM_API_KEY")
+        original_temp = os.getenv("LLM_TEMPERATURE")
+        original_tokens = os.getenv("LLM_MAX_TOKENS")
 
-        model = await LLMFactory.get_llm()
-        response = await model.call_llm("Say 'test' in one word.")
+        try:
+            os.environ["LLM_MODEL"] = "openai/gpt-4o-mini"
+            os.environ["LLM_API_KEY"] = api_key
+            os.environ["LLM_TEMPERATURE"] = "0.7"
+            os.environ["LLM_MAX_TOKENS"] = "50"
 
-        assert response is not None
-        assert isinstance(response, str)
-        assert len(response) > 0
+            # Clear settings cache to pick up new environment variables
+            get_settings.cache_clear()
+
+            model = await LLMFactory.get_llm()
+            response = await model.call_llm("Say 'test' in one word.")
+
+            assert response is not None
+            assert isinstance(response, str)
+            assert len(response) > 0
+
+        finally:
+            # Restore original environment
+            if original_model:
+                os.environ["LLM_MODEL"] = original_model
+            elif "LLM_MODEL" in os.environ:
+                del os.environ["LLM_MODEL"]
+
+            if original_api_key:
+                os.environ["LLM_API_KEY"] = original_api_key
+            elif "LLM_API_KEY" in os.environ:
+                del os.environ["LLM_API_KEY"]
+
+            if original_temp:
+                os.environ["LLM_TEMPERATURE"] = original_temp
+            elif "LLM_TEMPERATURE" in os.environ:
+                del os.environ["LLM_TEMPERATURE"]
+
+            if original_tokens:
+                os.environ["LLM_MAX_TOKENS"] = original_tokens
+            elif "LLM_MAX_TOKENS" in os.environ:
+                del os.environ["LLM_MAX_TOKENS"]
+
+            # Clear cache to restore original settings
+            get_settings.cache_clear()
 
 
 class TestLLMModelEndToEnd:
