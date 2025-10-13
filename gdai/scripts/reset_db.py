@@ -9,7 +9,7 @@ from gdai.repositories.sqlalchemy import Base
 async def reset_database():
     """Drop all tables and recreate database schema."""
     # Safety confirmation
-    confirm = input("\n⚠️  WARNING: This will DELETE ALL TABLES and data!\n" "Type 'YES' to confirm: ")
+    confirm = input("\n⚠️  WARNING: This will DELETE ALL TABLES and data!\nType 'YES' to confirm: ")
 
     if confirm != "YES":
         print("❌ Operation canceled.")

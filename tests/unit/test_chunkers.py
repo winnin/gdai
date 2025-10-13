@@ -306,7 +306,7 @@ class TestChunkersIntegration:
             "This is the first document. It has multiple sentences. "
             "Each sentence should be properly chunked. "
             "The chunker should handle this correctly.",
-            "This is the second document. It also has sentences. " "We want to test multiple pages.",
+            "This is the second document. It also has sentences. We want to test multiple pages.",
         ]
 
         # Chunk the text

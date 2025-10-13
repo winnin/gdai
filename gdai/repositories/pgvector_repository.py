@@ -65,8 +65,7 @@ class PGVectorRepository(BaseRepository):
         """
         if self._session is None:
             raise RuntimeError(
-                "No session available. Use repository as context manager: "
-                "async with PGVectorRepository() as repo: ..."
+                "No session available. Use repository as context manager: async with PGVectorRepository() as repo: ..."
             )
         return self._session
 
