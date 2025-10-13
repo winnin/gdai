@@ -1,0 +1,721 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+        <title>GitHub Actions - Workflows do GDAI - GDAI</title>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        
+        
+        
+
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+            <link rel="stylesheet" href="../assets/css/darcula-highlight.min.css">
+
+        <link rel="stylesheet" href="../assets/css/bootstrap.min.css">
+        <link rel="stylesheet" href="../assets/css/dracula-ui.min.css">
+        <link rel="stylesheet" href="../assets/css/mkdocs.min.css">
+
+        
+            <link  rel="icon" type="image/x-icon" href="../assets/favicon.ico">
+        
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+                <script>hljs.initHighlightingOnLoad();</script>
+
+</head>
+
+<body class="drac-bg-black-secondary drac-text-grey-ternary drac-text drac-scrollbar-purple">
+
+    <main class="d-flex">
+
+        <!-- block sidebar -->
+            <nav id="sidebar" class="sidebar drac-bg-black">
+    <div class="custom-menu">
+        <button type="button" id="sidebarCollapse" class="btn btn-primary">
+            <i class="fa fa-bars"></i>
+            <span class="sr-only">Menu</span>
+        </button>
+    </div>
+
+    <div class="p-4">
+        
+            <img class="logo" src="../assets/logo.png" height="150px">
+        
+
+        <div class="drac-text-center">
+            
+                <span class="drac-text drac-line-height drac-text-white">GDAI</span>
+            
+        </div>
+
+        <div class="drac-box flex-column">
+            <ul class="dot-ul">
+                <li><div class="dot-li drac-bg-cyan"></div></li>
+                <li><div class="dot-li drac-bg-green"></div></li>
+                <li><div class="dot-li drac-bg-orange"></div></li>
+                <li><div class="dot-li drac-bg-pink"></div></li>
+                <li><div class="dot-li drac-bg-purple"></div></li>
+                <li><div class="dot-li drac-bg-red"></div></li>
+                <li><div class="dot-li drac-bg-yellow"></div></li>
+            </ul>
+        </div>
+
+        <hr class="drac-divider" />
+
+        <!-- block menu -->
+        <ul class="mb-5 drac-list drac-list-none">
+            
+            <li class="drac-box">
+                <a href=".."
+                    class="
+                    drac-anchor d-inline-flex align-items-center border-0 drac-text-purple--hover">
+                    Home
+                </a>
+            </li>
+            <li class="drac-box">
+                <a href="../contributing/"
+                    class="
+                    drac-anchor d-inline-flex align-items-center border-0 drac-text-purple--hover">
+                    Contributing
+                </a>
+            </li>
+            <li class="drac-box">
+                <a href="../code_of_conduct/"
+                    class="
+                    drac-anchor d-inline-flex align-items-center border-0 drac-text-purple--hover">
+                    Code of Conduct
+                </a>
+            </li>
+            <li class="drac-box">
+                <a href="../about/"
+                    class="
+                    drac-anchor d-inline-flex align-items-center border-0 drac-text-purple--hover">
+                    About
+                </a>
+            </li>
+            <li class="drac-box">
+                <a href="../CHANGELOG/"
+                    class="
+                    drac-anchor d-inline-flex align-items-center border-0 drac-text-purple--hover">
+                    Changelog
+                </a>
+            </li>
+            <li class="drac-box">
+                <a href="../ROADMAP/"
+                    class="
+                    drac-anchor d-inline-flex align-items-center border-0 drac-text-purple--hover">
+                    Roadmap
+                </a>
+            </li>
+        </ul>
+        <!-- endblock -->
+    </div>
+</nav>
+        <!-- endblock -->
+
+        <nav class="divider drac-bg-purple-cyan"></nav>
+
+        <div class="content">
+            <!-- block header -->
+                <header>
+    <nav class="navbar navbar-expand-xl drac-bg-purple">
+        <div class="container-fluid">
+            
+            <button class="navbar-toggler w-100 text-center" type="button" data-bs-toggle="collapse" data-bs-target="#navbarsMenu"
+                aria-controls="navbarsMenu" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse flex-column ml-auto" id="navbarsMenu">
+                <ul class="navbar-nav text-md-center">
+
+                    <!-- block preview -->
+                    <li class="nav-item">
+                            
+                    </li>
+                    <!--  endblock -->
+
+                    <!-- block search -->
+                    <li class="nav-item"><div role="search" class="search-box">
+	<form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+		<input type="text" name="q" class="drac-input drac-input-search drac-input-white drac-text-white drac-bg-black-secondary"
+		placeholder="Search docs" title="Type search term here" />
+	</form>
+</div>
+                    </li>
+                    <!--  endblock -->
+
+                    <!-- block source -->
+                    <li class="nav-item">
+                        
+                    </li>
+                    <!--  endblock -->
+
+                </ul>
+            </div>
+
+        </div>
+    </nav>
+</header>
+            <!-- endblock -->
+
+            <!-- block content -->
+                <section class="p-md-5 section-content">
+    <article>
+        <p><h1 id="github-actions-workflows-do-gdai">GitHub Actions - Workflows do GDAI</h1>
+<p>Este documento explica todos os workflows de CI/CD configurados no projeto GDAI.</p>
+<h2 id="visao-geral-dos-workflows">📊 Visão Geral dos Workflows</h2>
+<pre><code>┌─────────────────────────────────────────────────────────────────────┐
+│                         GitHub Repository                            │
+│                         (winnin/gdai)                               │
+└────────────────────┬────────────────────────────────────────────────┘
+                     │
+                     │ git push / pull request
+                     │
+                     ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                      GitHub Actions Triggers                         │
+├─────────────────┬───────────────────┬───────────────────────────────┤
+│                 │                   │                               │
+│   on: push      │  on: pull_request │   on: schedule / manual      │
+│                 │                   │                               │
+└────────┬────────┴────────┬──────────┴───────────┬───────────────────┘
+         │                 │                      │
+         ▼                 ▼                      ▼
+    ┌────────┐      ┌──────────┐         ┌──────────────┐
+    │ Tests  │      │Pre-commit│         │  GH Pages    │
+    │Workflow│      │ Workflow │         │   Workflow   │
+    └────────┘      └──────────┘         └──────────────┘
+</code></pre>
+<h2 id="workflow-1-tests-testsyml">🔬 Workflow 1: Tests (tests.yml)</h2>
+<h3 id="diagrama-de-execucao">Diagrama de Execução</h3>
+<pre><code>┌──────────────────────────────────────────────────────────────────────┐
+│                         Tests Workflow                                │
+│                    (.github/workflows/tests.yml)                     │
+└──────────────────────────────────────────────────────────────────────┘
+                                │
+                                │ Trigger: push / pull_request
+                                ▼
+                    ┌───────────────────────┐
+                    │  Setup Environment    │
+                    ├───────────────────────┤
+                    │ • Checkout code       │
+                    │ • Setup Python 3.12   │
+                    │ • Install UV          │
+                    └───────────┬───────────┘
+                                │
+                                ▼
+                    ┌───────────────────────┐
+                    │  Start Services       │
+                    ├───────────────────────┤
+                    │ PostgreSQL Container  │
+                    │ • Image: pgvector     │
+                    │ • Port: 5555          │
+                    │ • Health checks       │
+                    └───────────┬───────────┘
+                                │
+                                ▼
+                    ┌───────────────────────┐
+                    │ Install Dependencies  │
+                    ├───────────────────────┤
+                    │ • uv sync --all-groups│
+                    └───────────┬───────────┘
+                                │
+                                ▼
+                    ┌───────────────────────┐
+                    │  Create .env File     │
+                    ├───────────────────────┤
+                    │ EMBEDDING_API_KEY=... │
+                    │ EMBEDDING_MODEL=...   │
+                    │ LLM_API_KEY=...       │
+                    │ PGVECTOR_*=...        │
+                    └───────────┬───────────┘
+                                │
+                                ▼
+                    ┌───────────────────────┐
+                    │   Run Unit Tests      │
+                    ├───────────────────────┤
+                    │ pytest tests/unit/    │
+                    │ --cov=gdai            │
+                    │ --cov-report=xml      │
+                    │ --cov-report=html     │
+                    └───────────┬───────────┘
+                                │
+                                ▼
+                    ┌───────────────────────┐
+                    │  Upload to Codecov    │
+                    ├───────────────────────┤
+                    │ • Send coverage.xml   │
+                    │ • Generate badge      │
+                    │ • Update dashboard    │
+                    └───────────┬───────────┘
+                                │
+                                ▼
+                    ┌───────────────────────┐
+                    │  Archive Artifacts    │
+                    ├───────────────────────┤
+                    │ • HTML report         │
+                    │ • Retention: 14 days  │
+                    └───────────┬───────────┘
+                                │
+                                ▼
+                         ┌──────────┐
+                         │ Success! │
+                         └──────────┘
+</code></pre>
+<h3 id="configuracao-detalhada">Configuração Detalhada</h3>
+<pre><code class="language-yaml">name: Tests
+
+on:
+  push: # Executa em todo push
+  pull_request: # Executa em PRs
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres: # PostgreSQL container para testes
+        image: ankane/pgvector:latest
+        env:
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpwd
+          POSTGRES_DB: vectordb
+        ports:
+          - 5555:5432
+</code></pre>
+<h3 id="como-funciona">Como Funciona:</h3>
+<ol>
+<li>
+<p><strong>Trigger</strong>: Executa automaticamente em:</p>
+</li>
+<li>
+<p>Todo <code>git push</code> para qualquer branch</p>
+</li>
+<li>
+<p>Toda abertura/atualização de Pull Request</p>
+</li>
+<li>
+<p><strong>Setup</strong>:</p>
+</li>
+<li>
+<p>Faz checkout do código</p>
+</li>
+<li>Configura Python 3.12</li>
+<li>
+<p>Instala UV (gerenciador de pacotes)</p>
+</li>
+<li>
+<p><strong>Services</strong>:</p>
+</li>
+<li>
+<p>Inicia PostgreSQL com pgvector em container Docker</p>
+</li>
+<li>Aguarda health check antes de prosseguir</li>
+<li>
+<p>Disponível em <code>localhost:5555</code></p>
+</li>
+<li>
+<p><strong>Dependências</strong>:</p>
+</li>
+<li>
+<p>Executa <code>uv sync --all-groups</code></p>
+</li>
+<li>
+<p>Instala todas as dependências do projeto</p>
+</li>
+<li>
+<p><strong>Environment</strong>:</p>
+</li>
+<li>
+<p>Cria arquivo <code>.env</code> dinamicamente</p>
+</li>
+<li>Define variáveis necessárias para testes</li>
+<li>
+<p>Usa valores mock para API keys</p>
+</li>
+<li>
+<p><strong>Testes</strong>:</p>
+</li>
+<li>
+<p>Executa testes unitários em <code>tests/unit/</code></p>
+</li>
+<li>Gera relatório de coverage em XML e HTML</li>
+<li>
+<p>Falha se coverage for muito baixo</p>
+</li>
+<li>
+<p><strong>Coverage</strong>:</p>
+</li>
+<li>
+<p>Envia <code>coverage.xml</code> para Codecov</p>
+</li>
+<li>Codecov processa e atualiza badge</li>
+<li>
+<p>Disponível em https://codecov.io/gh/winnin/gdai</p>
+</li>
+<li>
+<p><strong>Artifacts</strong>:</p>
+</li>
+<li>Salva relatório HTML como artifact</li>
+<li>Disponível para download por 14 dias</li>
+<li>Acessível na aba "Actions" do GitHub</li>
+</ol>
+<h3 id="visualizando-resultados">Visualizando Resultados:</h3>
+<pre><code>GitHub Repository
+    │
+    └─&gt; Actions Tab
+            │
+            └─&gt; Workflow: &quot;Tests&quot;
+                    │
+                    ├─&gt; ✓ Build logs
+                    ├─&gt; ✓ Test results
+                    ├─&gt; 📊 Coverage report (artifact)
+                    └─&gt; 🔗 Codecov link
+</code></pre>
+<h2 id="workflow-2-pre-commit-pre-commityml">✨ Workflow 2: Pre-commit (pre-commit.yml)</h2>
+<h3 id="diagrama-de-execucao_1">Diagrama de Execução</h3>
+<pre><code>┌──────────────────────────────────────────────────────────────────────┐
+│                      Pre-commit Workflow                              │
+│                  (.github/workflows/pre-commit.yml)                  │
+└──────────────────────────────────────────────────────────────────────┘
+                                │
+                                │ Trigger: push / pull_request
+                                ▼
+                    ┌───────────────────────┐
+                    │  Setup Environment    │
+                    ├───────────────────────┤
+                    │ • Checkout code       │
+                    │ • Setup Python 3.11   │
+                    └───────────┬───────────┘
+                                │
+                                ▼
+                    ┌───────────────────────┐
+                    │ Run Pre-commit Hooks  │
+                    ├───────────────────────┤
+                    │ • ruff (linting)      │
+                    │ • ruff-format         │
+                    │ • check-json          │
+                    │ • fix-end-of-files    │
+                    │ • trim-trailing-ws    │
+                    │ • prettier (markdown) │
+                    └───────────┬───────────┘
+                                │
+                                ▼
+                         ┌──────────┐
+                         │  Result  │
+                         ├──────────┤
+                         │ ✓ Pass   │
+                         │ ✗ Fail   │
+                         └──────────┘
+</code></pre>
+<h3 id="hooks-executados">Hooks Executados:</h3>
+<pre><code>┌──────────────────┐
+│  Code Quality    │
+├──────────────────┤
+│                  │
+│  1. ruff         │──&gt; Linting Python (PEP 8, imports, etc)
+│     └─ check     │
+│                  │
+│  2. ruff-format  │──&gt; Formatação de código Python
+│     └─ format    │
+│                  │
+├──────────────────┤
+│  File Checks     │
+├──────────────────┤
+│                  │
+│  3. check-json   │──&gt; Valida arquivos JSON
+│                  │
+│  4. end-of-files │──&gt; Garante newline no final
+│                  │
+│  5. trim-ws      │──&gt; Remove espaços em branco no final
+│                  │
+│  6. prettier     │──&gt; Formata Markdown, YAML, JSON
+│                  │
+└──────────────────┘
+</code></pre>
+<h3 id="como-funciona_1">Como Funciona:</h3>
+<ol>
+<li>
+<p><strong>Trigger</strong>: Executa em:</p>
+</li>
+<li>
+<p>Todo push</p>
+</li>
+<li>
+<p>Todo pull request</p>
+</li>
+<li>
+<p><strong>Validações</strong>:</p>
+</li>
+<li>
+<p>Código Python segue PEP 8</p>
+</li>
+<li>Imports organizados</li>
+<li>Formatação consistente</li>
+<li>Arquivos JSON válidos</li>
+<li>
+<p>Markdown bem formatado</p>
+</li>
+<li>
+<p><strong>Resultado</strong>:</p>
+</li>
+<li>✅ Pass: Código está limpo</li>
+<li>❌ Fail: Precisa correções</li>
+</ol>
+<h2 id="workflow-3-github-pages-gh-pagesyml">📄 Workflow 3: GitHub Pages (gh-pages.yml)</h2>
+<h3 id="diagrama-de-execucao_2">Diagrama de Execução</h3>
+<pre><code>┌──────────────────────────────────────────────────────────────────────┐
+│                      GH Pages Workflow                                │
+│                  (.github/workflows/gh-pages.yml)                    │
+└──────────────────────────────────────────────────────────────────────┘
+                                │
+                                │ Trigger: push to main OR manual
+                                ▼
+                    ┌───────────────────────┐
+                    │  Build Documentation  │
+                    ├───────────────────────┤
+                    │ • Generate docs       │
+                    │ • Build static site   │
+                    └───────────┬───────────┘
+                                │
+                                ▼
+                    ┌───────────────────────┐
+                    │  Deploy to GH Pages   │
+                    ├───────────────────────┤
+                    │ • Push to gh-pages    │
+                    │ • Update site         │
+                    └───────────┬───────────┘
+                                │
+                                ▼
+                         ┌──────────┐
+                         │ Published│
+                         └──────────┘
+                    https://winnin.github.io/gdai
+</code></pre>
+<h2 id="fluxo-completo-de-desenvolvimento">🔄 Fluxo Completo de Desenvolvimento</h2>
+<pre><code>┌─────────────────────────────────────────────────────────────────────┐
+│                    Developer Workflow                                │
+└─────────────────────────────────────────────────────────────────────┘
+
+Developer
+    │
+    │ 1. Escreve código
+    │
+    ├─&gt; git add .
+    ├─&gt; git commit
+    │       │
+    │       └─&gt; Local pre-commit hooks executam
+    │           ├─&gt; ruff
+    │           ├─&gt; ruff-format
+    │           ├─&gt; prettier
+    │           └─&gt; outros checks
+    │
+    ├─&gt; git push origin feature-branch
+    │
+    ▼
+GitHub
+    │
+    ├─────────────────────────────────────────┐
+    │                                         │
+    ▼                                         ▼
+┌────────────┐                        ┌──────────────┐
+│   Tests    │                        │  Pre-commit  │
+│  Workflow  │                        │   Workflow   │
+└─────┬──────┘                        └──────┬───────┘
+      │                                      │
+      ├─&gt; Setup Environment                 ├─&gt; Run Hooks
+      ├─&gt; Start PostgreSQL                  ├─&gt; Validate Code
+      ├─&gt; Run Tests                         └─&gt; Report ✓/✗
+      ├─&gt; Generate Coverage
+      ├─&gt; Upload to Codecov
+      └─&gt; Archive Report
+      │
+      ▼
+   ✓ All Checks Pass
+      │
+      ▼
+Create Pull Request
+      │
+      ├─&gt; Tests badge: ✓ passing
+      ├─&gt; Pre-commit badge: ✓ passing
+      ├─&gt; Coverage badge: 85%
+      │
+      ▼
+Code Review
+      │
+      ▼
+Merge to Main
+      │
+      ├─&gt; All workflows re-run
+      ├─&gt; GH Pages updates
+      └─&gt; Deploy (if configured)
+</code></pre>
+<h2 id="badges-disponiveis">📊 Badges Disponíveis</h2>
+<pre><code>README.md
+    │
+    ├─&gt; [![Tests](...)         ]  ─┬─&gt; GitHub Actions: tests.yml
+    │                               └─&gt; Status: passing/failing
+    │
+    ├─&gt; [![Pre-commit](...)]    ─┬─&gt; GitHub Actions: pre-commit.yml
+    │                             └─&gt; Status: passing/failing
+    │
+    └─&gt; [![codecov](...)]       ─┬─&gt; Codecov.io
+                                  └─&gt; Coverage: 85%
+</code></pre>
+<h3 id="urls-dos-badges">URLs dos Badges:</h3>
+<pre><code class="language-markdown">&lt;!-- Tests --&gt;
+
+https://github.com/winnin/gdai/actions/workflows/tests.yml/badge.svg
+
+&lt;!-- Pre-commit --&gt;
+
+https://github.com/winnin/gdai/actions/workflows/pre-commit.yml/badge.svg
+
+&lt;!-- Coverage --&gt;
+
+https://codecov.io/gh/winnin/gdai/branch/main/graph/badge.svg
+</code></pre>
+<h2 id="comandos-uteis">🛠️ Comandos Úteis</h2>
+<h3 id="executar-localmente-antes-do-push">Executar Localmente (antes do push):</h3>
+<pre><code class="language-bash"># Executar pre-commit em todos os arquivos
+pre-commit run --all-files
+
+# Executar apenas ruff
+pre-commit run ruff --all-files
+
+# Executar testes como no CI
+./gdai/scripts/tests.sh unit
+</code></pre>
+<h3 id="ver-logs-do-github-actions">Ver Logs do GitHub Actions:</h3>
+<pre><code class="language-bash"># Instalar GitHub CLI
+gh workflow list
+
+# Ver runs recentes
+gh run list
+
+# Ver logs de um run específico
+gh run view &lt;run-id&gt; --log
+</code></pre>
+<h3 id="fazer-download-de-artifacts">Fazer Download de Artifacts:</h3>
+<pre><code class="language-bash"># Via GitHub CLI
+gh run download &lt;run-id&gt;
+
+# Via Web
+# GitHub → Actions → Workflow Run → Artifacts
+</code></pre>
+<h2 id="secrets-necessarios">🔐 Secrets Necessários</h2>
+<pre><code>GitHub Repository Settings
+    │
+    └─&gt; Settings
+          │
+          └─&gt; Secrets and variables
+                │
+                └─&gt; Actions
+                      │
+                      └─&gt; Repository secrets
+                            │
+                            └─&gt; CODECOV_TOKEN (se repo privado)
+</code></pre>
+<h3 id="como-adicionar">Como Adicionar:</h3>
+<ol>
+<li>Acesse Settings → Secrets and variables → Actions</li>
+<li>Clique "New repository secret"</li>
+<li>Nome: <code>CODECOV_TOKEN</code></li>
+<li>Valor: Token do Codecov</li>
+<li>Save</li>
+</ol>
+<h2 id="monitoramento">📈 Monitoramento</h2>
+<h3 id="github-actions-dashboard">GitHub Actions Dashboard:</h3>
+<pre><code>https://github.com/winnin/gdai/actions
+
+┌─────────────────────────────────────────┐
+│          Workflow Runs                  │
+├─────────────────────────────────────────┤
+│ ✓ Tests             #123  main  2m 30s │
+│ ✓ Pre-commit        #123  main  45s    │
+│ ✓ GH Pages          #122  main  1m 15s │
+│ ✗ Tests             #121  feat  Failed │
+└─────────────────────────────────────────┘
+</code></pre>
+<h3 id="codecov-dashboard">Codecov Dashboard:</h3>
+<pre><code>https://codecov.io/gh/winnin/gdai
+
+┌─────────────────────────────────────────┐
+│          Coverage Report                │
+├─────────────────────────────────────────┤
+│ Total Coverage:        85.5%            │
+│ Files:                 42               │
+│ Lines:                 2,534            │
+│ Covered:               2,167            │
+│                                         │
+│ Coverage by Module:                     │
+│ • gdai/api/           92%               │
+│ • gdai/temporal/      88%               │
+│ • gdai/repositories/  81%               │
+└─────────────────────────────────────────┘
+</code></pre>
+<h2 id="troubleshooting">🚨 Troubleshooting</h2>
+<h3 id="workflow-falha-com-database-connection-error">Workflow falha com "Database connection error"</h3>
+<pre><code>Causa: PostgreSQL service não iniciou corretamente
+
+Solução:
+1. Verificar health check no workflow
+2. Aumentar timeout do health check
+3. Verificar portas disponíveis
+</code></pre>
+<h3 id="coverage-nao-e-enviado-ao-codecov">Coverage não é enviado ao Codecov</h3>
+<pre><code>Causa: Token não configurado ou coverage.xml não gerado
+
+Solução:
+1. Verificar se CODECOV_TOKEN está configurado
+2. Verificar logs: &quot;Upload coverage to Codecov&quot;
+3. Confirmar que coverage.xml existe
+</code></pre>
+<h3 id="pre-commit-falha-mas-codigo-esta-correto">Pre-commit falha mas código está correto</h3>
+<pre><code>Causa: Hooks desatualizados
+
+Solução:
+1. pre-commit autoupdate
+2. pre-commit run --all-files
+3. git add .
+4. git commit --amend
+</code></pre>
+<h2 id="referencias">📚 Referências</h2>
+<ul>
+<li><a href="https://docs.github.com/actions">GitHub Actions Documentation</a></li>
+<li><a href="https://docs.codecov.com">Codecov Documentation</a></li>
+<li><a href="https://pre-commit.com">Pre-commit Documentation</a></li>
+<li><a href="https://pytest-cov.readthedocs.io">pytest-cov Documentation</a></li>
+</ul>
+<hr />
+<p><strong>Última atualização</strong>: 2025-10-11</p></p>
+    </article>
+</section>
+            <!-- endblock -->
+
+            <!-- block footer -->
+                <footer>
+    <div class="d-flex flex-sm-row justify-content-between py-2 border-top drac-text-black drac-bg-cyan-green">
+        <a href="https://github.com/dracula/mkdocs" target="_blank" style="padding-left: 1%;"
+            class="footer-text drac-anchor drac-text-black drac-text-purple--hover">
+            Made with Dracula Theme for MkDocs
+        </a>
+    </div>
+</footer>
+            <!-- endblock -->
+        </div>
+
+    </main>
+
+        <script>var base_url = '..';</script>
+        <script src="../assets/js/jquery-3.3.1.slim.min.js"></script>
+        <script src="../assets/js/bootstrap.bundle.min.js"></script>
+        <script src="../assets/js/mkdocs.js"></script>
+			<script src="../search/main.js" defer></script>
+
+</body>
+
+</html>

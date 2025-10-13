@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-        <title>About - GDAI</title>
+        <title>Configuração do Codecov - GDAI</title>
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -89,8 +89,8 @@
                 </a>
             </li>
             <li class="drac-box">
-                <a href="./"
-                    class=" active 
+                <a href="../about/"
+                    class="
                     drac-anchor d-inline-flex align-items-center border-0 drac-text-purple--hover">
                     About
                 </a>
@@ -134,22 +134,6 @@
                     <!-- block preview -->
                     <li class="nav-item">
                             
-        <div class="container">
-            <div class="row row-preview">
-                <div class="col">
-                    <a href="../code_of_conduct/"
-                        class="btn-preview drac-btn drac-btn-outline drac-text-white drac-text-cyan-green--hover">
-                        <i class="fa fa-arrow-left"></i> Previous
-                    </a>
-                </div>
-                <div class="col">
-                    <a href="../CHANGELOG/"
-                        class="btn-preview drac-btn drac-btn-outline drac-text-white drac-text-cyan-green--hover" style="padding-left: 3%;">
-                        Next <i class="fa fa-arrow-right"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
                     </li>
                     <!--  endblock -->
 
@@ -180,19 +164,131 @@
             <!-- block content -->
                 <section class="p-md-5 section-content">
     <article>
-        <p><h1 id="about-gdai">About GDAI</h1>
-<p>GDAI was created to address the growing need for trustworthy, explainable, and scalable document search and question-answering systems. As organizations increasingly rely on large collections of documents, ensuring that answers are both accurate and auditable becomes critical.</p>
-<h2 id="vision">Vision</h2>
-<p>To empower organizations with a platform that not only delivers precise answers but also provides full transparency into the sources and reasoning behind those answers.</p>
-<h2 id="core-principles">Core Principles</h2>
+        <p><h1 id="configuracao-do-codecov">Configuração do Codecov</h1>
+<p>Este guia explica como configurar o Codecov para exibir o badge de coverage no README.</p>
+<h2 id="o-que-e-codecov">O que é Codecov?</h2>
+<p>Codecov é um serviço gratuito (para projetos open source) que rastreia a cobertura de código dos seus testes e exibe badges e relatórios detalhados.</p>
+<h2 id="passo-a-passo">Passo a Passo</h2>
+<h3 id="1-criar-conta-no-codecov">1. Criar conta no Codecov</h3>
+<ol>
+<li>Acesse <a href="https://codecov.io">codecov.io</a></li>
+<li>Clique em "Sign up" e escolha "Sign up with GitHub"</li>
+<li>Autorize o Codecov a acessar suas repositórios</li>
+</ol>
+<h3 id="2-adicionar-o-repositorio">2. Adicionar o repositório</h3>
+<ol>
+<li>No dashboard do Codecov, clique em "Add new repository"</li>
+<li>Procure por <code>winnin/gdai</code> na lista</li>
+<li>Clique em "Setup repo"</li>
+</ol>
+<h3 id="3-obter-o-token-se-repositorio-privado">3. Obter o token (se repositório privado)</h3>
+<p><strong>Para repositórios públicos</strong>: O token não é necessário! O badge funcionará automaticamente.</p>
+<p><strong>Para repositórios privados</strong>:</p>
+<ol>
+<li>No Codecov, vá em Settings do repositório</li>
+<li>Copie o "Upload token"</li>
+<li>No GitHub, vá em Settings → Secrets and variables → Actions</li>
+<li>Clique em "New repository secret"</li>
+<li>Nome: <code>CODECOV_TOKEN</code></li>
+<li>Valor: Cole o token copiado</li>
+<li>Clique em "Add secret"</li>
+</ol>
+<h3 id="4-fazer-o-primeiro-push">4. Fazer o primeiro push</h3>
+<p>Depois de configurar:</p>
+<pre><code class="language-bash">git add .github/workflows/tests.yml
+git commit -m &quot;ci: enable code coverage reporting&quot;
+git push
+</code></pre>
+<p>O GitHub Actions vai executar, gerar o coverage e enviar para o Codecov.</p>
+<h3 id="5-verificar-o-badge">5. Verificar o badge</h3>
+<p>Após o primeiro upload bem-sucedido:</p>
+<ol>
+<li>Vá para https://codecov.io/gh/winnin/gdai</li>
+<li>O badge deve aparecer no topo da página</li>
+<li>No README.md, o badge já está configurado:
+   <code>markdown
+   [![codecov](https://codecov.io/gh/winnin/gdai/branch/main/graph/badge.svg)](https://codecov.io/gh/winnin/gdai)</code></li>
+</ol>
+<h2 id="alternativa-badge-local-sem-codecov">Alternativa: Badge Local (sem Codecov)</h2>
+<p>Se você <strong>não quiser usar Codecov</strong>, pode usar um badge estático ou gerar localmente:</p>
+<h3 id="opcao-1-badge-shieldsio-dinamico-via-github-actions">Opção 1: Badge Shields.io (Dinâmico via GitHub Actions)</h3>
+<p>Adicione ao README.md:</p>
+<pre><code class="language-markdown">![Coverage](https://img.shields.io/badge/coverage-85%25-brightgreen)
+</code></pre>
+<p>Você precisa atualizar manualmente o valor após cada release.</p>
+<h3 id="opcao-2-badge-via-artifact">Opção 2: Badge via Artifact</h3>
+<ol>
+<li>Gere um badge JSON no workflow:</li>
+</ol>
+<pre><code class="language-yaml">- name: Generate coverage badge
+  run: |
+    coverage=$(uv run pytest tests/unit/ --cov=gdai --cov-report=term | grep TOTAL | awk '{print $4}')
+    echo &quot;{\&quot;schemaVersion\&quot;:1,\&quot;label\&quot;:\&quot;coverage\&quot;,\&quot;message\&quot;:\&quot;$coverage\&quot;,\&quot;color\&quot;:\&quot;green\&quot;}&quot; &gt; coverage-badge.json
+
+- name: Upload badge
+  uses: actions/upload-artifact@v4
+  with:
+    name: coverage-badge
+    path: coverage-badge.json
+</code></pre>
+<ol>
+<li>Use o GitHub Pages para hospedar o badge.</li>
+</ol>
+<h3 id="opcao-3-badge-via-gist">Opção 3: Badge via Gist</h3>
+<p>Use o <a href="https://github.com/dbrgn/coverage-badge">coverage-badge</a> para gerar e atualizar automaticamente.</p>
+<h2 id="verificando-o-coverage-localmente">Verificando o Coverage Localmente</h2>
+<pre><code class="language-bash"># Executar testes com coverage
+./gdai/scripts/tests.sh unit
+
+# Abrir relatório HTML
+open htmlcov/index.html  # macOS
+xdg-open htmlcov/index.html  # Linux
+</code></pre>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<h3 id="badge-nao-aparece">Badge não aparece</h3>
+<ol>
+<li>Verifique se o workflow executou: https://github.com/winnin/gdai/actions</li>
+<li>Verifique se o upload para Codecov foi bem-sucedido nos logs</li>
+<li>Aguarde alguns minutos - o Codecov pode demorar para processar</li>
+<li>Limpe o cache do navegador</li>
+</ol>
+<h3 id="badge-mostra-unknown">Badge mostra "unknown"</h3>
+<ol>
+<li>O primeiro upload ainda não foi processado</li>
+<li>O branch no badge (<code>main</code>) precisa corresponder ao branch padrão</li>
+<li>Verifique se o coverage.xml foi gerado corretamente</li>
+</ol>
+<h3 id="erro-codecov_token-not-found">Erro "CODECOV_TOKEN not found"</h3>
+<p><strong>Para repositórios públicos</strong>: Remova a linha <code>token: ${{ secrets.CODECOV_TOKEN }}</code> do workflow.</p>
+<p><strong>Para repositórios privados</strong>: Configure o secret conforme o passo 3.</p>
+<h2 id="urls-uteis">URLs Úteis</h2>
 <ul>
-<li><strong>Transparency</strong>: Every answer is traceable to its source.</li>
-<li><strong>Scalability</strong>: Designed for multi-tenant environments and large document collections.</li>
-<li><strong>Flexibility</strong>: Supports various semantic and retrieval techniques.</li>
-<li><strong>Community-Driven</strong>: Open to contributions and improvements from the community.</li>
+<li><strong>Dashboard Codecov</strong>: https://codecov.io/gh/winnin/gdai</li>
+<li><strong>Badge URL</strong>: https://codecov.io/gh/winnin/gdai/branch/main/graph/badge.svg</li>
+<li><strong>Documentação</strong>: https://docs.codecov.com/docs</li>
 </ul>
-<h2 id="acknowledgements">Acknowledgements</h2>
-<p>GDAI builds upon open-source technologies such as PostgreSQL, pgvector, Temporal.io, and modern NLP/LLM frameworks.</p></p>
+<h2 id="configuracao-avancada-opcional">Configuração Avançada (Opcional)</h2>
+<p>Crie um arquivo <code>.codecov.yml</code> na raiz do projeto para customizar:</p>
+<pre><code class="language-yaml">coverage:
+  status:
+    project:
+      default:
+        target: 80% # Meta de coverage
+        threshold: 5% # Tolerância
+    patch:
+      default:
+        target: 80%
+
+ignore:
+  - &quot;tests/&quot;
+  - &quot;**/__init__.py&quot;
+
+comment:
+  behavior: default
+  require_changes: false
+</code></pre>
+<hr />
+<p><strong>Pronto!</strong> Agora seu badge de coverage deve funcionar no GitHub. 🎉</p></p>
     </article>
 </section>
             <!-- endblock -->
