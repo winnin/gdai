@@ -4,11 +4,12 @@ from __future__ import annotations
 
 from functools import lru_cache
 
+from dotenv import load_dotenv
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# Import config to ensure .env is loaded before settings are instantiated
-from gdai.commons import config  # noqa: F401
+# Load environment variables with override to prioritize local .env file
+load_dotenv(override=True)
 
 
 class DatabaseSettings(BaseSettings):

@@ -7,8 +7,8 @@ import numpy as np
 import pytest
 import pytest_asyncio
 
-from gdai.commons.config import Config
 from gdai.commons.enums import ChunkTypeEnum, DocumentTypeEnum, QueryStatusEnum
+from gdai.commons.settings import get_settings
 from gdai.repositories.models import ChunkModel, DocumentModel, QueryModel
 from gdai.repositories.pgvector_repository import PGVectorRepository
 
@@ -26,9 +26,10 @@ async def repository(db_engine):
 
     try:
         # Verify database configuration is available
-        _ = Config.db.PGVECTOR_USER
-        _ = Config.db.PGVECTOR_PASSWORD
-        _ = Config.db.PGVECTOR_DATABASE
+        settings = get_settings()
+        _ = settings.database.user
+        _ = settings.database.password
+        _ = settings.database.database
     except Exception as e:
         pytest.skip(f"Database configuration not available: {e}")
 
