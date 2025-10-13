@@ -39,7 +39,9 @@ jobs:
             ${{ runner.os }}-uv-
 
       - name: Install dependencies
-        run: uv sync --all-groups
+        run: |
+          uv sync --all-groups --frozen
+          uv pip list | head -20
 
       - name: Run Ruff linting
         run: uv run ruff check gdai/ tests/ --output-format=github
@@ -83,9 +85,13 @@ jobs:
             ~/.cache/uv
             .venv
           key: ${{ runner.os }}-uv-${{ hashFiles('**/uv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-uv-
 
       - name: Install dependencies
-        run: uv sync --all-groups
+        run: |
+          uv sync --all-groups --frozen
+          uv pip list | head -20
 
       - name: Create minimal .env
         run: |
@@ -184,9 +190,13 @@ jobs:
             ~/.cache/uv
             .venv
           key: ${{ runner.os }}-uv-${{ hashFiles('**/uv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-uv-
 
       - name: Install dependencies
-        run: uv sync --all-groups
+        run: |
+          uv sync --all-groups --frozen
+          uv pip list | head -20
 
       - name: Create test environment
         run: |
