@@ -102,6 +102,7 @@ jobs:
           S3_BUCKET=test
           EMBEDDING_MODEL=cohere/embed-v4.0
           EMBEDDING_API_KEY=test
+          EMBEDDING_DIMENSION=1536
           LLM_MODEL=openai/gpt-4o
           LLM_API_KEY=test
           EOF
@@ -141,22 +142,30 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
-      minio:
-        image: quay.io/minio/minio:latest
-        env:
-          MINIO_ROOT_USER: minioadmin
-          MINIO_ROOT_PASSWORD: minioadmin
-        ports:
-          - 9000:9000
-        options: >-
-          --health-cmd "curl -f http://localhost:9000/minio/health/live || exit 1"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Start MinIO
+        run: |
+          docker run -d \
+            --name minio \
+            -p 9000:9000 \
+            -e MINIO_ROOT_USER=minioadmin \
+            -e MINIO_ROOT_PASSWORD=minioadmin \
+            quay.io/minio/minio:latest \
+            server /data
+
+          # Wait for MinIO to be ready
+          echo "Waiting for MinIO to be ready..."
+          for i in {1..30}; do
+            if curl -f http://localhost:9000/minio/health/live 2>/dev/null; then
+              echo "MinIO is ready!"
+              break
+            fi
+            echo "Attempt $i: MinIO not ready yet..."
+            sleep 2
+          done
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
