@@ -17,9 +17,9 @@ class DatabaseSettings(BaseSettings):
 
     model_config = SettingsConfigDict(env_prefix="PGVECTOR_", case_sensitive=False)
 
-    database: str = Field(..., description="Database name")
-    user: str = Field(..., description="Database user")
-    password: str = Field(..., description="Database password")
+    database: str = Field(default="vectordb", description="Database name")
+    user: str = Field(default="testuser", description="Database user")
+    password: str = Field(default="testpwd", description="Database password")
     host: str = Field(default="localhost", description="Database host")
     port: int = Field(default=5432, description="Database port")
     min_pool_connections: int = Field(default=5, gt=0, description="Minimum pool size")
@@ -47,9 +47,9 @@ class EmbeddingSettings(BaseSettings):
 
     model_config = SettingsConfigDict(env_prefix="EMBEDDING_", case_sensitive=False)
 
-    model: str = Field(..., description="Embedding model name")
-    api_key: str = Field(..., description="API key for embedding service")
-    dimension: int = Field(..., gt=0, description="Embedding dimension")
+    model: str = Field(default="cohere/embed-v4.0", description="Embedding model name")
+    api_key: str = Field(default="", description="API key for embedding service")
+    dimension: int = Field(default=1536, gt=0, description="Embedding dimension")
     max_text_size: int = Field(default=5000, gt=0, description="Maximum text size for embedding")
     batch_size: int = Field(default=96, gt=0, description="Maximum batch size")
     max_retries: int = Field(default=3, ge=0, description="Maximum retry attempts")
@@ -68,8 +68,8 @@ class LLMSettings(BaseSettings):
 
     model_config = SettingsConfigDict(env_prefix="LLM_", case_sensitive=False)
 
-    model: str = Field(..., description="LLM model name")
-    api_key: str = Field(..., description="API key for LLM service")
+    model: str = Field(default="openai/gpt-4o", description="LLM model name")
+    api_key: str = Field(default="", description="API key for LLM service")
     max_tokens: int = Field(default=2000, gt=0, description="Maximum tokens for generation")
     temperature: float = Field(default=0.7, ge=0.0, le=2.0, description="Temperature for generation")
 
@@ -120,10 +120,10 @@ class S3Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_prefix="S3_", case_sensitive=False)
 
-    endpoint: str = Field(..., description="S3/MinIO endpoint URL")
-    access_key: str = Field(..., description="S3/MinIO access key")
-    secret_key: str = Field(..., description="S3/MinIO secret key")
-    bucket: str = Field(..., description="S3/MinIO bucket name")
+    endpoint: str = Field(default="http://localhost:9000", description="S3/MinIO endpoint URL")
+    access_key: str = Field(default="minioadmin", description="S3/MinIO access key")
+    secret_key: str = Field(default="minioadmin", description="S3/MinIO secret key")
+    bucket: str = Field(default="gdai-documents", description="S3/MinIO bucket name")
     region: str = Field(default="us-east-1", description="S3 region")
     use_ssl: bool = Field(default=False, description="Use SSL for S3 connections")
 
