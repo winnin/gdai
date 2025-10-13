@@ -2,8 +2,9 @@
 
 GDAI is an open-source platform designed to provide a robust, multi-tenant vector store with advanced document processing and semantic search capabilities. It leverages Retrieval-Augmented Generation (RAG) and Temporal.io workflows to deliver accurate, auditable answers with full source traceability.
 
-[![Tests](https://github.com/winnin/gdai/actions/workflows/tests.yml/badge.svg)](https://github.com/winnin/gdai/actions/workflows/tests.yml)
-[![Pre-commit](https://github.com/winnin/gdai/actions/workflows/pre-commit.yml/badge.svg)](https://github.com/winnin/gdai/actions/workflows/pre-commit.yml)
+[![CI](https://github.com/winnin/gdai/actions/workflows/ci.yml/badge.svg)](https://github.com/winnin/gdai/actions/workflows/ci.yml)
+[![Security](https://github.com/winnin/gdai/actions/workflows/security.yml/badge.svg)](https://github.com/winnin/gdai/actions/workflows/security.yml)
+[![Docs](https://github.com/winnin/gdai/actions/workflows/docs.yml/badge.svg)](https://github.com/winnin/gdai/actions/workflows/docs.yml)
 [![codecov](https://codecov.io/gh/winnin/gdai/branch/main/graph/badge.svg)](https://codecov.io/gh/winnin/gdai)
 ![Python Version](https://img.shields.io/badge/python-3.12%2B-blue)
 
