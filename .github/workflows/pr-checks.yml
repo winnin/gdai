@@ -1,0 +1,278 @@
+name: PR Checks - Required for Approval
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches:
+      - main
+      - develop
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+  pr-metadata:
+    name: PR Metadata Validation
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    steps:
+      - name: Check PR title
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            docs
+            style
+            refactor
+            perf
+            test
+            build
+            ci
+            chore
+            revert
+          requireScope: false
+          subjectPattern: ^[A-Z].+$
+          subjectPatternError: |
+            The subject "{subject}" found in the pull request title "{title}"
+            didn't match the configured pattern. Please ensure that the subject
+            starts with an uppercase character.
+
+      - name: Check PR description
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            if (!pr.body || pr.body.trim().length < 20) {
+              core.setFailed('PR description is too short or missing. Please provide a detailed description of your changes.');
+            }
+
+      - name: Check for breaking changes
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const body = pr.body || '';
+
+            if (body.includes('BREAKING CHANGE') || pr.title.includes('!')) {
+              core.warning('⚠️ This PR contains breaking changes. Make sure to update the changelog and documentation.');
+            }
+
+  code-review-checklist:
+    name: Code Review Checklist
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for TODO/FIXME comments
+        run: |
+          echo "## Code Review Checklist" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          TODOS=$(git diff origin/${{ github.base_ref }}...HEAD | grep "^+" | grep -i "TODO\|FIXME" | wc -l || true)
+          if [ "$TODOS" -gt 0 ]; then
+            echo "⚠️ Found $TODOS new TODO/FIXME comments" >> $GITHUB_STEP_SUMMARY
+            git diff origin/${{ github.base_ref }}...HEAD | grep "^+" | grep -i "TODO\|FIXME" >> $GITHUB_STEP_SUMMARY || true
+          else
+            echo "✅ No new TODO/FIXME comments" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Check file changes
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Files Changed" >> $GITHUB_STEP_SUMMARY
+
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | wc -l)
+          echo "Total files changed: $CHANGED_FILES" >> $GITHUB_STEP_SUMMARY
+
+          if [ "$CHANGED_FILES" -gt 50 ]; then
+            echo "⚠️ Large PR: Consider breaking into smaller PRs" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Check if tests were added for new code
+          NEW_CODE=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep "^gdai/" | grep ".py$" | wc -l || true)
+          NEW_TESTS=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep "^tests/" | grep ".py$" | wc -l || true)
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "New code files: $NEW_CODE" >> $GITHUB_STEP_SUMMARY
+          echo "New test files: $NEW_TESTS" >> $GITHUB_STEP_SUMMARY
+
+          if [ "$NEW_CODE" -gt 0 ] && [ "$NEW_TESTS" -eq 0 ]; then
+            echo "⚠️ New code added without tests" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  test-coverage:
+    name: Test Coverage Check
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    services:
+      postgres:
+        image: ankane/pgvector:latest
+        env:
+          POSTGRES_DB: vectordb
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpwd
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      minio:
+        image: quay.io/minio/minio:latest
+        env:
+          MINIO_ROOT_USER: minioadmin
+          MINIO_ROOT_PASSWORD: minioadmin
+        ports:
+          - 9000:9000
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install UV
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Cache UV dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/uv
+            .venv
+          key: ${{ runner.os }}-uv-${{ hashFiles('**/uv.lock') }}
+
+      - name: Install dependencies
+        run: uv sync --all-groups
+
+      - name: Create test environment
+        run: |
+          cat > .env << EOF
+          DATABASE=pgvector
+          PGVECTOR_USER=testuser
+          PGVECTOR_PASSWORD=testpwd
+          PGVECTOR_DATABASE=vectordb
+          PGVECTOR_HOST=localhost
+          PGVECTOR_PORT=5432
+          S3_ENDPOINT=http://localhost:9000
+          S3_ACCESS_KEY=minioadmin
+          S3_SECRET_KEY=minioadmin
+          S3_BUCKET=gdai-test
+          EMBEDDING_MODEL=cohere/embed-v4.0
+          EMBEDDING_API_KEY=test-key
+          LLM_MODEL=openai/gpt-4o
+          LLM_API_KEY=test-key
+          EOF
+
+      - name: Setup database
+        run: uv run python gdai/scripts/setup_db.py
+
+      - name: Run tests with coverage
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          uv run pytest tests/ \
+            --cov=gdai \
+            --cov-report=xml \
+            --cov-report=term-missing \
+            --cov-fail-under=60
+
+      - name: Coverage comment
+        uses: py-cov-action/python-coverage-comment-action@v3
+        with:
+          GITHUB_TOKEN: ${{ github.token }}
+          MINIMUM_GREEN: 80
+          MINIMUM_ORANGE: 60
+
+  security-check:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install UV
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: uv sync --all-groups
+
+      - name: Run safety check
+        continue-on-error: true
+        run: |
+          uv pip install safety
+          uv run safety check --output json > safety-report.json || true
+
+      - name: Run bandit security check
+        continue-on-error: true
+        run: |
+          uv pip install bandit
+          uv run bandit -r gdai/ -f json -o bandit-report.json || true
+
+      - name: Upload security reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-reports
+          path: |
+            safety-report.json
+            bandit-report.json
+
+  approval-requirements:
+    name: PR Approval Requirements
+    runs-on: ubuntu-latest
+    needs: [pr-metadata, code-review-checklist, test-coverage, security-check]
+    if: always() && github.event.pull_request.draft == false
+    steps:
+      - name: Check all requirements
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const jobs = {
+              'pr-metadata': '${{ needs.pr-metadata.result }}',
+              'code-review-checklist': '${{ needs.code-review-checklist.result }}',
+              'test-coverage': '${{ needs.test-coverage.result }}',
+              'security-check': '${{ needs.security-check.result }}'
+            };
+
+            let allPassed = true;
+            let summary = '## PR Approval Requirements\n\n';
+
+            for (const [job, result] of Object.entries(jobs)) {
+              const icon = result === 'success' ? '✅' : '❌';
+              summary += `${icon} ${job}: ${result}\n`;
+              if (result !== 'success') allPassed = false;
+            }
+
+            core.summary.addRaw(summary);
+            await core.summary.write();
+
+            if (!allPassed) {
+              core.setFailed('Not all PR requirements passed. Please fix the issues above.');
+            } else {
+              core.notice('✅ All PR requirements passed! Ready for review.');
+            }

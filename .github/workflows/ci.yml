@@ -1,0 +1,252 @@
+name: CI - Continuous Integration
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  code-quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install UV
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Cache UV dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/uv
+            .venv
+          key: ${{ runner.os }}-uv-${{ hashFiles('**/uv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-uv-
+
+      - name: Install dependencies
+        run: uv sync --all-groups
+
+      - name: Run Ruff linting
+        run: uv run ruff check gdai/ tests/ --output-format=github
+
+      - name: Run Ruff formatting check
+        run: uv run ruff format gdai/ tests/ --check
+
+      - name: Check import sorting
+        run: uv run ruff check gdai/ tests/ --select I
+
+      - name: Type checking with mypy (if configured)
+        continue-on-error: true
+        run: |
+          if [ -f "pyproject.toml" ] && grep -q "mypy" "pyproject.toml"; then
+            uv run mypy gdai/
+          else
+            echo "Mypy not configured, skipping"
+          fi
+
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install UV
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Cache UV dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/uv
+            .venv
+          key: ${{ runner.os }}-uv-${{ hashFiles('**/uv.lock') }}
+
+      - name: Install dependencies
+        run: uv sync --all-groups
+
+      - name: Create minimal .env
+        run: |
+          cat > .env << EOF
+          DATABASE=pgvector
+          PGVECTOR_USER=test
+          PGVECTOR_PASSWORD=test
+          PGVECTOR_DATABASE=test
+          PGVECTOR_HOST=localhost
+          PGVECTOR_PORT=5432
+          S3_ENDPOINT=http://localhost:9000
+          S3_ACCESS_KEY=test
+          S3_SECRET_KEY=test
+          S3_BUCKET=test
+          EMBEDDING_MODEL=cohere/embed-v4.0
+          EMBEDDING_API_KEY=test
+          LLM_MODEL=openai/gpt-4o
+          LLM_API_KEY=test
+          EOF
+
+      - name: Run unit tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          uv run pytest tests/unit/ \
+            -v \
+            --tb=short \
+            --maxfail=3 \
+            --junit-xml=junit-unit.xml
+
+      - name: Upload unit test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: unit-test-results
+          path: junit-unit.xml
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: ankane/pgvector:latest
+        env:
+          POSTGRES_DB: vectordb
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpwd
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      minio:
+        image: quay.io/minio/minio:latest
+        env:
+          MINIO_ROOT_USER: minioadmin
+          MINIO_ROOT_PASSWORD: minioadmin
+        ports:
+          - 9000:9000
+        options: >-
+          --health-cmd "curl -f http://localhost:9000/minio/health/live || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install UV
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Cache UV dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/uv
+            .venv
+          key: ${{ runner.os }}-uv-${{ hashFiles('**/uv.lock') }}
+
+      - name: Install dependencies
+        run: uv sync --all-groups
+
+      - name: Create test environment
+        run: |
+          cat > .env << EOF
+          DATABASE=pgvector
+          PGVECTOR_USER=testuser
+          PGVECTOR_PASSWORD=testpwd
+          PGVECTOR_DATABASE=vectordb
+          PGVECTOR_HOST=localhost
+          PGVECTOR_PORT=5432
+          PGVECTOR_MIN_POOL_CONNECTIONS=2
+          PGVECTOR_MAX_POOL_CONNECTIONS=10
+          S3_ENDPOINT=http://localhost:9000
+          S3_ACCESS_KEY=minioadmin
+          S3_SECRET_KEY=minioadmin
+          S3_BUCKET=gdai-test
+          S3_REGION=us-east-1
+          S3_USE_SSL=false
+          EXTRACTOR_TMP_FOLDER=/tmp/gdai-test
+          EMBEDDING_MODEL=cohere/embed-v4.0
+          EMBEDDING_API_KEY=test-key
+          EMBEDDING_DIMENSION=1536
+          LLM_MODEL=openai/gpt-4o
+          LLM_API_KEY=test-key
+          TEMPORAL_HOST=localhost:7233
+          GDAI_LOG_LEVEL=INFO
+          EOF
+
+      - name: Setup database
+        run: |
+          uv run python gdai/scripts/setup_db.py
+
+      - name: Run integration tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          uv run pytest tests/integration/ \
+            -v \
+            --tb=short \
+            --maxfail=5 \
+            --junit-xml=junit-integration.xml
+
+      - name: Upload integration test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-test-results
+          path: junit-integration.xml
+
+  build-summary:
+    name: Build Summary
+    runs-on: ubuntu-latest
+    needs: [code-quality, unit-tests, integration-tests]
+    if: always()
+    steps:
+      - name: Check job statuses
+        run: |
+          echo "## CI Results Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Code Quality: ${{ needs.code-quality.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Unit Tests: ${{ needs.unit-tests.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Integration Tests: ${{ needs.integration-tests.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ needs.code-quality.result }}" != "success" ] || \
+             [ "${{ needs.unit-tests.result }}" != "success" ] || \
+             [ "${{ needs.integration-tests.result }}" != "success" ]; then
+            echo "❌ CI Failed - Please fix the issues" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          else
+            echo "✅ All CI checks passed!" >> $GITHUB_STEP_SUMMARY
+          fi
