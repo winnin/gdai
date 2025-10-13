@@ -17,22 +17,24 @@ Este documento descreve todas as configurações necessárias no GitHub para que
 
 Configure os seguintes secrets em: **Settings → Secrets and variables → Actions → New repository secret**
 
-### Required Secrets
+### ⚠️ Secrets Recomendados para Testes Completos
+
+**IMPORTANTE**: Sem estes secrets, ~36 testes de integração serão **pulados (skipped)** mas o build **não falhará**.
+
+| Secret Name         | Description                             | How to Get                            | Impacto sem o Secret            |
+| ------------------- | --------------------------------------- | ------------------------------------- | ------------------------------- |
+| `EMBEDDING_API_KEY` | Cohere API key para testes de embedding | https://dashboard.cohere.com/api-keys | ~18 testes de embedding skipped |
+| `LLM_API_KEY`       | OpenAI API key para testes de LLM       | https://platform.openai.com/api-keys  | ~18 testes de LLM skipped       |
+
+**Com API keys**: 139 testes de integração executam
+**Sem API keys**: 103 testes de integração executam (36 skipped)
+
+### Optional Secrets
 
 | Secret Name        | Description                             | How to Get                                                 |
 | ------------------ | --------------------------------------- | ---------------------------------------------------------- |
 | `CODECOV_TOKEN`    | Token for uploading coverage to Codecov | https://codecov.io/ → Sign up → Get token for your repo    |
 | `GITLEAKS_LICENSE` | License for Gitleaks (optional)         | Optional - only needed for private repos with Gitleaks Pro |
-
-### Optional Secrets (for E2E tests)
-
-| Secret Name          | Description          | How to Get                            |
-| -------------------- | -------------------- | ------------------------------------- |
-| `COHERE_API_KEY`     | Cohere API key       | https://dashboard.cohere.com/api-keys |
-| `OPENAI_API_KEY`     | OpenAI API key       | https://platform.openai.com/api-keys  |
-| `TEST_S3_ENDPOINT`   | External S3 endpoint | For testing against real S3           |
-| `TEST_S3_ACCESS_KEY` | S3 access key        | From your S3 provider                 |
-| `TEST_S3_SECRET_KEY` | S3 secret key        | From your S3 provider                 |
 
 ---
 

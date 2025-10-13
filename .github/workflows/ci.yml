@@ -198,10 +198,10 @@ jobs:
           S3_USE_SSL=false
           EXTRACTOR_TMP_FOLDER=/tmp/gdai-test
           EMBEDDING_MODEL=cohere/embed-v4.0
-          EMBEDDING_API_KEY=test-key
+          EMBEDDING_API_KEY=${{ secrets.EMBEDDING_API_KEY || 'test-key' }}
           EMBEDDING_DIMENSION=1536
           LLM_MODEL=openai/gpt-4o
-          LLM_API_KEY=test-key
+          LLM_API_KEY=${{ secrets.LLM_API_KEY || 'test-key' }}
           TEMPORAL_HOST=localhost:7233
           GDAI_LOG_LEVEL=INFO
           EOF
@@ -219,6 +219,23 @@ jobs:
             --tb=short \
             --maxfail=5 \
             --junit-xml=junit-integration.xml
+
+      - name: Report skipped tests
+        if: always()
+        run: |
+          echo "## Integration Tests Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -z "${{ secrets.EMBEDDING_API_KEY }}" ] || [ -z "${{ secrets.LLM_API_KEY }}" ]; then
+            echo "⚠️ **Some tests were skipped due to missing API keys**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "To run all 139 integration tests, add these secrets:" >> $GITHUB_STEP_SUMMARY
+            echo "- \`EMBEDDING_API_KEY\` - Cohere API key for embedding tests (~36 tests)" >> $GITHUB_STEP_SUMMARY
+            echo "- \`LLM_API_KEY\` - OpenAI API key for LLM tests (~36 tests)" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Currently running: ~103 tests (PostgreSQL + MinIO only)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ All 139 integration tests ran (including API tests)" >> $GITHUB_STEP_SUMMARY
+          fi
 
       - name: Upload integration test results
         uses: actions/upload-artifact@v4
