@@ -1,0 +1,154 @@
+name: Deploy Documentation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "README.md"
+      - "ROADMAP.md"
+      - "CHANGELOG.md"
+      - "mkdocs.yml"
+      - ".github/workflows/docs.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "README.md"
+      - "ROADMAP.md"
+      - "CHANGELOG.md"
+      - "mkdocs.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-docs:
+    name: Build Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install UV
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Cache UV dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/uv
+            .venv
+          key: ${{ runner.os }}-uv-docs-${{ hashFiles('**/uv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-uv-docs-
+            ${{ runner.os }}-uv-
+
+      - name: Install dependencies
+        run: uv sync --all-groups
+
+      - name: Prepare documentation files
+        run: |
+          echo "Copying project files to docs directory..."
+          cp ROADMAP.md docs/
+          cp CHANGELOG.md docs/
+          cp README.md docs/index.md
+
+          echo "Adjusting links in index.md..."
+          sed -Ei 's#docs/([a-zA-Z0-9_-]+\.md)#\1#g' docs/index.md
+
+          echo "Documentation files prepared successfully."
+
+      - name: Build MkDocs site
+        run: |
+          uv run mkdocs build --strict --verbose
+          echo "MkDocs site built successfully."
+
+      - name: Upload documentation artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentation
+          path: site/
+          retention-days: 7
+
+  deploy-docs:
+    name: Deploy to GitHub Pages
+    runs-on: ubuntu-latest
+    needs: build-docs
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install UV
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Cache UV dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/uv
+            .venv
+          key: ${{ runner.os }}-uv-docs-${{ hashFiles('**/uv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-uv-docs-
+            ${{ runner.os }}-uv-
+
+      - name: Install dependencies
+        run: uv sync --all-groups
+
+      - name: Prepare documentation files
+        run: |
+          cp ROADMAP.md docs/
+          cp CHANGELOG.md docs/
+          cp README.md docs/index.md
+          sed -Ei 's#docs/([a-zA-Z0-9_-]+\.md)#\1#g' docs/index.md
+
+      - name: Configure git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Deploy to GitHub Pages
+        run: |
+          uv run mkdocs gh-deploy --force --verbose
+          echo "Documentation deployed to GitHub Pages successfully."
+
+      - name: Build summary
+        run: |
+          echo "## 📚 Documentation Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Documentation has been deployed to GitHub Pages" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📖 **View Documentation**: https://$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]' | sed 's|/|.github.io/|')" >> $GITHUB_STEP_SUMMARY
+          echo "🔗 **Repository**: ${{ github.server_url }}/${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
+          echo "📝 **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
