@@ -200,6 +200,15 @@ jobs:
           MINIMUM_GREEN: 80
           MINIMUM_ORANGE: 60
 
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+
   security-check:
     name: Security Scan
     runs-on: ubuntu-latest
