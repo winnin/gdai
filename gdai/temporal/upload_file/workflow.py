@@ -47,6 +47,7 @@ class UploadFileWorkflow:
                     maximum_interval=timedelta(seconds=10),
                     backoff_coefficient=2.0,
                 ),
+                result_type=UploadFileOutput,
             )
 
             if result.success:
@@ -94,6 +95,7 @@ class UploadFileobjWorkflow:
                     maximum_interval=timedelta(seconds=10),
                     backoff_coefficient=2.0,
                 ),
+                result_type=UploadFileOutput,
             )
 
             if result.success:
@@ -141,6 +143,7 @@ class DeleteFileWorkflow:
                     maximum_interval=timedelta(seconds=10),
                     backoff_coefficient=2.0,
                 ),
+                result_type=DeleteFileOutput,
             )
 
             if result.success:
@@ -180,6 +183,7 @@ class CheckFileExistsWorkflow:
                 "check_file_exists",
                 input,
                 schedule_to_close_timeout=timedelta(seconds=30),
+                result_type=CheckFileExistsOutput,
             )
 
             logger.info(f"Check file exists workflow completed for file: {input.s3_key}")
@@ -211,6 +215,7 @@ class ListFilesWorkflow:
                 "list_files",
                 input,
                 schedule_to_close_timeout=timedelta(minutes=2),
+                result_type=ListFilesOutput,
             )
 
             logger.info(f"List files workflow completed for tenant: {input.tenant_id}")
