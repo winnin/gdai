@@ -3,6 +3,7 @@
 from datetime import timedelta
 
 from temporalio import workflow
+from temporalio.common import RetryPolicy
 
 from gdai.commons.logger import logger
 
@@ -40,7 +41,7 @@ class UploadFileWorkflow:
                 "upload_file",
                 input,
                 schedule_to_close_timeout=timedelta(minutes=5),
-                retry_policy=workflow.RetryPolicy(
+                retry_policy=RetryPolicy(
                     maximum_attempts=3,
                     initial_interval=timedelta(seconds=1),
                     maximum_interval=timedelta(seconds=10),
@@ -87,7 +88,7 @@ class UploadFileobjWorkflow:
                 "upload_fileobj",
                 input,
                 schedule_to_close_timeout=timedelta(minutes=5),
-                retry_policy=workflow.RetryPolicy(
+                retry_policy=RetryPolicy(
                     maximum_attempts=3,
                     initial_interval=timedelta(seconds=1),
                     maximum_interval=timedelta(seconds=10),
@@ -134,7 +135,7 @@ class DeleteFileWorkflow:
                 "delete_file",
                 input,
                 schedule_to_close_timeout=timedelta(seconds=30),
-                retry_policy=workflow.RetryPolicy(
+                retry_policy=RetryPolicy(
                     maximum_attempts=3,
                     initial_interval=timedelta(seconds=1),
                     maximum_interval=timedelta(seconds=10),
