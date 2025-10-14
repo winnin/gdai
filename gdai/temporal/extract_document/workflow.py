@@ -13,9 +13,9 @@ class DocumentExtractionWorkflow:
         """Validate document input and file existence"""
         try:
             await workflow.execute_activity("validate", document_input, schedule_to_close_timeout=timedelta(seconds=10))
-            logger.info(f"Document validation completed for: {document_input.document_path}")
+            logger.info(f"Document validation completed for: {document_input.s3_key}")
         except Exception as e:
-            logger.error(f"Document validation failed for {document_input.document_path}: {e}")
+            logger.error(f"Document validation failed for {document_input.s3_key}: {e}")
             raise e
 
     async def _save_document_metadata(self, document_input: DocumentExtracInput) -> str:
@@ -27,7 +27,7 @@ class DocumentExtractionWorkflow:
             logger.info(f"Document metadata saved with ID: {document_id}")
             return document_id
         except Exception as e:
-            logger.error(f"Saving document metadata failed for {document_input.document_path}: {e}")
+            logger.error(f"Saving document metadata failed for {document_input.s3_key}: {e}")
             raise e
 
     async def _extract_document_content(self, document_input: DocumentExtracInput) -> str:
@@ -39,7 +39,7 @@ class DocumentExtractionWorkflow:
             logger.info(f"Document extraction completed. Output: {extracted_document_path}")
             return extracted_document_path
         except Exception as e:
-            logger.error(f"Document extraction failed for {document_input.document_path}: {e}")
+            logger.error(f"Document extraction failed for {document_input.s3_key}: {e}")
             raise e
 
     async def _chunk_texts_to_batched_files(
@@ -60,7 +60,7 @@ class DocumentExtractionWorkflow:
             logger.info(f"Text chunking completed. Generated chunk files: {len(batched_chunk_file)}")
             return batched_chunk_file
         except Exception as e:
-            logger.error(f"Text chunking failed for {document_input.document_path}: {e}")
+            logger.error(f"Text chunking failed for {document_input.s3_key}: {e}")
             raise e
 
     async def _get_chunk_file_content_for_embedding(self, batched_chunk_file: str) -> list[Chunk]:
@@ -122,7 +122,7 @@ class DocumentExtractionWorkflow:
         batched_chunk_files = []
         try:
             logger.info(
-                f"Starting document extraction workflow for: {document_input.document_path} "
+                f"Starting document extraction workflow for: {document_input.s3_key} "
                 f"(tenant: {document_input.tenant_id})"
                 f" with chunk strategy: {document_input.chunk_strategy}"
             )
@@ -148,8 +148,8 @@ class DocumentExtractionWorkflow:
                 await self._store_embedded_chunks(chunks_with_embeddings)
                 logger.info(f"Stored chunks from file {file_path} into database successfully")
 
-            logger.info(f"Document extraction workflow completed successfully for: {document_input.document_path}")
-            return f"Document {document_input.document_path} processed successfully."
+            logger.info(f"Document extraction workflow completed successfully for: {document_input.s3_key}")
+            return f"Document {document_input.s3_key} processed successfully."
 
         except Exception as e:
             logger.error(f"Document extraction workflow failed: {e}")
