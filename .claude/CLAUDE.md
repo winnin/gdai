@@ -131,7 +131,7 @@ task configure-dev              # Installs deps + pre-commit hooks
 cp .env.example .env            # Copy and EDIT with your API keys
 
 # 2. Start infrastructure
-docker compose up -d            # PostgreSQL, Temporal, MinIO
+task dev-infra                  # PostgreSQL, Temporal, MinIO
 task setup-db                   # Creates database tables
 
 # 3. Start workers

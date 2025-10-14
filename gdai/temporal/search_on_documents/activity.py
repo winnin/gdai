@@ -11,6 +11,7 @@ from .schema import (
     FormatAnswerInput,
     PromptInput,
     QueryInput,
+    SearchResult,
     UpdateQueryResultInput,
 )
 
@@ -37,8 +38,6 @@ __PROMPT_TEMPLATE_TO_SOLVE_QUERY = """
 
 """
 
-__REPOSITORY = RepositoryFactory.get_repository()
-
 
 @activity.defn
 async def register_query(query_param: QueryInput) -> None:
@@ -47,14 +46,15 @@ async def register_query(query_param: QueryInput) -> None:
             f"Starting query registration for query_id: {query_param.query_id}, tenant: {query_param.tenant_id}"
         )
 
-        await __REPOSITORY.insert_query(
-            QueryModel(
-                id=query_param.query_id,
-                tenant_id=query_param.tenant_id,
-                query=query_param.query,
-                status=QueryStatusEnum.pending,
+        async with RepositoryFactory.get_repository() as repository:
+            await repository.insert_query(
+                QueryModel(
+                    id=query_param.query_id,
+                    tenant_id=query_param.tenant_id,
+                    query=query_param.query,
+                    status=QueryStatusEnum.pending,
+                )
             )
-        )
 
         logger.info(f"Query {query_param.query_id} registered successfully for tenant {query_param.tenant_id}")
 
@@ -74,25 +74,26 @@ async def get_chunks(search_query_param: ChunkSearchParam) -> list[Chunk]:
         if search_query_param.document_ids:
             logger.debug(f"Searching within specific documents: {search_query_param.document_ids}")
 
-        result = await __REPOSITORY.search_chunks_by_similarity_on_document_ids(
-            tenant_id=search_query_param.tenant_id,
-            query_vector=search_query_param.query_embedding,
-            similarity_threshold=search_query_param.similarity_threshold,
-            document_ids=search_query_param.document_ids,
-            limit=search_query_param.limit,
-        )
-
-        chunks = [
-            Chunk(
-                chunk_id=str(chunk.id),
-                type=str(chunk.type),
-                text=chunk.chunk,
-                document_id=str(chunk.document_id),
-                page_number=chunk.page_number,
-                query_similarity=similarity,
+        async with RepositoryFactory.get_repository() as repository:
+            result = await repository.search_chunks_by_similarity_on_document_ids(
+                tenant_id=search_query_param.tenant_id,
+                query_vector=search_query_param.query_embedding,
+                similarity_threshold=search_query_param.similarity_threshold,
+                document_ids=search_query_param.document_ids,
+                limit=search_query_param.limit,
             )
-            for chunk, similarity in result
-        ]
+
+            chunks = [
+                Chunk(
+                    chunk_id=str(chunk.id),
+                    type=str(chunk.type),
+                    text=chunk.chunk,
+                    document_id=str(chunk.document_id),
+                    page_number=chunk.page_number,
+                    query_similarity=similarity,
+                )
+                for chunk, similarity in result
+            ]
 
         if not chunks or len(chunks) == 0:
             logger.warning(f"No chunks found matching the search criteria for tenant {search_query_param.tenant_id}")
@@ -116,27 +117,28 @@ async def save_query_result(input: UpdateQueryResultInput) -> None:
         logger.info(f"Saving query result for query {input.query_id}, tenant {input.tenant_id}")
         logger.debug(f"Query result status: {input.status}, answer length: {len(input.answer) if input.answer else 0}")
 
-        # update query result
-        await __REPOSITORY.update_query_result(
-            query_id=input.query_id,
-            tenant_id=input.tenant_id,
-            result=input.answer,
-            status=input.status,
-        )
-
-        # link query with chunks
-        if input.chunks:
-            chunk_links = [(chunk.chunk_id, chunk.query_similarity) for chunk in input.chunks]
-            await __REPOSITORY.insert_query_chunk_links(
-                tenant_id=input.tenant_id,
+        async with RepositoryFactory.get_repository() as repository:
+            # update query result
+            await repository.update_query_result(
                 query_id=input.query_id,
-                chunks_ids_with_similarity=chunk_links,
+                tenant_id=input.tenant_id,
+                result=input.answer,
+                status=input.status,
             )
 
-            chunk_count = len(input.chunks)
-            logger.info(f"Linked query {input.query_id} with {chunk_count} chunks")
-        else:
-            logger.warning(f"No chunks to link for query {input.query_id}")
+            # link query with chunks
+            if input.chunks:
+                chunk_links = [(chunk.chunk_id, chunk.query_similarity) for chunk in input.chunks]
+                await repository.insert_query_chunk_links(
+                    tenant_id=input.tenant_id,
+                    query_id=input.query_id,
+                    chunks_ids_with_similarity=chunk_links,
+                )
+
+                chunk_count = len(input.chunks)
+                logger.info(f"Linked query {input.query_id} with {chunk_count} chunks")
+            else:
+                logger.warning(f"No chunks to link for query {input.query_id}")
 
         logger.info(f"Query result saved successfully for query {input.query_id}")
 
@@ -165,15 +167,21 @@ async def generate_prompt_from_template(prompt_input: PromptInput) -> str:
 
 
 @activity.defn
-async def format_answer(format_answer_input: FormatAnswerInput) -> dict:
+async def format_answer(format_answer_input: FormatAnswerInput) -> SearchResult:
     try:
         logger.info(
             f"Formatting answer for query {format_answer_input.query_id}, tenant {format_answer_input.tenant_id}"
         )
-        logger.debug(f"Answer length: {len(format_answer_input.llm_answer) if format_answer_input.llm_answer else 0}")
+        logger.debug(f"Answer length: {len(format_answer_input.answer) if format_answer_input.answer else 0}")
         logger.debug(f"Number of chunks: {len(format_answer_input.chunks) if format_answer_input.chunks else 0}")
 
-        result = format_answer_input.__dict__
+        result = SearchResult(
+            query_id=format_answer_input.query_id,
+            tenant_id=format_answer_input.tenant_id,
+            query=format_answer_input.query,
+            answer=format_answer_input.answer,
+            chunks=format_answer_input.chunks or [],
+        )
 
         logger.info(f"Answer formatted successfully for query {format_answer_input.query_id}")
 

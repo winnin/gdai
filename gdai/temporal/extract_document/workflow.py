@@ -120,6 +120,7 @@ class DocumentExtractionWorkflow:
     async def run(self, document_input: DocumentExtracInput) -> str:
         extracted_document_path = ""
         batched_chunk_files = []
+        document_id = ""
         try:
             logger.info(
                 f"Starting document extraction workflow for: {document_input.s3_key} "
@@ -149,11 +150,7 @@ class DocumentExtractionWorkflow:
                 logger.info(f"Stored chunks from file {file_path} into database successfully")
 
             logger.info(f"Document extraction workflow completed successfully for: {document_input.s3_key}")
-            return f"Document {document_input.s3_key} processed successfully."
-
-        except Exception as e:
-            logger.error(f"Document extraction workflow failed: {e}")
-            raise e
+            return document_id
 
         except Exception as e:
             logger.error(f"Document extraction workflow failed: {e}")
