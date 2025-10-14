@@ -77,10 +77,9 @@ async def test_full_document_processing_and_search_flow():
     # ============================================
     print("\n[2/5] Extracting document and generating embeddings...")
     extract_input = DocumentExtracInput(
-        tenant_id=tenant_id,
-        document_path=upload_result.s3_key,
         s3_key=upload_result.s3_key,
         chunk_strategy="sentence",
+        tenant_id=tenant_id,
     )
 
     document_id = await client.execute_workflow(
@@ -244,10 +243,9 @@ async def test_multi_document_search():
 
         # Extract and embed
         extract_input = DocumentExtracInput(
-            tenant_id=tenant_id,
-            document_path=upload_result.s3_key,
             s3_key=upload_result.s3_key,
             chunk_strategy="sentence",
+            tenant_id=tenant_id,
         )
 
         document_id = await client.execute_workflow(
