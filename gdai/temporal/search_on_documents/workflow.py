@@ -58,6 +58,7 @@ class DocumentSearchWorkflow:
                     document_ids=search_input.document_ids,
                 ),
                 schedule_to_close_timeout=timedelta(seconds=30),
+                result_type=list,
             )
             workflow.logger.info(f"Retrieved {len(chunks)} chunks for query: {search_input.query_id}")
 
@@ -67,6 +68,7 @@ class DocumentSearchWorkflow:
                 "generate_prompt_from_template",
                 PromptInput(query=search_input.query, chunks=chunks),
                 schedule_to_close_timeout=timedelta(seconds=30),
+                result_type=str,
             )
             workflow.logger.debug(f"Prompt generated with length: {len(prompt)}")
 
@@ -110,6 +112,7 @@ class DocumentSearchWorkflow:
                     similarity_threshold=search_input.similarity_threshold,
                 ),
                 schedule_to_close_timeout=timedelta(seconds=10),
+                result_type=SearchResult,
             )
 
             workflow.logger.info(f"Document search workflow completed successfully for query: {search_input.query_id}")

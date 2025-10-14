@@ -199,8 +199,7 @@ async def test_full_document_processing_and_search_flow():
         query="Who are the main characters in Alice in Wonderland? List them with brief descriptions.",
         document_ids=[document_id],
         similarity_threshold=0.7,
-        top_k=5,
-        generate_answer=True,
+        max_num_chunks=5,
     )
 
     print("  Starting semantic search workflow...")
@@ -334,8 +333,7 @@ async def test_multi_document_search():
         query="What are the common themes between these stories? Compare and contrast the main characters.",
         document_ids=document_ids,
         similarity_threshold=0.7,
-        top_k=10,
-        generate_answer=True,
+        max_num_chunks=10,
     )
 
     search_result = await client.execute_workflow(
