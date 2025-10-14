@@ -17,6 +17,7 @@ Requires:
 """
 
 import os
+import time
 import uuid
 from pathlib import Path
 
@@ -29,6 +30,20 @@ from gdai.temporal.extract_document.workflow import DocumentExtractionWorkflow
 from gdai.temporal.search_on_documents.schema import SearchInput
 from gdai.temporal.upload_file.schema import UploadFileInput
 from gdai.temporal.upload_file.workflow import UploadFileWorkflow
+
+
+def print_step(step_num: int, total_steps: int, description: str, substep: str = ""):
+    """Print a formatted step message with optional substep."""
+    bar_length = 50
+    progress = int((step_num / total_steps) * bar_length)
+    bar = "█" * progress + "░" * (bar_length - progress)
+
+    print(f"\n{'=' * 80}")
+    print(f"[{step_num}/{total_steps}] {description}")
+    print(f"Progress: [{bar}] {int((step_num / total_steps) * 100)}%")
+    if substep:
+        print(f"    → {substep}")
+    print(f"{'=' * 80}")
 
 
 @pytest.mark.asyncio
@@ -48,18 +63,25 @@ async def test_full_document_processing_and_search_flow():
     assert fixture_path.exists(), f"Fixture not found: {fixture_path}"
 
     # Connect to Temporal
+    print_step(0, 5, "INITIALIZATION", "Connecting to Temporal and preparing test data")
+    print(f"  Tenant ID: {tenant_id}")
+    print(f"  Document: {fixture_path.name}")
     client = await Client.connect("localhost:7233")
+    print("  ✓ Connected to Temporal")
 
     # ============================================
     # Step 1: Upload file to S3
     # ============================================
-    print("\n[1/5] Uploading file to S3...")
+    print_step(1, 5, "UPLOAD FILE TO S3", "Uploading PDF document to MinIO/S3 storage")
+    start_time = time.time()
+
     upload_input = UploadFileInput(
         tenant_id=tenant_id,
         file_path=str(fixture_path),
         object_name="alice_in_wonderland.pdf",
     )
 
+    print("  Starting upload workflow...")
     upload_result = await client.execute_workflow(
         UploadFileWorkflow.run,
         upload_input,
@@ -67,20 +89,34 @@ async def test_full_document_processing_and_search_flow():
         task_queue="upload-file-queue",
     )
 
+    elapsed = time.time() - start_time
     assert upload_result.success, f"Upload failed: {upload_result.error_message}"
     assert upload_result.s3_key
     assert upload_result.file_size > 0
-    print(f"✓ File uploaded: {upload_result.s3_key} ({upload_result.file_size} bytes)")
+
+    print("  ✓ File uploaded successfully!")
+    print(f"    S3 Key: {upload_result.s3_key}")
+    print(f"    Size: {upload_result.file_size:,} bytes ({upload_result.file_size / 1024 / 1024:.2f} MB)")
+    print(f"    Time: {elapsed:.2f}s")
 
     # ============================================
     # Step 2: Extract document and generate embeddings
     # ============================================
-    print("\n[2/5] Extracting document and generating embeddings...")
+    print_step(2, 5, "EXTRACT DOCUMENT & GENERATE EMBEDDINGS", "Processing PDF and creating vector embeddings")
+    start_time = time.time()
+
     extract_input = DocumentExtracInput(
         s3_key=upload_result.s3_key,
         chunk_strategy="sentence",
         tenant_id=tenant_id,
     )
+
+    print("  Starting document extraction workflow...")
+    print("    → Downloading document from S3")
+    print("    → Extracting text and metadata")
+    print("    → Chunking text into semantic units")
+    print("    → Generating embeddings (Cohere)")
+    print("    → Storing chunks in database")
 
     document_id = await client.execute_workflow(
         DocumentExtractionWorkflow.run,
@@ -89,15 +125,21 @@ async def test_full_document_processing_and_search_flow():
         task_queue="process-document-queue",
     )
 
+    elapsed = time.time() - start_time
     assert document_id
-    print(f"✓ Document processed: {document_id}")
+    print("  ✓ Document extraction completed!")
+    print(f"    Document ID: {document_id}")
+    print(f"    Time: {elapsed:.2f}s")
 
     # ============================================
     # Step 3: Verify document was created
     # ============================================
-    print("\n[3/5] Verifying document in database...")
+    print_step(3, 5, "VERIFY DOCUMENT IN DATABASE", "Checking document metadata and status")
+    start_time = time.time()
+
     get_doc_input = GetDocumentInput(tenant_id=tenant_id, document_id=document_id)
 
+    print("  Querying document metadata...")
     document = await client.execute_workflow(
         "GetDocumentWorkflow",
         get_doc_input,
@@ -105,18 +147,26 @@ async def test_full_document_processing_and_search_flow():
         task_queue="document-management-queue",
     )
 
+    elapsed = time.time() - start_time
     assert document.id == document_id
     assert document.tenant_id == tenant_id
     assert document.name == "alice_in_wonderland.pdf"
     assert document.status == "processed"
-    print(f"✓ Document verified: {document.name} (status: {document.status})")
+    print("  ✓ Document verified in database!")
+    print(f"    Name: {document.name}")
+    print(f"    Status: {document.status}")
+    print(f"    Tenant: {document.tenant_id}")
+    print(f"    Time: {elapsed:.2f}s")
 
     # ============================================
     # Step 4: Verify chunks were created with embeddings
     # ============================================
-    print("\n[4/5] Verifying chunks with embeddings...")
+    print_step(4, 5, "VERIFY CHUNKS WITH EMBEDDINGS", "Checking chunked text and vector embeddings")
+    start_time = time.time()
+
     get_chunks_input = GetDocumentChunksInput(tenant_id=tenant_id, document_id=document_id)
 
+    print("  Querying document chunks from database...")
     chunks_result = await client.execute_workflow(
         "GetDocumentChunksWorkflow",
         get_chunks_input,
@@ -124,19 +174,23 @@ async def test_full_document_processing_and_search_flow():
         task_queue="document-management-queue",
     )
 
+    elapsed = time.time() - start_time
     assert chunks_result.total > 0, "No chunks were created"
-    print(f"✓ Found {chunks_result.total} chunks")
+    print("  ✓ Chunks verified successfully!")
+    print(f"    Total chunks: {chunks_result.total}")
+    print(f"    Time: {elapsed:.2f}s")
 
     # Display sample chunks
-    print("\nSample chunks:")
+    print("\n  Sample chunks:")
     for i, chunk in enumerate(chunks_result.chunks[:3]):
         preview = chunk.content[:100].replace("\n", " ")
-        print(f"  Chunk {i + 1} (page {chunk.page_number}): {preview}...")
+        print(f"    {i + 1}. Page {chunk.page_number}: {preview}...")
 
     # ============================================
     # Step 5: Perform semantic search with RAG
     # ============================================
-    print("\n[5/5] Performing semantic search with RAG...")
+    print_step(5, 5, "SEMANTIC SEARCH WITH RAG", "Searching document and generating AI answer")
+    start_time = time.time()
 
     # Search for characters in Alice in Wonderland
     search_input = SearchInput(
@@ -149,6 +203,13 @@ async def test_full_document_processing_and_search_flow():
         generate_answer=True,
     )
 
+    print("  Starting semantic search workflow...")
+    print("    → Generating query embedding")
+    print("    → Vector similarity search (pgvector)")
+    print("    → Retrieving relevant chunks")
+    print("    → Building context for LLM")
+    print("    → Generating answer (OpenAI GPT-4o)")
+
     search_result = await client.execute_workflow(
         "DocumentSearchWorkflow",
         search_input,
@@ -156,10 +217,17 @@ async def test_full_document_processing_and_search_flow():
         task_queue="search-on-documents-queue",
     )
 
+    elapsed = time.time() - start_time
+
     # Verify search results
     assert search_result.query == search_input.query
     assert search_result.answer is not None, "No answer was generated"
     assert len(search_result.chunks) > 0, "No relevant chunks found"
+
+    print("  ✓ Search completed successfully!")
+    print(f"    Found chunks: {len(search_result.chunks)}")
+    print(f"    Answer length: {len(search_result.answer)} characters")
+    print(f"    Time: {elapsed:.2f}s")
 
     # Display results
     print("\n" + "=" * 80)
